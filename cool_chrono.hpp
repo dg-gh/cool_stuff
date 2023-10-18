@@ -72,9 +72,9 @@ namespace cool
 		template <std::intmax_t unit_mod_num = 1, std::intmax_t unit_mod_den = 1>
 		inline float_Ty get_duration(cool::duration unit = cool::duration::s) const noexcept;
 		template <std::intmax_t unit_mod_num = 1, std::intmax_t unit_mod_den = 1>
-		inline float_Ty get_duration_from_start(cool::duration unit = cool::duration::s) const noexcept;
+		inline float_Ty get_duration_until_now(cool::duration unit = cool::duration::s) const noexcept;
 		inline typename std::chrono::time_point<clock_Ty>::rep get_ticks() const noexcept;
-		inline typename std::chrono::time_point<clock_Ty>::rep get_ticks_from_start() const noexcept;
+		inline typename std::chrono::time_point<clock_Ty>::rep get_ticks_until_now() const noexcept;
 
 		// total duration
 		inline cool::chrono<float_Ty, int_Ty, clock_Ty>& add_to_total_duration() noexcept;
@@ -401,7 +401,7 @@ inline float_Ty cool::chrono<float_Ty, int_Ty, clock_Ty>::get_duration(cool::dur
 }
 
 template <class float_Ty, class int_Ty, class clock_Ty> template <std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
-inline float_Ty cool::chrono<float_Ty, int_Ty, clock_Ty>::get_duration_from_start(cool::duration unit) const noexcept
+inline float_Ty cool::chrono<float_Ty, int_Ty, clock_Ty>::get_duration_until_now(cool::duration unit) const noexcept
 {
 	return duration_per_tick<unit_mod_num, unit_mod_den>(unit) * static_cast<float_Ty>((
 		clock_Ty::now() - m_start).count());
@@ -414,7 +414,7 @@ inline typename std::chrono::time_point<clock_Ty>::rep cool::chrono<float_Ty, in
 }
 
 template <class float_Ty, class int_Ty, class clock_Ty>
-inline typename std::chrono::time_point<clock_Ty>::rep cool::chrono<float_Ty, int_Ty, clock_Ty>::get_ticks_from_start() const noexcept
+inline typename std::chrono::time_point<clock_Ty>::rep cool::chrono<float_Ty, int_Ty, clock_Ty>::get_ticks_until_now() const noexcept
 {
 	return (clock_Ty::now() - m_start).count();
 }
