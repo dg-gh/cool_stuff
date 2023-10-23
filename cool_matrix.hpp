@@ -153,6 +153,11 @@ namespace cool
 		const Ty* m_begin_ptr;
 	};
 
+#ifndef _COOL_NO_INIT_ENUM
+#define _COOL_NO_INIT_ENUM
+	enum no_init_t { no_init };
+#endif // _COOL_NO_INIT_ENUM
+
 	template <std::size_t _rows, std::size_t _cols> class _diag;
 
 	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> class matrix
@@ -179,6 +184,8 @@ namespace cool
 
 
 		matrix() = default;
+
+		inline matrix(cool::no_init_t) noexcept {};
 
 		template <std::size_t _rhs_rows_padded>
 		inline matrix(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) noexcept;
@@ -812,15 +819,6 @@ namespace cool
 
 	template <class Ty, std::size_t Ar, std::size_t _A_rows_padded>
 	inline cool::lu_matrix<Ty, Ar> lu(const cool::matrix<Ty, Ar, Ar, _A_rows_padded>& A) noexcept;
-
-	template <class Ty, std::size_t _rows, std::size_t _cols = 1, std::size_t _rows_padded = _rows>
-	inline cool::matrix<Ty, _rows, _cols, _rows_padded>& as_matrix(void* ref_location) noexcept;
-
-	template <class Ty, std::size_t _rows, std::size_t _cols = 1, std::size_t _rows_padded = _rows>
-	inline const cool::matrix<Ty, _rows, _cols, _rows_padded>& as_matrix(const void* ref_location) noexcept;
-
-	template <class Ty, std::size_t _rows, std::size_t _cols = 1, std::size_t _rows_padded = _rows>
-	inline const cool::matrix<Ty, _rows, _cols, _rows_padded>& as_const_matrix(const void* ref_location) noexcept;
 
 	template <std::size_t _rows, std::size_t _cols> class _diag
 	{
@@ -6703,24 +6701,6 @@ inline cool::lu_matrix<Ty, Ar> cool::lu(const cool::matrix<Ty, Ar, Ar, _A_rows_p
 	}
 
 	return LU;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::as_matrix(void* ref_location) noexcept
-{
-	return *reinterpret_cast<cool::matrix<Ty, _rows, _cols, _rows_padded>*>(ref_location);
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline const cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::as_matrix(const void* ref_location) noexcept
-{
-	return *reinterpret_cast<const cool::matrix<Ty, _rows, _cols, _rows_padded>*>(ref_location);
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline const cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::as_const_matrix(const void* ref_location) noexcept
-{
-	return *reinterpret_cast<const cool::matrix<Ty, _rows, _cols, _rows_padded>*>(ref_location);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>

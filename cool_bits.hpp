@@ -92,6 +92,11 @@ namespace cool
 
 namespace cool
 {
+#ifndef _COOL_NO_INIT_ENUM
+#define _COOL_NO_INIT_ENUM
+	enum no_init_t { no_init };
+#endif // _COOL_NO_INIT_ENUM
+
 	// bits
 
 	template <std::size_t bit_count, class word_Ty> class bits
@@ -117,7 +122,8 @@ namespace cool
 		static constexpr std::size_t word_capacity = bit_count / word_size;
 		static constexpr std::size_t word_count = (bit_count % word_size == 0) ? bit_count / word_size : bit_count / word_size + 1;
 
-		inline bits() noexcept {};
+		bits() noexcept = default;
+		inline bits(cool::no_init_t) noexcept {};
 		constexpr bits(const cool::bits<bit_count, word_Ty>&) noexcept = default;
 		inline cool::bits<bit_count, word_Ty>& operator=(const cool::bits<bit_count, word_Ty>& rhs) noexcept;
 		bits(cool::bits<bit_count, word_Ty>&&) noexcept = default;
@@ -600,19 +606,19 @@ namespace cool
 	template <std::size_t bit_count, class word_Ty>
 	inline bool operator!=(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
 
-	// reinterpret address
+	// reinterpret address (should be called only at fixed addresses without other existing objects aliasing)
 
 	template <std::size_t bit_count, class word_Ty = unsigned char, class uintptr_Ty>
-	inline cool::bits<bit_count, word_Ty>& bits_at(uintptr_Ty ref_address) noexcept;
+	inline cool::bits<bit_count, word_Ty>& bits_at(uintptr_Ty mem_address) noexcept;
 
 	template <std::size_t bit_count, class word_Ty = unsigned char, class uintptr_Ty>
-	inline const cool::bits<bit_count, word_Ty>& const_bits_at(uintptr_Ty ref_address) noexcept;
+	inline const cool::bits<bit_count, word_Ty>& const_bits_at(uintptr_Ty mem_address) noexcept;
 
 	template <std::size_t bit_count, class word_Ty = unsigned char, class uintptr_Ty>
-	inline volatile cool::bits<bit_count, word_Ty>& volatile_bits_at(uintptr_Ty ref_address) noexcept;
+	inline volatile cool::bits<bit_count, word_Ty>& volatile_bits_at(uintptr_Ty mem_address) noexcept;
 
 	template <std::size_t bit_count, class word_Ty = unsigned char, class uintptr_Ty>
-	inline const volatile cool::bits<bit_count, word_Ty>& const_volatile_bits_at(uintptr_Ty ref_address) noexcept;
+	inline const volatile cool::bits<bit_count, word_Ty>& const_volatile_bits_at(uintptr_Ty mem_address) noexcept;
 }
 
 
@@ -835,12 +841,12 @@ template <class uint_Ty> inline bool cool::bits<bit_count, word_Ty>::vbit(uint_T
 	if (no_word_offset)
 	{
 		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << static_cast<std::size_t>(bit_offset));
-		return (*static_cast<volatile word_Ty*>(m_field) & mask) != static_cast<word_Ty>(0);
+		return (*static_cast<const volatile word_Ty*>(m_field) & mask) != static_cast<word_Ty>(0);
 	}
 	else
 	{
 		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (static_cast<std::size_t>(bit_offset) % word_size));
-		return (*(static_cast<volatile word_Ty*>(m_field) + static_cast<std::size_t>(bit_offset) / word_size) & mask) != static_cast<word_Ty>(0);
+		return (*(static_cast<const volatile word_Ty*>(m_field) + static_cast<std::size_t>(bit_offset) / word_size) & mask) != static_cast<word_Ty>(0);
 	}
 }
 
@@ -853,13 +859,13 @@ template <class uint_Ty1, class uint_Ty2> inline bool cool::bits<bit_count, word
 	{
 		std::size_t new_bit_offset = static_cast<std::size_t>(bit_offset) + CHAR_BIT * static_cast<std::size_t>(additional_byte_offset);
 		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << new_bit_offset);
-		return (*static_cast<volatile word_Ty*>(m_field) & mask) != static_cast<word_Ty>(0);
+		return (*static_cast<const volatile word_Ty*>(m_field) & mask) != static_cast<word_Ty>(0);
 	}
 	else
 	{
 		std::size_t new_bit_offset = static_cast<std::size_t>(bit_offset) + CHAR_BIT * static_cast<std::size_t>(additional_byte_offset);
 		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (new_bit_offset % word_size));
-		return (*(static_cast<volatile word_Ty*>(m_field) + new_bit_offset / word_size) & mask) != static_cast<word_Ty>(0);
+		return (*(static_cast<const volatile word_Ty*>(m_field) + new_bit_offset / word_size) & mask) != static_cast<word_Ty>(0);
 	}
 }
 
@@ -2069,34 +2075,34 @@ constexpr inline cool::bits<bit_count, word_Ty> cool::value_in_bits(rhs_word_Ty 
 // reinterpret address
 
 template <std::size_t bit_count, class word_Ty, class  uintptr_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits_at(uintptr_Ty ref_address) noexcept
+inline cool::bits<bit_count, word_Ty>& cool::bits_at(uintptr_Ty mem_address) noexcept
 {
-	cool::bits<bit_count, word_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty>*>(static_cast<std::uintptr_t>(ref_address));
-	new (ptr) cool::bits<bit_count, word_Ty>();
+	cool::bits<bit_count, word_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty>*>(static_cast<std::uintptr_t>(mem_address));
+	new (ptr) cool::bits<bit_count, word_Ty>(cool::no_init);
 	return *ptr;
 }
 
 template <std::size_t bit_count, class word_Ty, class  uintptr_Ty>
-inline const cool::bits<bit_count, word_Ty>& cool::const_bits_at(uintptr_Ty ref_address) noexcept
+inline const cool::bits<bit_count, word_Ty>& cool::const_bits_at(uintptr_Ty mem_address) noexcept
 {
-	cool::bits<bit_count, word_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty>*>(static_cast<std::uintptr_t>(ref_address));
-	new (ptr) cool::bits<bit_count, word_Ty>();
+	cool::bits<bit_count, word_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty>*>(static_cast<std::uintptr_t>(mem_address));
+	new (ptr) cool::bits<bit_count, word_Ty>(cool::no_init);
 	return *ptr;
 }
 
 template <std::size_t bit_count, class word_Ty, class  uintptr_Ty>
-inline volatile cool::bits<bit_count, word_Ty>& cool::volatile_bits_at(uintptr_Ty ref_address) noexcept
+inline volatile cool::bits<bit_count, word_Ty>& cool::volatile_bits_at(uintptr_Ty mem_address) noexcept
 {
-	cool::bits<bit_count, word_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty>*>(static_cast<std::uintptr_t>(ref_address));
-	new (ptr) cool::bits<bit_count, word_Ty>();
+	cool::bits<bit_count, word_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty>*>(static_cast<std::uintptr_t>(mem_address));
+	new (ptr) cool::bits<bit_count, word_Ty>(cool::no_init);
 	return *ptr;
 }
 
 template <std::size_t bit_count, class word_Ty, class  uintptr_Ty>
-inline const volatile cool::bits<bit_count, word_Ty>& cool::const_volatile_bits_at(uintptr_Ty ref_address) noexcept
+inline const volatile cool::bits<bit_count, word_Ty>& cool::const_volatile_bits_at(uintptr_Ty mem_address) noexcept
 {
-	cool::bits<bit_count, word_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty>*>(static_cast<std::uintptr_t>(ref_address));
-	new (ptr) cool::bits<bit_count, word_Ty>();
+	cool::bits<bit_count, word_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty>*>(static_cast<std::uintptr_t>(mem_address));
+	new (ptr) cool::bits<bit_count, word_Ty>(cool::no_init);
 	return *ptr;
 }
 

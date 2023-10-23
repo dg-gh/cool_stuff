@@ -518,7 +518,8 @@ inline void* cool::mem_blocks<default_mem_address>::init_set_data(void* data_ptr
 #endif // defined(__GNUC__) && !defined(__clang__)
 		for (std::size_t n = 0; n < block_count; n++)
 		{
-			*_current_ptr++ = static_cast<void*>(_first_block_ptr + block_size * n);
+			new (_current_ptr) void*(static_cast<void*>(_first_block_ptr + block_size * n));
+			_current_ptr++;
 		}
 
 		m_current_address_ptr = _current_ptr;
@@ -582,7 +583,8 @@ inline void* cool::mem_blocks<default_mem_address>::init_set_data(void* data_ptr
 #endif // defined(__GNUC__) && !defined(__clang__)
 		for (std::size_t n = 0; n < block_count; n++)
 		{
-			*_current_ptr++ = static_cast<void*>(_first_block_ptr + block_size * n);
+			new (_current_ptr) void*(static_cast<void*>(_first_block_ptr + block_size * n));
+			_current_ptr++;
 		}
 
 		m_current_address_ptr = _current_ptr;
