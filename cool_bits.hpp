@@ -607,6 +607,7 @@ namespace cool
 	inline bool operator!=(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
 
 	// reinterpret address (should be called only at fixed addresses without other existing objects aliasing)
+	// address must be a multiple of alignof(word_Ty)
 
 	template <std::size_t bit_count, class word_Ty = unsigned char, class uintptr_Ty>
 	inline cool::bits<bit_count, word_Ty>& bits_at(uintptr_Ty mem_address) noexcept;
@@ -2171,6 +2172,34 @@ cool::masked(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs, const cool::_cv
 template <std::size_t bit_count, class ptr_Ty1, class ptr_Ty2>
 inline cool::_masked_proxy<bit_count, ptr_Ty1, ptr_Ty2>::_masked_proxy(ptr_Ty1 rhs_ptr, ptr_Ty2 mask_ptr) noexcept
 	: m_rhs_ptr(rhs_ptr), m_mask_ptr(mask_ptr) {}
+
+
+// type traits
+
+namespace std
+{
+	template <std::size_t bit_count, class word_Ty> class std::is_trivially_copy_assignable<cool::bits<bit_count, word_Ty>> {
+	public:
+		using value_type = cool::bits<bit_count, word_Ty>;
+		static constexpr bool value = bit_count % (CHAR_BIT * sizeof(word_Ty)) == 0;
+		constexpr operator bool() noexcept { return value; }
+		constexpr bool operator()() noexcept { return value; }
+	};
+	template <std::size_t bit_count, class word_Ty> class std::is_trivially_copyable<cool::bits<bit_count, word_Ty>> {
+	public:
+		using value_type = cool::bits<bit_count, word_Ty>;
+		static constexpr bool value = bit_count % (CHAR_BIT * sizeof(word_Ty)) == 0;
+		constexpr operator bool() noexcept { return value; }
+		constexpr bool operator()() noexcept { return value; }
+	};
+	template <std::size_t bit_count, class word_Ty> class std::is_trivially_move_assignable<cool::bits<bit_count, word_Ty>> {
+	public:
+		using value_type = cool::bits<bit_count, word_Ty>;
+		static constexpr bool value = bit_count % (CHAR_BIT * sizeof(word_Ty)) == 0;
+		constexpr operator bool() noexcept { return value; }
+		constexpr bool operator()() noexcept { return value; }
+	};
+}
 
 #endif // _COOL_BITS_HPP
 
