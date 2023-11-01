@@ -11,17 +11,6 @@
 
 namespace cool
 {
-	// UV rotation matrix is :
-	// rotation matrix around axis U * ...
-	// rotation matrix around axis V
-
-	// UVW rotation matrix is :
-	// rotation matrix around axis U * ...
-	// rotation matrix around axis V * ...
-	// rotation matrix around axis W
-
-	// U, V, W being X = (1, 0, 0), Y = (0, 1, 0), Z = (0, 0, 1)
-
 	namespace rotation_subroutine
 	{
 		// template specializable functions, default to <cmath> functions
@@ -57,8 +46,132 @@ namespace cool
 		static constexpr std::size_t none = 3;
 	}
 
+
+	// 2D and 3D rotations
+
+	// rotationU matrix is :
+	// rotation matrix around axis U
+
+	// rotationUV matrix is :
+	// rotation matrix around axis U * ...
+	// rotation matrix around axis V
+
+	// rotationUVW matrix is :
+	// rotation matrix around axis U * ...
+	// rotation matrix around axis V * ...
+	// rotation matrix around axis W
+
+	// U, V, W being X = (1, 0, 0) or Y = (0, 1, 0) or Z = (0, 0, 1)
+
+	// 2D rotations
+
 	template <class Ty, std::size_t _dim_padded = 2, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotation2d
+		int _func_impl_number = 0> class rotation2d;
+
+	// 3D rotations
+
+	enum class rotation_axis_order : std::size_t
+	{
+		X = 0,
+		Y = 1,
+		Z = 2,
+		XY = 3,
+		XZ = 4,
+		YZ = 5,
+		YX = 6,
+		ZX = 7,
+		ZY = 8,
+		XYZ = 9,
+		XZY = 10,
+		YZX = 11,
+		YXZ = 12,
+		ZXY = 13,
+		ZYX = 14,
+		XYX2 = 15,
+		XZX2 = 16,
+		YZY2 = 17,
+		YXY2 = 18,
+		ZXZ2 = 19,
+		ZYZ2 = 20
+	};
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationX;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationY;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationZ;
+
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationXY;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationXZ;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationYZ;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationYX;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationZX;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationZY;
+
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationXYZ;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationXZY;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationYZX;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationYXZ;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationZXY;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationZYX;
+
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationXYX2;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationXZX2;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationYZY2;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationYXY2;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationZXZ2;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotationZYZ2;
+
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotation_axis;
+
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
+		int _func_impl_number = 0> class rotation_quaternion;
+
+
+	// class member details
+
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotation2d
 	{
 
 	public:
@@ -103,8 +216,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationX
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationX
 	{
 
 	public:
@@ -112,6 +224,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::X;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -138,8 +252,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationY
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationY
 	{
 
 	public:
@@ -147,6 +260,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::Y;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -173,8 +288,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationZ
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationZ
 	{
 
 	public:
@@ -182,6 +296,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::Z;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -208,8 +324,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationXY
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationXY
 	{
 
 	public:
@@ -217,6 +332,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::XY;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -243,8 +360,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationXZ
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationXZ
 	{
 
 	public:
@@ -252,6 +368,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::XZ;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -278,8 +396,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationYZ
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationYZ
 	{
 
 	public:
@@ -287,6 +404,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::YZ;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -313,8 +432,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationYX
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationYX
 	{
 
 	public:
@@ -322,6 +440,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::YX;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -348,8 +468,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationZX
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationZX
 	{
 
 	public:
@@ -357,6 +476,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::ZX;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -383,8 +504,8 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationZY
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout,
+		int _func_impl_number> class rotationZY
 	{
 
 	public:
@@ -392,6 +513,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::ZY;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -418,8 +541,8 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationXYZ
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout,
+		int _func_impl_number> class rotationXYZ
 	{
 
 	public:
@@ -427,6 +550,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::XYZ;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -456,8 +581,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationXZY
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationXZY
 	{
 
 	public:
@@ -465,6 +589,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::XZY;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -494,8 +620,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationYZX
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationYZX
 	{
 
 	public:
@@ -503,6 +628,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::YZX;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -532,8 +659,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationYXZ
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationYXZ
 	{
 
 	public:
@@ -541,6 +667,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::YXZ;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -570,8 +698,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationZXY
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationZXY
 	{
 
 	public:
@@ -579,6 +706,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::ZXY;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -608,8 +737,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationZYX
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationZYX
 	{
 
 	public:
@@ -617,6 +745,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::ZYX;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -646,8 +776,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationXYX2
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationXYX2
 	{
 
 	public:
@@ -655,6 +784,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::XYX2;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -669,7 +800,7 @@ namespace cool
 
 		static constexpr std::size_t iX = 0;
 		static constexpr std::size_t iY = 1;
-		static constexpr std::size_t iZ = 3;
+		static constexpr std::size_t iZ = 2;
 		static constexpr std::size_t i_singular_axis = 1;
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_rXYX2_ptr) noexcept;
@@ -683,8 +814,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationXZX2
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationXZX2
 	{
 
 	public:
@@ -692,6 +822,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::XZX2;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -705,7 +837,7 @@ namespace cool
 		};
 
 		static constexpr std::size_t iX = 0;
-		static constexpr std::size_t iY = 3;
+		static constexpr std::size_t iY = 2;
 		static constexpr std::size_t iZ = 1;
 		static constexpr std::size_t i_singular_axis = 1;
 
@@ -720,8 +852,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationYZY2
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationYZY2
 	{
 
 	public:
@@ -729,6 +860,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::YZY2;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -741,7 +874,7 @@ namespace cool
 			static_cast<Ty>(0), static_cast<Ty>(3.14159265358979 * 0.5)
 		};
 
-		static constexpr std::size_t iX = 3;
+		static constexpr std::size_t iX = 2;
 		static constexpr std::size_t iY = 0;
 		static constexpr std::size_t iZ = 1;
 		static constexpr std::size_t i_singular_axis = 1;
@@ -757,8 +890,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationYXY2
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationYXY2
 	{
 
 	public:
@@ -766,6 +898,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::YXY2;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -780,7 +914,7 @@ namespace cool
 
 		static constexpr std::size_t iX = 1;
 		static constexpr std::size_t iY = 0;
-		static constexpr std::size_t iZ = 3;
+		static constexpr std::size_t iZ = 2;
 		static constexpr std::size_t i_singular_axis = 1;
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_rYXY2_ptr) noexcept;
@@ -794,8 +928,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationZXZ2
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationZXZ2
 	{
 
 	public:
@@ -803,6 +936,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::ZXZ2;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -816,7 +951,7 @@ namespace cool
 		};
 
 		static constexpr std::size_t iX = 1;
-		static constexpr std::size_t iY = 3;
+		static constexpr std::size_t iY = 2;
 		static constexpr std::size_t iZ = 0;
 		static constexpr std::size_t i_singular_axis = 1;
 
@@ -831,8 +966,7 @@ namespace cool
 	};
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotationZYZ2
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotationZYZ2
 	{
 
 	public:
@@ -840,6 +974,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr rotation_axis_order axis_order = rotation_axis_order::ZYZ2;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -852,7 +988,7 @@ namespace cool
 			static_cast<Ty>(0), static_cast<Ty>(3.14159265358979 * 0.5)
 		};
 
-		static constexpr std::size_t iX = 3;
+		static constexpr std::size_t iX = 2;
 		static constexpr std::size_t iY = 1;
 		static constexpr std::size_t iZ = 0;
 		static constexpr std::size_t i_singular_axis = 1;
@@ -870,8 +1006,7 @@ namespace cool
 
 	enum no_axis_norm_t { no_axis_norm };
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotation_axis
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotation_axis
 	{
 
 	public:
@@ -898,8 +1033,7 @@ namespace cool
 
 	enum no_quaternion_norm_t { no_quaternion_norm };
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = cool::matrix_layout::col,
-		int _func_impl_number = 0> class rotation_quaternion
+	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotation_quaternion
 	{
 
 	public:
