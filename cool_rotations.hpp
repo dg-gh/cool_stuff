@@ -122,7 +122,7 @@ namespace cool
 
 	constexpr inline std::size_t axis_order_as_index(cool::rotation_axis_order _axis_order) noexcept;
 
-	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotation_angles_3d;
 
 
