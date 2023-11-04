@@ -99,7 +99,7 @@ namespace cool
 			| static_cast<std::uint32_t>(iX) << 0
 			| static_cast<std::uint32_t>(iY) << 2
 			| static_cast<std::uint32_t>(iZ) << 4
-			| static_cast<std::uint32_t>(iSg) << 4
+			| static_cast<std::uint32_t>(iSg) << 6
 			| static_cast<std::uint32_t>(axis0) << 8
 			| static_cast<std::uint32_t>(axis1) << 10
 			| static_cast<std::uint32_t>(axis2) << 12
@@ -345,15 +345,15 @@ namespace cool
 		inline std::size_t iZ() const noexcept;
 		inline std::size_t iSg() const noexcept;
 
-		inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v2_rXZ_ptr) const noexcept;
-		inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v2_rXZ_ptr) const noexcept;
+		inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v_angles_ptr) const noexcept;
+		inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v_angles_ptr) const noexcept;
 		inline cool::rotation_status get_angles(Ty* v_angles_ptr, const Ty* m3x3_rotation_ptr,
 			Ty tol = static_cast<Ty>(0), Ty angle_choice_if_singular = static_cast<Ty>(0)) const noexcept;
 
 	private:
 
 		cool::rotation_axis_order m_axis_order;
-		cool::rotation_status(*m_rotation_function)(Ty*, const Ty*, Ty, Ty, int param);
+		cool::rotation_status(*m_rotation_functions)(Ty*, const Ty*, Ty, Ty, int param);
 	};
 
 
@@ -712,7 +712,7 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::Y;
 		static constexpr Ty singular_angle[2] = {
 			-(static_cast<Ty>(0.5) * cool::rotation_subroutine::pi<Ty, _func_impl_number>()),
-			static_cast<Ty>(0.5)* cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			static_cast<Ty>(0.5) * cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 0;
@@ -752,7 +752,7 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::Z;
 		static constexpr Ty singular_angle[2] = {
 			-(static_cast<Ty>(0.5) * cool::rotation_subroutine::pi<Ty, _func_impl_number>()),
-			static_cast<Ty>(0.5)* cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			static_cast<Ty>(0.5) * cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 0;
@@ -792,7 +792,7 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::Z;
 		static constexpr Ty singular_angle[2] = {
 			-(static_cast<Ty>(0.5) * cool::rotation_subroutine::pi<Ty, _func_impl_number>()),
-			static_cast<Ty>(0.5)* cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			static_cast<Ty>(0.5) * cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 2;
@@ -832,7 +832,7 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::X;
 		static constexpr Ty singular_angle[2] = {
 			-(static_cast<Ty>(0.5) * cool::rotation_subroutine::pi<Ty, _func_impl_number>()),
-			static_cast<Ty>(0.5)* cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			static_cast<Ty>(0.5) * cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iY = 0;
@@ -872,7 +872,7 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::X;
 		static constexpr Ty singular_angle[2] = {
 			-(static_cast<Ty>(0.5) * cool::rotation_subroutine::pi<Ty, _func_impl_number>()),
-			static_cast<Ty>(0.5)* cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			static_cast<Ty>(0.5) * cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 1;
@@ -912,7 +912,7 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::Y;
 		static constexpr Ty singular_angle[2] = {
 			-(static_cast<Ty>(0.5) * cool::rotation_subroutine::pi<Ty, _func_impl_number>()),
-			static_cast<Ty>(0.5)* cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			static_cast<Ty>(0.5) * cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 2;
@@ -1165,7 +1165,7 @@ namespace cool
 			= cool::_rotation3d_data<_dim_padded, _layout>();
 	};
 
-	template <class rotation_angles_3d_Ty> class _rotation_angles_3d_function
+	template <class rotation_angles_3d_Ty> class _rotation_angles_3d_functions
 	{
 
 	public:
@@ -1174,7 +1174,7 @@ namespace cool
 		using pointer = typename rotation_angles_3d_Ty::pointer;
 		using const_pointer = typename rotation_angles_3d_Ty::const_pointer;
 
-		static inline cool::rotation_status rotation_function(
+		static inline cool::rotation_status rotation_functions(
 			pointer dest_ptr, const_pointer orig_ptr, value_type tol, value_type angle_choice_if_singular, int param) noexcept;
 	};
 }
@@ -1794,50 +1794,50 @@ cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>::operator=
 	switch (cool::axis_order_as_index(new_axis_order))
 	{
 	case cool::axis_order_as_index(cool::rotation_axis_order::X):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationX<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationX<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::Y):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationY<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationY<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::Z):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationZ<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationZ<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 
 	case cool::axis_order_as_index(cool::rotation_axis_order::XY):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationXY<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationXY<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::XZ):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationXZ<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationXZ<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::YZ):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationYZ<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationYZ<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::YX):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationYX<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationYX<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::ZX):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationZX<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationZX<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::ZY):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationZY<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationZY<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 
 	case cool::axis_order_as_index(cool::rotation_axis_order::XYZ):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationXYZ<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationXYZ<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::XZY):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationXZY<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationXZY<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::YZX):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationYZX<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationYZX<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::YXZ):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationYXZ<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationYXZ<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::ZXY):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationZXY<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationZXY<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::ZYX):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationZYX<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationZYX<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 
 	case cool::axis_order_as_index(cool::rotation_axis_order::XYX2):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationXYX2<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationXYX2<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::XZX2):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationXZX2<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationXZX2<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::YZY2):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationYZY2<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationYZY2<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::YXY2):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationYXY2<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationYXY2<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::ZXZ2):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationZXZ2<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationZXZ2<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	case cool::axis_order_as_index(cool::rotation_axis_order::ZYZ2):
-		m_rotation_function = cool::_rotation_angles_3d_function<cool::rotationZYZ2<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_function; break;
+		m_rotation_functions = cool::_rotation_angles_3d_functions<cool::rotationZYZ2<Ty, _dim_padded, _layout, _func_impl_number>>::rotation_functions; break;
 	}
 
 	return *this;
@@ -1961,20 +1961,20 @@ inline std::size_t cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline void cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>::get_matrix(Ty* m3x3_rotation_ptr, const Ty* v_angles_ptr) const noexcept
 {
-	m_rotation_function(m3x3_rotation_ptr, v_angles_ptr, static_cast<Ty>(0), static_cast<Ty>(0), 0);
+	m_rotation_functions(m3x3_rotation_ptr, v_angles_ptr, static_cast<Ty>(0), static_cast<Ty>(0), 0);
 }
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline void cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>::get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v_angles_ptr) const noexcept
 {
-	m_rotation_function(m3x3_rotation_ptr, v_angles_ptr, static_cast<Ty>(0), static_cast<Ty>(0), 1);
+	m_rotation_functions(m3x3_rotation_ptr, v_angles_ptr, static_cast<Ty>(0), static_cast<Ty>(0), 1);
 }
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>::get_angles(Ty* v_angles_ptr, const Ty* m3x3_rotation_ptr,
 	Ty tol, Ty angle_choice_if_singular) const noexcept
 {
-	return m_rotation_function(v_angles_ptr, m3x3_rotation_ptr, tol, angle_choice_if_singular, 2);
+	return m_rotation_functions(v_angles_ptr, m3x3_rotation_ptr, tol, angle_choice_if_singular, 2);
 }
 
 
@@ -3203,7 +3203,7 @@ inline cool::rotation_status cool::rotationZYZ2<Ty, _dim_padded, _layout, _func_
 
 
 template <class rotation_angles_3d_Ty>
-inline cool::rotation_status cool::_rotation_angles_3d_function<rotation_angles_3d_Ty>::rotation_function(
+inline cool::rotation_status cool::_rotation_angles_3d_functions<rotation_angles_3d_Ty>::rotation_functions(
 	pointer dest_ptr, const_pointer orig_ptr, value_type tol, value_type angle_choice_if_singular, int param) noexcept
 {
 	if (param == 0)
