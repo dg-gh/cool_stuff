@@ -32,13 +32,13 @@ namespace cool
 	namespace rotation_subroutine
 	{
 		// template specializable functions, default to <cmath> functions
-		template <class Ty, int _func_impl_number> static inline Ty cos(Ty x) noexcept;
-		template <class Ty, int _func_impl_number> static inline Ty sin(Ty x) noexcept;
-		template <class Ty, int _func_impl_number> static inline Ty sqrt(Ty x) noexcept;
-		template <class Ty, int _func_impl_number> static inline Ty inv_sqrt(Ty x) noexcept;
-		template <class Ty, int _func_impl_number> static inline Ty acos(Ty x) noexcept;
-		template <class Ty, int _func_impl_number> static inline Ty asin(Ty x) noexcept;
-		template <class Ty, int _func_impl_number> static inline Ty atan2(Ty y, Ty x) noexcept;
+		template <class Ty, int _func_impl_number> inline Ty cos(Ty x) noexcept;
+		template <class Ty, int _func_impl_number> inline Ty sin(Ty x) noexcept;
+		template <class Ty, int _func_impl_number> inline Ty acos(Ty x) noexcept;
+		template <class Ty, int _func_impl_number> inline Ty asin(Ty x) noexcept;
+		template <class Ty, int _func_impl_number> inline Ty atan2(Ty y, Ty x) noexcept;
+		template <class Ty, int _func_impl_number> inline Ty sqrt(Ty x) noexcept;
+		template <class Ty, int _func_impl_number> inline Ty inv_sqrt(Ty x) noexcept;
 	}
 
 	enum class rotation_status
@@ -1177,18 +1177,6 @@ inline Ty cool::rotation_subroutine::sin(Ty x) noexcept
 }
 
 template <class Ty, int _func_impl_number>
-inline Ty cool::rotation_subroutine::sqrt(Ty x) noexcept
-{
-	return std::sqrt(x);
-}
-
-template <class Ty, int _func_impl_number>
-inline Ty cool::rotation_subroutine::inv_sqrt(Ty x) noexcept
-{
-	return static_cast<Ty>(1) / std::sqrt(x);
-}
-
-template <class Ty, int _func_impl_number>
 inline Ty cool::rotation_subroutine::acos(Ty x) noexcept
 {
 	return std::acos(x);
@@ -1204,6 +1192,18 @@ template <class Ty, int _func_impl_number>
 inline Ty cool::rotation_subroutine::atan2(Ty y, Ty x) noexcept
 {
 	return std::atan2(y, x);
+}
+
+template <class Ty, int _func_impl_number>
+inline Ty cool::rotation_subroutine::sqrt(Ty x) noexcept
+{
+	return std::sqrt(x);
+}
+
+template <class Ty, int _func_impl_number>
+inline Ty cool::rotation_subroutine::inv_sqrt(Ty x) noexcept
+{
+	return static_cast<Ty>(1) / std::sqrt(x);
 }
 
 
