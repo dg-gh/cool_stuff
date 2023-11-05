@@ -40,7 +40,7 @@ namespace cool
 		template <class Ty, int _func_impl_number> inline Ty sqrt(Ty x) noexcept;
 		template <class Ty, int _func_impl_number> inline Ty inv_sqrt(Ty x) noexcept;
 
-		// template specializable constexpr function, defaults to 3.14159265358979
+		// template specializable constexpr function, defaults to 3.141592653589793
 		template <class Ty, int _func_impl_number> constexpr inline Ty pi() noexcept;
 	}
 
@@ -55,6 +55,11 @@ namespace cool
 		static constexpr std::size_t X = 0;
 		static constexpr std::size_t Y = 1;
 		static constexpr std::size_t Z = 2;
+		static constexpr std::size_t none = 3;
+	}
+
+	namespace axis_index
+	{
 		static constexpr std::size_t none = 3;
 	}
 
@@ -139,6 +144,7 @@ namespace cool
 	};
 
 	constexpr inline std::size_t axis_order_as_index(cool::rotation_axis_order _axis_order) noexcept;
+	constexpr inline cool::rotation_axis_order index_as_axis_order(std::size_t _index) noexcept;
 
 
 	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
@@ -335,7 +341,6 @@ namespace cool
 		inline cool::rotation_angles_3d < Ty, _dim_padded, _layout, _func_impl_number>& operator=(cool::rotation_axis_order new_axis_order) noexcept;
 		inline operator cool::rotation_axis_order() const noexcept;
 		inline cool::rotation_axis_order axis_order() const noexcept;
-		inline std::size_t axis_order_as_index() const noexcept;
 
 		inline std::size_t axis_count() const noexcept;
 		inline std::size_t axis(std::size_t _index) const noexcept;
@@ -384,9 +389,9 @@ namespace cool
 		static constexpr Ty singular_angle[2] = {};
 
 		static constexpr std::size_t iX = 0;
-		static constexpr std::size_t iY = 3;
-		static constexpr std::size_t iZ = 3;
-		static constexpr std::size_t iSg = 3;
+		static constexpr std::size_t iY = cool::axis_index::none;
+		static constexpr std::size_t iZ = cool::axis_index::none;
+		static constexpr std::size_t iSg = cool::axis_index::none;
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* angle_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* angle_ptr) noexcept;
@@ -420,10 +425,10 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::none;
 		static constexpr Ty singular_angle[2] = {};
 
-		static constexpr std::size_t iX = 3;
+		static constexpr std::size_t iX = cool::axis_index::none;
 		static constexpr std::size_t iY = 0;
-		static constexpr std::size_t iZ = 3;
-		static constexpr std::size_t iSg = 3;
+		static constexpr std::size_t iZ = cool::axis_index::none;
+		static constexpr std::size_t iSg = cool::axis_index::none;
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* angle_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* angle_ptr) noexcept;
@@ -457,10 +462,10 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::none;
 		static constexpr Ty singular_angle[2] = {};
 
-		static constexpr std::size_t iX = 3;
-		static constexpr std::size_t iY = 3;
+		static constexpr std::size_t iX = cool::axis_index::none;
+		static constexpr std::size_t iY = cool::axis_index::none;
 		static constexpr std::size_t iZ = 0;
-		static constexpr std::size_t iSg = 3;
+		static constexpr std::size_t iSg = cool::axis_index::none;
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* angle_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* angle_ptr) noexcept;
@@ -532,9 +537,9 @@ namespace cool
 		static constexpr Ty singular_angle[2] = {};
 
 		static constexpr std::size_t iX = 0;
-		static constexpr std::size_t iY = 3;
+		static constexpr std::size_t iY = cool::axis_index::none;
 		static constexpr std::size_t iZ = 1;
-		static constexpr std::size_t iSg = 3;
+		static constexpr std::size_t iSg = cool::axis_index::none;
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v2_rXZ_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v2_rXZ_ptr) noexcept;
@@ -568,10 +573,10 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::none;
 		static constexpr Ty singular_angle[2] = {};
 
-		static constexpr std::size_t iX = 3;
+		static constexpr std::size_t iX = cool::axis_index::none;
 		static constexpr std::size_t iY = 0;
 		static constexpr std::size_t iZ = 1;
-		static constexpr std::size_t iSg = 3;
+		static constexpr std::size_t iSg = cool::axis_index::none;
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v2_rYZ_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v2_rYZ_ptr) noexcept;
@@ -607,8 +612,8 @@ namespace cool
 
 		static constexpr std::size_t iX = 1;
 		static constexpr std::size_t iY = 0;
-		static constexpr std::size_t iZ = 3;
-		static constexpr std::size_t iSg = 3;
+		static constexpr std::size_t iZ = cool::axis_index::none;
+		static constexpr std::size_t iSg = cool::axis_index::none;
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v2_rYX_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v2_rYX_ptr) noexcept;
@@ -643,9 +648,9 @@ namespace cool
 		static constexpr Ty singular_angle[2] = {};
 
 		static constexpr std::size_t iX = 1;
-		static constexpr std::size_t iY = 3;
+		static constexpr std::size_t iY = cool::axis_index::none;
 		static constexpr std::size_t iZ = 0;
-		static constexpr std::size_t iSg = 3;
+		static constexpr std::size_t iSg = cool::axis_index::none;
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v2_rZX_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v2_rZX_ptr) noexcept;
@@ -680,10 +685,10 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::none;
 		static constexpr Ty singular_angle[2] = {};
 
-		static constexpr std::size_t iX = 3;
+		static constexpr std::size_t iX = cool::axis_index::none;
 		static constexpr std::size_t iY = 1;
 		static constexpr std::size_t iZ = 0;
-		static constexpr std::size_t iSg = 3;
+		static constexpr std::size_t iSg = cool::axis_index::none;
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v2_rZY_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v2_rZY_ptr) noexcept;
@@ -1233,7 +1238,7 @@ inline Ty cool::rotation_subroutine::inv_sqrt(Ty x) noexcept
 template <class Ty, int _func_impl_number>
 constexpr inline Ty cool::rotation_subroutine::pi() noexcept
 {
-	return static_cast<Ty>(3.14159265358979);
+	return static_cast<Ty>(3.141592653589793);
 }
 
 
@@ -1785,6 +1790,40 @@ constexpr inline std::size_t cool::axis_order_as_index(cool::rotation_axis_order
 	return static_cast<std::size_t>(static_cast<std::uint32_t>(_axis_order) >> 16);
 }
 
+constexpr inline cool::rotation_axis_order cool::index_as_axis_order(std::size_t _index) noexcept
+{
+	constexpr cool::rotation_axis_order arr[22] = {
+		cool::rotation_axis_order::id,
+
+		cool::rotation_axis_order::X,
+		cool::rotation_axis_order::Y,
+		cool::rotation_axis_order::Z,
+
+		cool::rotation_axis_order::XY,
+		cool::rotation_axis_order::XZ,
+		cool::rotation_axis_order::YZ,
+		cool::rotation_axis_order::YX,
+		cool::rotation_axis_order::ZX,
+		cool::rotation_axis_order::ZY,
+
+		cool::rotation_axis_order::XYZ,
+		cool::rotation_axis_order::XZY,
+		cool::rotation_axis_order::YZX,
+		cool::rotation_axis_order::YXZ,
+		cool::rotation_axis_order::ZXY,
+		cool::rotation_axis_order::ZYX,
+
+		cool::rotation_axis_order::XYX2,
+		cool::rotation_axis_order::XZX2,
+		cool::rotation_axis_order::YZY2,
+		cool::rotation_axis_order::YXY2,
+		cool::rotation_axis_order::ZXZ2,
+		cool::rotation_axis_order::ZYZ2,
+	};
+
+	return arr[_index];
+}
+
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>::rotation_angles_3d() noexcept
 {
@@ -1870,12 +1909,6 @@ template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _f
 inline cool::rotation_axis_order cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>::axis_order() const noexcept
 {
 	return m_axis_order;
-}
-
-template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
-inline std::size_t cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>::axis_order_as_index() const noexcept
-{
-	return static_cast<std::size_t>(static_cast<std::uint32_t>(m_axis_order) >> 16);
 }
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
