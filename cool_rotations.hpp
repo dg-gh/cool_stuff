@@ -34,14 +34,19 @@ namespace cool
 		// template specializable functions, default to <cmath> functions
 
 		// defaults to std::cos(x)
+		// can be specialized to std::cos(pi / 180 * x) if angles are in degrees
 		template <class Ty, int _func_impl_number> inline Ty cos(Ty x) noexcept;
 		// defaults to std::sin(x)
+		// can be specialized to std::sin(pi / 180 * x) if angles are in degrees
 		template <class Ty, int _func_impl_number> inline Ty sin(Ty x) noexcept;
 		// defaults to std::acos(x)
+		// can be specialized to 180 / pi * std::acos(x) if angles are in degrees
 		template <class Ty, int _func_impl_number> inline Ty acos(Ty x) noexcept;
 		// defaults to std::asin(x)
+		// can be specialized to 180 / pi * std::asin(x) if angles are in degrees
 		template <class Ty, int _func_impl_number> inline Ty asin(Ty x) noexcept;
 		// defaults to std::atan(y, x)
+		// can be specialized to 180 / pi * std::atan2(y, x) if angles are in degrees
 		template <class Ty, int _func_impl_number> inline Ty atan2(Ty y, Ty x) noexcept;
 		// defaults to std::sqrt(x)
 		template <class Ty, int _func_impl_number> inline Ty sqrt(Ty x) noexcept;
@@ -51,6 +56,9 @@ namespace cool
 
 		// defaults to static_cast<Ty>(3.141592653589793)
 		template <class Ty, int _func_impl_number> constexpr inline Ty pi() noexcept;
+		// defaults to static_cast<Ty>(3.141592653589793)
+		// should be specialized to return 180 if degrees are used to get correct angles of singular positions
+		template <class Ty, int _func_impl_number> constexpr inline Ty half_turn() noexcept;
 		// defaults to static_cast<Ty>(1)
 		template <class Ty, int _func_impl_number> constexpr inline Ty one() noexcept;
 		// defaults to static_cast<Ty>(0.5)
@@ -64,14 +72,14 @@ namespace cool
 
 		// default deduced from one + one
 		template <class Ty, int _func_impl_number> constexpr inline Ty two() noexcept;
-		// default deduced from half * pi
-		template <class Ty, int _func_impl_number> constexpr inline Ty half_pi() noexcept;
+		// default deduced from half * half_turn
+		template <class Ty, int _func_impl_number> constexpr inline Ty quarter_turn() noexcept;
 		// default deduced from half * half
 		template <class Ty, int _func_impl_number> constexpr inline Ty quarter() noexcept;
-		// default deduced from to -pi
-		template <class Ty, int _func_impl_number> constexpr inline Ty minus_pi() noexcept;
-		// default deduced from -minus_half_pi
-		template <class Ty, int _func_impl_number> constexpr inline Ty minus_half_pi() noexcept;
+		// default deduced from to -half_turn
+		template <class Ty, int _func_impl_number> constexpr inline Ty minus_half_turn() noexcept;
+		// default deduced from -minus_quarter_turn
+		template <class Ty, int _func_impl_number> constexpr inline Ty minus_quarter_turn() noexcept;
 		// default deduced from -one
 		template <class Ty, int _func_impl_number> constexpr inline Ty minus_one() noexcept;
 		// default deduced from -quarter
@@ -312,13 +320,13 @@ namespace cool
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
 
-		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_axis_ptr, Ty angle, Ty tol = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
-		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_axis_ptr, Ty angle, Ty tol = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
+		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_axis_ptr, Ty angle, Ty norm_tol = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
+		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_axis_ptr, Ty angle, Ty norm_tol = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_axis_ptr, Ty angle, cool::no_axis_norm_t) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_axis_ptr, Ty angle, cool::no_axis_norm_t) noexcept;
-		static inline cool::rotation_status get_axis_angle(Ty* v3_axis_ptr, Ty* angle_ptr, const Ty* m3x3_rotation_ptr, Ty tol) noexcept;
+		static inline cool::rotation_status get_axis_angle(Ty* v3_axis_ptr, Ty* angle_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol) noexcept;
 		static inline cool::rotation_status get_axis_angle(Ty* v3_axis_ptr, Ty* angle_ptr, const Ty* m3x3_rotation_ptr,
-			const Ty* v3_axis_way_ptr, Ty tol) noexcept;
+			const Ty* v3_axis_way_ptr, Ty angle_tol) noexcept;
 
 	private:
 
@@ -347,12 +355,12 @@ namespace cool
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v4_quaternion_ptr, cool::no_quaternion_norm_t) noexcept;
 		static inline void get_quaternion_from_matrix(Ty* v4_quaternion_ptr, const Ty* m3x3_rotation_ptr) noexcept;
 		static inline void get_quaternion_from_axis_angle(Ty* v4_quaternion_ptr, const Ty* v3_axis_ptr, Ty angle,
-			Ty tol = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
+			Ty norm_tol = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
 		static inline void get_quaternion_from_axis_angle(Ty* v4_quaternion_ptr, const Ty* v3_axis_ptr, Ty angle,
 			cool::no_axis_norm_t) noexcept;
-		static inline cool::rotation_status get_axis_angle(Ty* v3_axis_ptr, Ty* angle, Ty* v4_quaternion_ptr, Ty tol) noexcept;
+		static inline cool::rotation_status get_axis_angle(Ty* v3_axis_ptr, Ty* angle, Ty* v4_quaternion_ptr, Ty angle_tol) noexcept;
 		static inline cool::rotation_status get_axis_angle(Ty* v3_axis_ptr, Ty* angle, Ty* v4_quaternion_ptr,
-			const Ty* v3_axis_way_ptr, Ty tol) noexcept;
+			const Ty* v3_axis_way_ptr, Ty angle_tol) noexcept;
 
 	private:
 
@@ -393,7 +401,7 @@ namespace cool
 		inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v_angles_ptr) const noexcept;
 		inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v_angles_ptr) const noexcept;
 		inline cool::rotation_status get_angles(Ty* v_angles_ptr, const Ty* m3x3_rotation_ptr,
-			Ty tol = cool::rotation_subroutine::zero<Ty, _func_impl_number>(),
+			Ty angle_tol = cool::rotation_subroutine::zero<Ty, _func_impl_number>(),
 			Ty angle_choice_if_singular = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) const noexcept;
 
 	private:
@@ -759,8 +767,8 @@ namespace cool
 
 		static constexpr std::size_t singular_axis = cool::axis::Y;
 		static constexpr Ty singular_angle[2] = {
-			cool::rotation_subroutine::minus_half_pi<Ty, _func_impl_number>(),
-			cool::rotation_subroutine::half_pi<Ty, _func_impl_number>()
+			cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>(),
+			cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 0;
@@ -770,7 +778,7 @@ namespace cool
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_rXYZ_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_rXYZ_ptr) noexcept;
-		static inline cool::rotation_status get_angles(Ty* v3_rXYZ_ptr, const Ty* m3x3_rotation_ptr, Ty tol,
+		static inline cool::rotation_status get_angles(Ty* v3_rXYZ_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol,
 			Ty rX_choice_if_singular = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
 
 	private:
@@ -799,8 +807,8 @@ namespace cool
 
 		static constexpr std::size_t singular_axis = cool::axis::Z;
 		static constexpr Ty singular_angle[2] = {
-			cool::rotation_subroutine::minus_half_pi<Ty, _func_impl_number>(),
-			cool::rotation_subroutine::half_pi<Ty, _func_impl_number>()
+			cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>(),
+			cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 0;
@@ -810,7 +818,7 @@ namespace cool
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_rXZY_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_rXZY_ptr) noexcept;
-		static inline cool::rotation_status get_angles(Ty* v3_rXZY_ptr, const Ty* m3x3_rotation, Ty tol,
+		static inline cool::rotation_status get_angles(Ty* v3_rXZY_ptr, const Ty* m3x3_rotation, Ty angle_tol,
 			Ty rX_choice_if_singular = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
 
 	private:
@@ -839,8 +847,8 @@ namespace cool
 
 		static constexpr std::size_t singular_axis = cool::axis::Z;
 		static constexpr Ty singular_angle[2] = {
-			cool::rotation_subroutine::minus_half_pi<Ty, _func_impl_number>(),
-			cool::rotation_subroutine::half_pi<Ty, _func_impl_number>()
+			cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>(),
+			cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 2;
@@ -850,7 +858,7 @@ namespace cool
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_rYZX_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_rYZX_ptr) noexcept;
-		static inline cool::rotation_status get_angles(Ty* v3_rYZX_ptr, const Ty* m3x3_rotation, Ty tol,
+		static inline cool::rotation_status get_angles(Ty* v3_rYZX_ptr, const Ty* m3x3_rotation, Ty angle_tol,
 			Ty rY_choice_if_singular = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
 
 	private:
@@ -879,8 +887,8 @@ namespace cool
 
 		static constexpr std::size_t singular_axis = cool::axis::X;
 		static constexpr Ty singular_angle[2] = {
-			cool::rotation_subroutine::minus_half_pi<Ty, _func_impl_number>(),
-			cool::rotation_subroutine::half_pi<Ty, _func_impl_number>()
+			cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>(),
+			cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iY = 0;
@@ -890,7 +898,7 @@ namespace cool
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_rYXZ_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_rYXZ_ptr) noexcept;
-		static inline cool::rotation_status get_angles(Ty* v3_rYXZ_ptr, const Ty* m3x3_rotation_ptr, Ty tol,
+		static inline cool::rotation_status get_angles(Ty* v3_rYXZ_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol,
 			Ty rY_choice_if_singular = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
 
 	private:
@@ -919,8 +927,8 @@ namespace cool
 
 		static constexpr std::size_t singular_axis = cool::axis::X;
 		static constexpr Ty singular_angle[2] = {
-			cool::rotation_subroutine::minus_half_pi<Ty, _func_impl_number>(),
-			cool::rotation_subroutine::half_pi<Ty, _func_impl_number>()
+			cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>(),
+			cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 1;
@@ -930,7 +938,7 @@ namespace cool
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_rZXY_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_rZXY_ptr) noexcept;
-		static inline cool::rotation_status get_angles(Ty* v3_rZXY_ptr, const Ty* m3x3_rotation_ptr, Ty tol,
+		static inline cool::rotation_status get_angles(Ty* v3_rZXY_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol,
 			Ty rZ_choice_if_singular = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
 
 	private:
@@ -959,8 +967,8 @@ namespace cool
 
 		static constexpr std::size_t singular_axis = cool::axis::Y;
 		static constexpr Ty singular_angle[2] = {
-			cool::rotation_subroutine::minus_half_pi<Ty, _func_impl_number>(),
-			cool::rotation_subroutine::half_pi<Ty, _func_impl_number>()
+			cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>(),
+			cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 2;
@@ -970,7 +978,7 @@ namespace cool
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_rZYX_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_rZYX_ptr) noexcept;
-		static inline cool::rotation_status get_angles(Ty* v3_rZYX_ptr, const Ty* m3x3_rotation, Ty tol,
+		static inline cool::rotation_status get_angles(Ty* v3_rZYX_ptr, const Ty* m3x3_rotation, Ty angle_tol,
 			Ty rZ_choice_if_singular = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
 
 	private:
@@ -1000,7 +1008,7 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::Y;
 		static constexpr Ty singular_angle[2] = {
 			cool::rotation_subroutine::zero<Ty, _func_impl_number>(),
-			cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			cool::rotation_subroutine::half_turn<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 0;
@@ -1010,7 +1018,7 @@ namespace cool
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_rXYX2_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_rXYX2_ptr) noexcept;
-		static inline cool::rotation_status get_angles(Ty* v3_rXYX2_ptr, const Ty* m3x3_rotation_ptr, Ty tol,
+		static inline cool::rotation_status get_angles(Ty* v3_rXYX2_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol,
 			Ty rX_choice_if_singular = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
 
 	private:
@@ -1040,7 +1048,7 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::Z;
 		static constexpr Ty singular_angle[2] = {
 			cool::rotation_subroutine::zero<Ty, _func_impl_number>(),
-			cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			cool::rotation_subroutine::half_turn<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 0;
@@ -1050,7 +1058,7 @@ namespace cool
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_rXZX2_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_rXZX2_ptr) noexcept;
-		static inline cool::rotation_status get_angles(Ty* v3_rXZX2_ptr, const Ty* m3x3_rotation_ptr, Ty tol,
+		static inline cool::rotation_status get_angles(Ty* v3_rXZX2_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol,
 			Ty rX_choice_if_singular = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
 
 	private:
@@ -1080,7 +1088,7 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::Z;
 		static constexpr Ty singular_angle[2] = {
 			cool::rotation_subroutine::zero<Ty, _func_impl_number>(),
-			cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			cool::rotation_subroutine::half_turn<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 2;
@@ -1090,7 +1098,7 @@ namespace cool
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_rYZY2_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_rYZY2_ptr) noexcept;
-		static inline cool::rotation_status get_angles(Ty* v3_rYZY2_ptr, const Ty* m3x3_rotation_ptr, Ty tol,
+		static inline cool::rotation_status get_angles(Ty* v3_rYZY2_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol,
 			Ty rY_choice_if_singular = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
 
 	private:
@@ -1120,7 +1128,7 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::X;
 		static constexpr Ty singular_angle[2] = {
 			cool::rotation_subroutine::zero<Ty, _func_impl_number>(),
-			cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			cool::rotation_subroutine::half_turn<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 1;
@@ -1130,7 +1138,7 @@ namespace cool
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_rYXY2_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_rYXY2_ptr) noexcept;
-		static inline cool::rotation_status get_angles(Ty* v3_rYXY2_ptr, const Ty* m3x3_rotation_ptr, Ty tol,
+		static inline cool::rotation_status get_angles(Ty* v3_rYXY2_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol,
 			Ty rY_choice_if_singular = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
 
 	private:
@@ -1160,7 +1168,7 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::X;
 		static constexpr Ty singular_angle[2] = {
 			cool::rotation_subroutine::zero<Ty, _func_impl_number>(),
-			cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			cool::rotation_subroutine::half_turn<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 1;
@@ -1170,7 +1178,7 @@ namespace cool
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_rZXZ2_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_rZXZ2_ptr) noexcept;
-		static inline cool::rotation_status get_angles(Ty* v3_rZXZ2_ptr, const Ty* m3x3_rotation_ptr, Ty tol,
+		static inline cool::rotation_status get_angles(Ty* v3_rZXZ2_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol,
 			Ty rZ_choice_if_singular = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
 
 	private:
@@ -1200,7 +1208,7 @@ namespace cool
 		static constexpr std::size_t singular_axis = cool::axis::Y;
 		static constexpr Ty singular_angle[2] = {
 			cool::rotation_subroutine::zero<Ty, _func_impl_number>(),
-			cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			cool::rotation_subroutine::half_turn<Ty, _func_impl_number>()
 		};
 
 		static constexpr std::size_t iX = 2;
@@ -1210,7 +1218,7 @@ namespace cool
 
 		static inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v3_rZYZ2_ptr) noexcept;
 		static inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v3_rZYZ2_ptr) noexcept;
-		static inline cool::rotation_status get_angles(Ty* v3_rZYZ2_ptr, const Ty* m3x3_rotation_ptr, Ty tol,
+		static inline cool::rotation_status get_angles(Ty* v3_rZYZ2_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol,
 			Ty rZ_choice_if_singular = cool::rotation_subroutine::zero<Ty, _func_impl_number>()) noexcept;
 
 	private:
@@ -1280,6 +1288,12 @@ constexpr inline Ty cool::rotation_subroutine::pi() noexcept
 }
 
 template <class Ty, int _func_impl_number>
+constexpr inline Ty cool::rotation_subroutine::half_turn() noexcept
+{
+	return static_cast<Ty>(3.141592653589793);
+}
+
+template <class Ty, int _func_impl_number>
 constexpr inline Ty cool::rotation_subroutine::one() noexcept
 {
 	return static_cast<Ty>(1);
@@ -1307,10 +1321,10 @@ constexpr inline Ty cool::rotation_subroutine::two() noexcept
 }
 
 template <class Ty, int _func_impl_number>
-constexpr inline Ty cool::rotation_subroutine::half_pi() noexcept
+constexpr inline Ty cool::rotation_subroutine::quarter_turn() noexcept
 {
 	constexpr Ty ret = cool::rotation_subroutine::half<Ty, _func_impl_number>()
-		* cool::rotation_subroutine::pi<Ty, _func_impl_number>();
+		* cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
 	return ret;
 }
 
@@ -1323,16 +1337,16 @@ constexpr inline Ty cool::rotation_subroutine::quarter() noexcept
 }
 
 template <class Ty, int _func_impl_number>
-constexpr inline Ty cool::rotation_subroutine::minus_pi() noexcept
+constexpr inline Ty cool::rotation_subroutine::minus_half_turn() noexcept
 {
-	constexpr Ty ret = -cool::rotation_subroutine::pi<Ty, _func_impl_number>();
+	constexpr Ty ret = -cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
 	return ret;
 }
 
 template <class Ty, int _func_impl_number>
-constexpr inline Ty cool::rotation_subroutine::minus_half_pi() noexcept
+constexpr inline Ty cool::rotation_subroutine::minus_quarter_turn() noexcept
 {
-	constexpr Ty ret = -cool::rotation_subroutine::half_pi<Ty, _func_impl_number>();
+	constexpr Ty ret = -cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>();
 	return ret;
 }
 
@@ -1391,7 +1405,7 @@ inline void cool::rotation2d<Ty, _dim_padded, _layout, _func_impl_number>::get_a
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline void cool::rotation_axis<Ty, _dim_padded, _layout, _func_impl_number>::get_matrix(
-	Ty* m3x3_rotation_ptr, const Ty* v3_axis_ptr, Ty angle, Ty tol) noexcept
+	Ty* m3x3_rotation_ptr, const Ty* v3_axis_ptr, Ty angle, Ty norm_tol) noexcept
 {
 	Ty s = cool::rotation_subroutine::sin<Ty, _func_impl_number>(angle);
 	Ty c = cool::rotation_subroutine::cos<Ty, _func_impl_number>(angle);
@@ -1401,7 +1415,7 @@ inline void cool::rotation_axis<Ty, _dim_padded, _layout, _func_impl_number>::ge
 		+ *(v3_axis_ptr + 1) * *(v3_axis_ptr + 1)
 		+ *(v3_axis_ptr + 2) * *(v3_axis_ptr + 2);
 
-	if (axis_norm_sq > tol * tol)
+	if (axis_norm_sq > norm_tol * norm_tol)
 	{
 		Ty axis_norm_inv = cool::rotation_subroutine::inv_sqrt<Ty, _func_impl_number>(axis_norm_sq);
 
@@ -1452,10 +1466,10 @@ inline void cool::rotation_axis<Ty, _dim_padded, _layout, _func_impl_number>::ge
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline void cool::rotation_axis<Ty, _dim_padded, _layout, _func_impl_number>::get_matrix_inv(
-	Ty* m3x3_rotation_ptr, const Ty* v3_axis_ptr, Ty angle, Ty tol) noexcept
+	Ty* m3x3_rotation_ptr, const Ty* v3_axis_ptr, Ty angle, Ty norm_tol) noexcept
 {
 	constexpr cool::matrix_layout _other_layout = (_layout == cool::matrix_layout::col) ? cool::matrix_layout::row : cool::matrix_layout::col;
-	cool::rotation_axis<Ty, _dim_padded, _other_layout, _func_impl_number>::get_matrix(m3x3_rotation_ptr, v3_axis_ptr, angle, tol);
+	cool::rotation_axis<Ty, _dim_padded, _other_layout, _func_impl_number>::get_matrix(m3x3_rotation_ptr, v3_axis_ptr, angle, norm_tol);
 }
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
@@ -1502,7 +1516,7 @@ inline void cool::rotation_axis<Ty, _dim_padded, _layout, _func_impl_number>::ge
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotation_axis<Ty, _dim_padded, _layout, _func_impl_number>::get_axis_angle(
-	Ty* v3_axis_ptr, Ty* angle_ptr, const Ty* m3x3_rotation_ptr, Ty tol) noexcept
+	Ty* v3_axis_ptr, Ty* angle_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol) noexcept
 {
 	Ty quat_comp_sq[4];
 	Ty quat_comp_sgn[4];
@@ -1550,7 +1564,11 @@ inline cool::rotation_status cool::rotation_axis<Ty, _dim_padded, _layout, _func
 	Ty xyz_norm = cool::rotation_subroutine::quarter<Ty, _func_impl_number>()
 		* cool::rotation_subroutine::sqrt<Ty, _func_impl_number>(quat_comp_sq[1] + quat_comp_sq[2] + quat_comp_sq[3]);
 
-	if (xyz_norm > cool::rotation_subroutine::half<Ty, _func_impl_number>() * tol)
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()
+		* (cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>());
+
+	if (xyz_norm > angle_tol_coeff * angle_tol)
 	{
 		Ty xyz_norm_inv = cool::rotation_subroutine::one<Ty, _func_impl_number>() / xyz_norm;
 		*v3_axis_ptr = xyz_norm_inv * quat[1];
@@ -1574,7 +1592,7 @@ inline cool::rotation_status cool::rotation_axis<Ty, _dim_padded, _layout, _func
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotation_axis<Ty, _dim_padded, _layout, _func_impl_number>::get_axis_angle(
-	Ty* v3_axis_ptr, Ty* angle_ptr, const Ty* m3x3_rotation_ptr, const Ty* v3_axis_way_ptr, Ty tol) noexcept
+	Ty* v3_axis_ptr, Ty* angle_ptr, const Ty* m3x3_rotation_ptr, const Ty* v3_axis_way_ptr, Ty angle_tol) noexcept
 {
 	Ty quat_comp_sq[4];
 	Ty quat_comp_sgn[4];
@@ -1622,7 +1640,11 @@ inline cool::rotation_status cool::rotation_axis<Ty, _dim_padded, _layout, _func
 	Ty xyz_norm = cool::rotation_subroutine::quarter<Ty, _func_impl_number>()
 		* cool::rotation_subroutine::sqrt<Ty, _func_impl_number>(quat_comp_sq[1] + quat_comp_sq[2] + quat_comp_sq[3]);
 
-	if (xyz_norm > cool::rotation_subroutine::half<Ty, _func_impl_number>() * tol)
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()
+		* (cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>());
+
+	if (xyz_norm > angle_tol_coeff * angle_tol)
 	{
 		Ty param = quat[1] * *v3_axis_way_ptr + quat[2] * *(v3_axis_way_ptr + 1) + quat[3] * *(v3_axis_way_ptr + 2);
 		Ty flip = (param < cool::rotation_subroutine::zero<Ty, _func_impl_number>()) ?
@@ -1760,7 +1782,7 @@ inline void cool::rotation_quaternion<Ty, _dim_padded, _layout, _func_impl_numbe
 	quat_comp_sq[3] = a2 * a2 + b0 * b0 + b1 * b1 + c * c;
 
 	Ty quat_comp_sgn[4] = {
-		scool::rotation_subroutine::quarter<Ty, _func_impl_number>(),
+		cool::rotation_subroutine::quarter<Ty, _func_impl_number>(),
 		(a0 < cool::rotation_subroutine::zero<Ty, _func_impl_number>()) ?
 		cool::rotation_subroutine::minus_quarter<Ty, _func_impl_number>() : cool::rotation_subroutine::quarter<Ty, _func_impl_number>(),
 		(a1 < cool::rotation_subroutine::zero<Ty, _func_impl_number>()) ?
@@ -1777,7 +1799,7 @@ inline void cool::rotation_quaternion<Ty, _dim_padded, _layout, _func_impl_numbe
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline void cool::rotation_quaternion<Ty, _dim_padded, _layout, _func_impl_number>::get_quaternion_from_axis_angle(
-	Ty* v4_quaternion_ptr, const Ty* v3_axis_ptr, Ty angle, Ty tol) noexcept
+	Ty* v4_quaternion_ptr, const Ty* v3_axis_ptr, Ty angle, Ty norm_tol) noexcept
 {
 	Ty c = cool::rotation_subroutine::cos<Ty, _func_impl_number>(
 		cool::rotation_subroutine::half<Ty, _func_impl_number>() * angle);
@@ -1788,7 +1810,7 @@ inline void cool::rotation_quaternion<Ty, _dim_padded, _layout, _func_impl_numbe
 		+ *(v3_axis_ptr + 1) * *(v3_axis_ptr + 1)
 		+ *(v3_axis_ptr + 2) * *(v3_axis_ptr + 2);
 
-	if (axis_norm_sq > tol * tol)
+	if (axis_norm_sq > norm_tol * norm_tol)
 	{
 		Ty axis_norm_inv = cool::rotation_subroutine::inv_sqrt<Ty, _func_impl_number>(axis_norm_sq);
 
@@ -1831,7 +1853,7 @@ inline void cool::rotation_quaternion<Ty, _dim_padded, _layout, _func_impl_numbe
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotation_quaternion<Ty, _dim_padded, _layout, _func_impl_number>::get_axis_angle(
-	Ty* v3_axis_ptr, Ty* angle_ptr, Ty* v4_quaternion_ptr, Ty tol) noexcept
+	Ty* v3_axis_ptr, Ty* angle_ptr, Ty* v4_quaternion_ptr, Ty angle_tol) noexcept
 {
 	Ty quat[4] = {
 		*v4_quaternion_ptr,
@@ -1843,7 +1865,11 @@ inline cool::rotation_status cool::rotation_quaternion<Ty, _dim_padded, _layout,
 	Ty xyz_norm = cool::rotation_subroutine::sqrt<Ty, _func_impl_number>(
 		quat[1] * quat[1] + quat[2] * quat[2] + quat[3] * quat[3]);
 
-	if (xyz_norm > cool::rotation_subroutine::half<Ty, _func_impl_number>() * tol)
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()
+		* (cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>());
+
+	if (xyz_norm > angle_tol_coeff * angle_tol)
 	{
 		Ty xyz_norm_inv = cool::rotation_subroutine::one<Ty, _func_impl_number>() / xyz_norm;
 		*v3_axis_ptr = xyz_norm_inv * quat[1];
@@ -1868,7 +1894,7 @@ inline cool::rotation_status cool::rotation_quaternion<Ty, _dim_padded, _layout,
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotation_quaternion<Ty, _dim_padded, _layout, _func_impl_number>::get_axis_angle(
-	Ty* v3_axis_ptr, Ty* angle_ptr, Ty* v4_quaternion_ptr, const Ty* v3_axis_way_ptr, Ty tol) noexcept
+	Ty* v3_axis_ptr, Ty* angle_ptr, Ty* v4_quaternion_ptr, const Ty* v3_axis_way_ptr, Ty angle_tol) noexcept
 {
 	Ty quat[4] = {
 		*v4_quaternion_ptr,
@@ -1880,7 +1906,11 @@ inline cool::rotation_status cool::rotation_quaternion<Ty, _dim_padded, _layout,
 	Ty xyz_norm = cool::rotation_subroutine::sqrt<Ty, _func_impl_number>(
 		quat[1] * quat[1] + quat[2] * quat[2] + quat[3] * quat[3]);
 
-	if (xyz_norm > cool::rotation_subroutine::half<Ty, _func_impl_number>() * tol)
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()
+		* (cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+			/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>());
+
+	if (xyz_norm > angle_tol_coeff * angle_tol)
 	{
 		Ty angle = cool::rotation_subroutine::two<Ty, _func_impl_number>()
 			* cool::rotation_subroutine::atan2<Ty, _func_impl_number>(xyz_norm, quat[0]);
@@ -2084,12 +2114,12 @@ inline Ty cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>:
 	{
 		if (index < limit4)
 		{
-			return (_pole == 0) ? cool::rotation_subroutine::minus_half_pi<Ty, _func_impl_number>()
-				: cool::rotation_subroutine::half_pi<Ty, _func_impl_number>();
+			return (_pole == 0) ? cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>()
+				: cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>();
 		}
 		else
 		{
-			return (_pole == 0) ? cool::rotation_subroutine::zero<Ty, _func_impl_number>() : cool::rotation_subroutine::pi<Ty, _func_impl_number>();
+			return (_pole == 0) ? cool::rotation_subroutine::zero<Ty, _func_impl_number>() : cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
 		}
 	}
 	else
@@ -2147,9 +2177,9 @@ inline void cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>::get_angles(Ty* v_angles_ptr, const Ty* m3x3_rotation_ptr,
-	Ty tol, Ty angle_choice_if_singular) const noexcept
+	Ty angle_tol, Ty angle_choice_if_singular) const noexcept
 {
-	return m_rotation_functions(v_angles_ptr, m3x3_rotation_ptr, tol, angle_choice_if_singular, 2);
+	return m_rotation_functions(v_angles_ptr, m3x3_rotation_ptr, angle_tol, angle_choice_if_singular, 2);
 }
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
@@ -2604,10 +2634,13 @@ inline void cool::rotationXYZ<Ty, _dim_padded, _layout, _func_impl_number>::get_
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotationXYZ<Ty, _dim_padded, _layout, _func_impl_number>::get_angles(
-	Ty* v3_rXYZ_ptr, const Ty* m3x3_rotation_ptr, Ty tol, Ty rX_choice_if_singular) noexcept
+	Ty* v3_rXYZ_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol, Ty rX_choice_if_singular) noexcept
 {
-	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-		- cool::rotation_subroutine::half<Ty, _func_impl_number>() * (tol * tol);
+	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
+
+	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
 	if (-bound < *(m3x3_rotation_ptr + dat.i02) && *(m3x3_rotation_ptr + dat.i02) < bound)
 	{
@@ -2631,8 +2664,8 @@ inline cool::rotation_status cool::rotationXYZ<Ty, _dim_padded, _layout, _func_i
 			*(m3x3_rotation_ptr + dat.i10),
 			*(m3x3_rotation_ptr + dat.i11));
 		bool Yneg = *(m3x3_rotation_ptr + dat.i02) < cool::rotation_subroutine::zero<Ty, _func_impl_number>();
-		*(v3_rXYZ_ptr + 1) = Yneg ? cool::rotation_subroutine::minus_half_pi<Ty, _func_impl_number>() // rY
-			: cool::rotation_subroutine::half_pi<Ty, _func_impl_number>();
+		*(v3_rXYZ_ptr + 1) = Yneg ? cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>() // rY
+			: cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>();
 		*(v3_rXYZ_ptr + 2) = Yneg ? rZ0 + rX_choice_if_singular : rZ0 - rX_choice_if_singular; // rZ
 
 		return cool::rotation_status::singular;
@@ -2674,10 +2707,13 @@ inline void cool::rotationXZY<Ty, _dim_padded, _layout, _func_impl_number>::get_
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotationXZY<Ty, _dim_padded, _layout, _func_impl_number>::get_angles(
-	Ty* v3_rXZY_ptr, const Ty* m3x3_rotation_ptr, Ty tol, Ty rX_choice_if_singular) noexcept
+	Ty* v3_rXZY_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol, Ty rX_choice_if_singular) noexcept
 {
-	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-		- cool::rotation_subroutine::half<Ty, _func_impl_number>() * (tol * tol);
+	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
+
+	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
 	if (-bound < *(m3x3_rotation_ptr + dat.i01) && *(m3x3_rotation_ptr + dat.i01) < bound)
 	{
@@ -2701,8 +2737,8 @@ inline cool::rotation_status cool::rotationXZY<Ty, _dim_padded, _layout, _func_i
 			-*(m3x3_rotation_ptr + dat.i20),
 			*(m3x3_rotation_ptr + dat.i22));
 		bool Zneg = !(*(m3x3_rotation_ptr + dat.i01) < cool::rotation_subroutine::zero<Ty, _func_impl_number>());
-		*(v3_rXZY_ptr + 1) = Zneg ? cool::rotation_subroutine::minus_half_pi<Ty, _func_impl_number>() // rZ
-			: cool::rotation_subroutine::half_pi<Ty, _func_impl_number>();
+		*(v3_rXZY_ptr + 1) = Zneg ? cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>() // rZ
+			: cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>();
 		*(v3_rXZY_ptr + 2) = Zneg ? rY0 - rX_choice_if_singular : rY0 + rX_choice_if_singular; // rY
 
 		return cool::rotation_status::singular;
@@ -2744,10 +2780,13 @@ inline void cool::rotationYZX<Ty, _dim_padded, _layout, _func_impl_number>::get_
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotationYZX<Ty, _dim_padded, _layout, _func_impl_number>::get_angles(
-	Ty* v3_rYZX_ptr, const Ty* m3x3_rotation_ptr, Ty tol, Ty rY_choice_if_singular) noexcept
+	Ty* v3_rYZX_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol, Ty rY_choice_if_singular) noexcept
 {
-	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-		- cool::rotation_subroutine::half<Ty, _func_impl_number>() * (tol * tol);
+	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
+
+	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
 	if (-bound < *(m3x3_rotation_ptr + dat.i10) && *(m3x3_rotation_ptr + dat.i10) < bound)
 	{
@@ -2771,8 +2810,8 @@ inline cool::rotation_status cool::rotationYZX<Ty, _dim_padded, _layout, _func_i
 			*(m3x3_rotation_ptr + dat.i21),
 			*(m3x3_rotation_ptr + dat.i22));
 		bool Zneg = *(m3x3_rotation_ptr + dat.i10) < cool::rotation_subroutine::zero<Ty, _func_impl_number>();
-		*(v3_rYZX_ptr + 1) = Zneg ? cool::rotation_subroutine::minus_half_pi<Ty, _func_impl_number>() // rZ
-			: cool::rotation_subroutine::half_pi<Ty, _func_impl_number>();
+		*(v3_rYZX_ptr + 1) = Zneg ? cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>() // rZ
+			: cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>();
 		*(v3_rYZX_ptr + 2) = Zneg ? rX0 + rY_choice_if_singular : rX0 - rY_choice_if_singular; // rX
 
 		return cool::rotation_status::singular;
@@ -2814,10 +2853,13 @@ inline void cool::rotationYXZ<Ty, _dim_padded, _layout, _func_impl_number>::get_
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotationYXZ<Ty, _dim_padded, _layout, _func_impl_number>::get_angles(
-	Ty* v3_rYXZ_ptr, const Ty* m3x3_rotation_ptr, Ty tol, Ty rY_choice_if_singular) noexcept
+	Ty* v3_rYXZ_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol, Ty rY_choice_if_singular) noexcept
 {
-	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-		- cool::rotation_subroutine::half<Ty, _func_impl_number>() * (tol * tol);
+	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
+
+	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
 	if (-bound < *(m3x3_rotation_ptr + dat.i12) && *(m3x3_rotation_ptr + dat.i12) < bound)
 	{
@@ -2841,8 +2883,8 @@ inline cool::rotation_status cool::rotationYXZ<Ty, _dim_padded, _layout, _func_i
 			-*(m3x3_rotation_ptr + dat.i01),
 			*(m3x3_rotation_ptr + dat.i00));
 		bool Xneg = !(*(m3x3_rotation_ptr + dat.i12) < cool::rotation_subroutine::zero<Ty, _func_impl_number>());
-		*(v3_rYXZ_ptr + 1) = Xneg ? cool::rotation_subroutine::minus_half_pi<Ty, _func_impl_number>() // rX
-			: cool::rotation_subroutine::half_pi<Ty, _func_impl_number>();
+		*(v3_rYXZ_ptr + 1) = Xneg ? cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>() // rX
+			: cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>();
 		*(v3_rYXZ_ptr + 2) = Xneg ? rZ0 - rY_choice_if_singular : rZ0 + rY_choice_if_singular; // rZ
 
 		return cool::rotation_status::singular;
@@ -2884,10 +2926,13 @@ inline void cool::rotationZXY<Ty, _dim_padded, _layout, _func_impl_number>::get_
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotationZXY<Ty, _dim_padded, _layout, _func_impl_number>::get_angles(
-	Ty* v3_rZXY_ptr, const Ty* m3x3_rotation_ptr, Ty tol, Ty rZ_choice_if_singular) noexcept
+	Ty* v3_rZXY_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol, Ty rZ_choice_if_singular) noexcept
 {
-	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-		- cool::rotation_subroutine::half<Ty, _func_impl_number>() * (tol * tol);
+	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
+
+	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
 	if (-bound < *(m3x3_rotation_ptr + dat.i21) && *(m3x3_rotation_ptr + dat.i21) < bound)
 	{
@@ -2911,8 +2956,8 @@ inline cool::rotation_status cool::rotationZXY<Ty, _dim_padded, _layout, _func_i
 			*(m3x3_rotation_ptr + dat.i02),
 			*(m3x3_rotation_ptr + dat.i00));
 		bool Xneg = *(m3x3_rotation_ptr + dat.i21) < cool::rotation_subroutine::zero<Ty, _func_impl_number>();
-		*(v3_rZXY_ptr + 1) = Xneg ? cool::rotation_subroutine::minus_half_pi<Ty, _func_impl_number>() // rX
-			: cool::rotation_subroutine::half_pi<Ty, _func_impl_number>();
+		*(v3_rZXY_ptr + 1) = Xneg ? cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>() // rX
+			: cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>();
 		*(v3_rZXY_ptr + 2) = Xneg ? rY0 + rZ_choice_if_singular : rY0 - rZ_choice_if_singular; // rY
 
 		return cool::rotation_status::singular;
@@ -2954,10 +2999,13 @@ inline void cool::rotationZYX<Ty, _dim_padded, _layout, _func_impl_number>::get_
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotationZYX<Ty, _dim_padded, _layout, _func_impl_number>::get_angles(
-	Ty* v3_rZYX_ptr, const Ty* m3x3_rotation_ptr, Ty tol, Ty rZ_choice_if_singular) noexcept
+	Ty* v3_rZYX_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol, Ty rZ_choice_if_singular) noexcept
 {
-	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-		- cool::rotation_subroutine::half<Ty, _func_impl_number>() * (tol * tol);
+	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
+
+	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
 	if (-bound < *(m3x3_rotation_ptr + dat.i20) && *(m3x3_rotation_ptr + dat.i20) < bound)
 	{
@@ -2981,8 +3029,8 @@ inline cool::rotation_status cool::rotationZYX<Ty, _dim_padded, _layout, _func_i
 			-*(m3x3_rotation_ptr + dat.i12),
 			*(m3x3_rotation_ptr + dat.i11));
 		bool Yneg = !(*(m3x3_rotation_ptr + dat.i20) < cool::rotation_subroutine::zero<Ty, _func_impl_number>());
-		*(v3_rZYX_ptr + 1) = Yneg ? cool::rotation_subroutine::minus_half_pi<Ty, _func_impl_number>() // rY
-			: cool::rotation_subroutine::half_pi<Ty, _func_impl_number>();
+		*(v3_rZYX_ptr + 1) = Yneg ? cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>() // rY
+			: cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>();
 		*(v3_rZYX_ptr + 2) = Yneg ? rX0 - rZ_choice_if_singular : rX0 + rZ_choice_if_singular; // rX
 
 		return cool::rotation_status::singular;
@@ -3024,10 +3072,13 @@ inline void cool::rotationXYX2<Ty, _dim_padded, _layout, _func_impl_number>::get
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotationXYX2<Ty, _dim_padded, _layout, _func_impl_number>::get_angles(
-	Ty* v3_rXYX2_ptr, const Ty* m3x3_rotation_ptr, Ty tol, Ty rX_choice_if_singular) noexcept
+	Ty* v3_rXYX2_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol, Ty rX_choice_if_singular) noexcept
 {
-	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-		- cool::rotation_subroutine::half<Ty, _func_impl_number>() * (tol * tol);
+	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
+
+	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
 	if (-bound < *(m3x3_rotation_ptr + dat.i00) && *(m3x3_rotation_ptr + dat.i00) < bound)
 	{
@@ -3052,7 +3103,7 @@ inline cool::rotation_status cool::rotationXYX2<Ty, _dim_padded, _layout, _func_
 			-*(m3x3_rotation_ptr + dat.i12),
 			*(m3x3_rotation_ptr + dat.i11));
 		bool Yflipped = *(m3x3_rotation_ptr + dat.i00) < cool::rotation_subroutine::zero<Ty, _func_impl_number>();
-		*(v3_rXYX2_ptr + 1) = Yflipped ? cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		*(v3_rXYX2_ptr + 1) = Yflipped ? cool::rotation_subroutine::half_turn<Ty, _func_impl_number>()
 			: cool::rotation_subroutine::zero<Ty, _func_impl_number>(); // rY
 		*(v3_rXYX2_ptr + 2) = Yflipped ? rX20 + rX_choice_if_singular : rX20 - rX_choice_if_singular; // rX2
 
@@ -3095,10 +3146,13 @@ inline void cool::rotationXZX2<Ty, _dim_padded, _layout, _func_impl_number>::get
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotationXZX2<Ty, _dim_padded, _layout, _func_impl_number>::get_angles(
-	Ty* v3_rXZX2_ptr, const Ty* m3x3_rotation_ptr, Ty tol, Ty rX_choice_if_singular) noexcept
+	Ty* v3_rXZX2_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol, Ty rX_choice_if_singular) noexcept
 {
-	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-		- cool::rotation_subroutine::half<Ty, _func_impl_number>() * (tol * tol);
+	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
+
+	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
 	if (-bound < *(m3x3_rotation_ptr + dat.i00) && *(m3x3_rotation_ptr + dat.i00) < bound)
 	{
@@ -3123,7 +3177,7 @@ inline cool::rotation_status cool::rotationXZX2<Ty, _dim_padded, _layout, _func_
 			*(m3x3_rotation_ptr + dat.i21),
 			*(m3x3_rotation_ptr + dat.i22));
 		bool Zflipped = *(m3x3_rotation_ptr + dat.i00) < cool::rotation_subroutine::zero<Ty, _func_impl_number>();
-		*(v3_rXZX2_ptr + 1) = Zflipped ? cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		*(v3_rXZX2_ptr + 1) = Zflipped ? cool::rotation_subroutine::half_turn<Ty, _func_impl_number>()
 			: cool::rotation_subroutine::zero<Ty, _func_impl_number>(); // rZ2
 		*(v3_rXZX2_ptr + 2) = Zflipped ? rX20 + rX_choice_if_singular : rX20 - rX_choice_if_singular; // rX2
 
@@ -3166,10 +3220,13 @@ inline void cool::rotationYZY2<Ty, _dim_padded, _layout, _func_impl_number>::get
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotationYZY2<Ty, _dim_padded, _layout, _func_impl_number>::get_angles(
-	Ty* v3_rYZY2_ptr, const Ty* m3x3_rotation_ptr, Ty tol, Ty rY_choice_if_singular) noexcept
+	Ty* v3_rYZY2_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol, Ty rY_choice_if_singular) noexcept
 {
-	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-		- cool::rotation_subroutine::half<Ty, _func_impl_number>() * (tol * tol);
+	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
+
+	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
 	if (-bound < *(m3x3_rotation_ptr + dat.i11) && *(m3x3_rotation_ptr + dat.i11) < bound)
 	{
@@ -3194,7 +3251,7 @@ inline cool::rotation_status cool::rotationYZY2<Ty, _dim_padded, _layout, _func_
 			-*(m3x3_rotation_ptr + dat.i20),
 			*(m3x3_rotation_ptr + dat.i22));
 		bool Zflipped = *(m3x3_rotation_ptr + dat.i11) < cool::rotation_subroutine::zero<Ty, _func_impl_number>();
-		*(v3_rYZY2_ptr + 1) = Zflipped ? cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		*(v3_rYZY2_ptr + 1) = Zflipped ? cool::rotation_subroutine::half_turn<Ty, _func_impl_number>()
 			: cool::rotation_subroutine::zero<Ty, _func_impl_number>(); // rZ
 		*(v3_rYZY2_ptr + 2) = Zflipped ? rY20 + rY_choice_if_singular : rY20 - rY_choice_if_singular; // rY2
 
@@ -3237,10 +3294,13 @@ inline void cool::rotationYXY2<Ty, _dim_padded, _layout, _func_impl_number>::get
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotationYXY2<Ty, _dim_padded, _layout, _func_impl_number>::get_angles(
-	Ty* v3_rYXY2_ptr, const Ty* m3x3_rotation_ptr, Ty tol, Ty rY_choice_if_singular) noexcept
+	Ty* v3_rYXY2_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol, Ty rY_choice_if_singular) noexcept
 {
-	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-		- cool::rotation_subroutine::half<Ty, _func_impl_number>() * (tol * tol);
+	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
+
+	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
 	if (-bound < *(m3x3_rotation_ptr + dat.i11) && *(m3x3_rotation_ptr + dat.i11) < bound)
 	{
@@ -3265,7 +3325,7 @@ inline cool::rotation_status cool::rotationYXY2<Ty, _dim_padded, _layout, _func_
 			*(m3x3_rotation_ptr + dat.i02),
 			*(m3x3_rotation_ptr + dat.i00));
 		bool Xflipped = *(m3x3_rotation_ptr + dat.i11) < cool::rotation_subroutine::zero<Ty, _func_impl_number>();
-		*(v3_rYXY2_ptr + 1) = Xflipped ? cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		*(v3_rYXY2_ptr + 1) = Xflipped ? cool::rotation_subroutine::half_turn<Ty, _func_impl_number>()
 			: cool::rotation_subroutine::zero<Ty, _func_impl_number>(); // rX
 		*(v3_rYXY2_ptr + 2) = Xflipped ? rY20 + rY_choice_if_singular : rY20 - rY_choice_if_singular; // rY2
 
@@ -3308,10 +3368,13 @@ inline void cool::rotationZXZ2<Ty, _dim_padded, _layout, _func_impl_number>::get
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotationZXZ2<Ty, _dim_padded, _layout, _func_impl_number>::get_angles(
-	Ty* v3_rZXZ2_ptr, const Ty* m3x3_rotation_ptr, Ty tol, Ty rZ_choice_if_singular) noexcept
+	Ty* v3_rZXZ2_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol, Ty rZ_choice_if_singular) noexcept
 {
-	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-		- cool::rotation_subroutine::half<Ty, _func_impl_number>() * (tol * tol);
+	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
+
+	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
 	if (-bound < *(m3x3_rotation_ptr + dat.i22) && *(m3x3_rotation_ptr + dat.i22) < bound)
 	{
@@ -3336,7 +3399,7 @@ inline cool::rotation_status cool::rotationZXZ2<Ty, _dim_padded, _layout, _func_
 			-*(m3x3_rotation_ptr + dat.i01),
 			*(m3x3_rotation_ptr + dat.i00));
 		bool Xflipped = *(m3x3_rotation_ptr + dat.i22) < cool::rotation_subroutine::zero<Ty, _func_impl_number>();
-		*(v3_rZXZ2_ptr + 1) = Xflipped ? cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		*(v3_rZXZ2_ptr + 1) = Xflipped ? cool::rotation_subroutine::half_turn<Ty, _func_impl_number>()
 			: cool::rotation_subroutine::zero<Ty, _func_impl_number>(); // rX
 		*(v3_rZXZ2_ptr + 2) = Xflipped ? rZ20 + rZ_choice_if_singular : rZ20 - rZ_choice_if_singular; // rZ2
 
@@ -3379,10 +3442,13 @@ inline void cool::rotationZYZ2<Ty, _dim_padded, _layout, _func_impl_number>::get
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_status cool::rotationZYZ2<Ty, _dim_padded, _layout, _func_impl_number>::get_angles(
-	Ty* v3_rZYZ2_ptr, const Ty* m3x3_rotation_ptr, Ty tol, Ty rZ_choice_if_singular) noexcept
+	Ty* v3_rZYZ2_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol, Ty rZ_choice_if_singular) noexcept
 {
-	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-		- cool::rotation_subroutine::half<Ty, _func_impl_number>() * (tol * tol);
+	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
+
+	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
 	if (-bound < *(m3x3_rotation_ptr + dat.i22) && *(m3x3_rotation_ptr + dat.i22) < bound)
 	{
@@ -3407,7 +3473,7 @@ inline cool::rotation_status cool::rotationZYZ2<Ty, _dim_padded, _layout, _func_
 			*(m3x3_rotation_ptr + dat.i10),
 			*(m3x3_rotation_ptr + dat.i11));
 		bool Yflipped = *(m3x3_rotation_ptr + dat.i22) < cool::rotation_subroutine::zero<Ty, _func_impl_number>();
-		*(v3_rZYZ2_ptr + 1) = Yflipped ? cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		*(v3_rZYZ2_ptr + 1) = Yflipped ? cool::rotation_subroutine::half_turn<Ty, _func_impl_number>()
 			: cool::rotation_subroutine::zero<Ty, _func_impl_number>(); // rY
 		*(v3_rZYZ2_ptr + 2) = Yflipped ? rZ20 + rZ_choice_if_singular : rZ20 - rZ_choice_if_singular; // rZ2
 
@@ -3418,7 +3484,7 @@ inline cool::rotation_status cool::rotationZYZ2<Ty, _dim_padded, _layout, _func_
 
 template <class rotation_angles_3d_Ty>
 inline cool::rotation_status cool::_rotation_angles_3d_functions<rotation_angles_3d_Ty>::rotation_functions(
-	pointer dest_ptr, const_pointer orig_ptr, value_type tol, value_type angle_choice_if_singular, int param) noexcept
+	pointer dest_ptr, const_pointer orig_ptr, value_type angle_tol, value_type angle_choice_if_singular, int param) noexcept
 {
 	if (param == 0)
 	{
@@ -3432,7 +3498,7 @@ inline cool::rotation_status cool::_rotation_angles_3d_functions<rotation_angles
 	}
 	else
 	{
-		return rotation_angles_3d_Ty::get_angles(dest_ptr, orig_ptr, tol, angle_choice_if_singular);
+		return rotation_angles_3d_Ty::get_angles(dest_ptr, orig_ptr, angle_tol, angle_choice_if_singular);
 	}
 }
 
