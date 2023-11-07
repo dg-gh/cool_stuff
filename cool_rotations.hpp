@@ -374,6 +374,13 @@ namespace cool
 
 	public:
 
+		using value_type = Ty;
+		using pointer = Ty*;
+		using const_pointer = const Ty*;
+
+		static constexpr std::size_t dim_padded = _dim_padded;
+		static constexpr cool::matrix_layout layout = _layout;
+
 		inline rotation_angles_3d() noexcept;
 		inline rotation_angles_3d(cool::rotation_axis_order new_axis_order) noexcept;
 		rotation_angles_3d(const cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>&) noexcept = default;
