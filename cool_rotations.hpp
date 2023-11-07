@@ -376,13 +376,14 @@ namespace cool
 
 		inline rotation_angles_3d() noexcept;
 		inline rotation_angles_3d(cool::rotation_axis_order new_axis_order) noexcept;
-		rotation_angles_3d(const cool::rotation_angles_3d < Ty, _dim_padded, _layout, _func_impl_number>&) noexcept = default;
-		cool::rotation_angles_3d < Ty, _dim_padded, _layout, _func_impl_number>& operator=(const cool::rotation_angles_3d < Ty, _dim_padded, _layout, _func_impl_number>&) noexcept = default;
-		rotation_angles_3d(cool::rotation_angles_3d < Ty, _dim_padded, _layout, _func_impl_number>&&) noexcept = default;
-		cool::rotation_angles_3d < Ty, _dim_padded, _layout, _func_impl_number>& operator=(cool::rotation_angles_3d < Ty, _dim_padded, _layout, _func_impl_number>&&) noexcept = default;
+		rotation_angles_3d(const cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>&) noexcept = default;
+		cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>& operator=(const cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>&) noexcept = default;
+		rotation_angles_3d(cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>&&) noexcept = default;
+		cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>& operator=(cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>&&) noexcept = default;
 		~rotation_angles_3d() = default;
 
-		inline cool::rotation_angles_3d < Ty, _dim_padded, _layout, _func_impl_number>& operator=(cool::rotation_axis_order new_axis_order) noexcept;
+		inline cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>& operator=(cool::rotation_axis_order new_axis_order) noexcept;
+		inline cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>& set_axis_order(cool::rotation_axis_order new_axis_order) noexcept;
 		inline operator cool::rotation_axis_order() const noexcept;
 		inline cool::rotation_axis_order axis_order() const noexcept;
 
@@ -1955,36 +1956,38 @@ constexpr inline std::size_t cool::axis_order_as_index(cool::rotation_axis_order
 
 constexpr inline cool::rotation_axis_order cool::index_as_axis_order(std::size_t _index) noexcept
 {
-	constexpr cool::rotation_axis_order arr[22] = {
-		cool::rotation_axis_order::id,
+	switch (_index)
+	{
 
-		cool::rotation_axis_order::X,
-		cool::rotation_axis_order::Y,
-		cool::rotation_axis_order::Z,
+	case 0: return cool::rotation_axis_order::id; break;
 
-		cool::rotation_axis_order::XY,
-		cool::rotation_axis_order::XZ,
-		cool::rotation_axis_order::YZ,
-		cool::rotation_axis_order::YX,
-		cool::rotation_axis_order::ZX,
-		cool::rotation_axis_order::ZY,
+	case 1: return cool::rotation_axis_order::X; break;
+	case 2: return cool::rotation_axis_order::Y; break;
+	case 3: return cool::rotation_axis_order::Z; break;
 
-		cool::rotation_axis_order::XYZ,
-		cool::rotation_axis_order::XZY,
-		cool::rotation_axis_order::YZX,
-		cool::rotation_axis_order::YXZ,
-		cool::rotation_axis_order::ZXY,
-		cool::rotation_axis_order::ZYX,
+	case 4: return cool::rotation_axis_order::XY; break;
+	case 5: return cool::rotation_axis_order::XZ; break;
+	case 6: return cool::rotation_axis_order::YZ; break;
+	case 7: return cool::rotation_axis_order::YX; break;
+	case 8: return cool::rotation_axis_order::ZX; break;
+	case 9: return cool::rotation_axis_order::ZY; break;
 
-		cool::rotation_axis_order::XYX2,
-		cool::rotation_axis_order::XZX2,
-		cool::rotation_axis_order::YZY2,
-		cool::rotation_axis_order::YXY2,
-		cool::rotation_axis_order::ZXZ2,
-		cool::rotation_axis_order::ZYZ2,
-	};
+	case 10: return cool::rotation_axis_order::XYZ; break;
+	case 11: return cool::rotation_axis_order::XZY; break;
+	case 12: return cool::rotation_axis_order::YZX; break;
+	case 13: return cool::rotation_axis_order::YXZ; break;
+	case 14: return cool::rotation_axis_order::ZXY; break;
+	case 15: return cool::rotation_axis_order::ZYX; break;
 
-	return arr[_index];
+	case 16: return cool::rotation_axis_order::XYX2; break;
+	case 17: return cool::rotation_axis_order::XZX2; break;
+	case 18: return cool::rotation_axis_order::YZY2; break;
+	case 19: return cool::rotation_axis_order::YXY2; break;
+	case 20: return cool::rotation_axis_order::ZXZ2; break;
+	case 21: return cool::rotation_axis_order::ZYZ2; break;
+
+	default: return cool::rotation_axis_order::id; break;
+	}
 }
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
@@ -1997,12 +2000,19 @@ inline cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>::ro
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>::rotation_angles_3d(cool::rotation_axis_order new_axis_order) noexcept
 {
-	this->operator=(new_axis_order);
+	set_axis_order(new_axis_order);
 }
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>&
 cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>::operator=(cool::rotation_axis_order new_axis_order) noexcept
+{
+	return set_axis_order(new_axis_order);
+}
+
+template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
+inline cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>&
+cool::rotation_angles_3d<Ty, _dim_padded, _layout, _func_impl_number>::set_axis_order(cool::rotation_axis_order new_axis_order) noexcept
 {
 	m_axis_order = new_axis_order;
 
