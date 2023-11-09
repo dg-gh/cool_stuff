@@ -22,9 +22,9 @@ namespace cool
 #endif // _COOL_MATRIX_LAYOUT_ENUM
 }
 
-#ifndef COOL_ROTATION_DEFAULT_MATRIX_LAYOUT
-#define COOL_ROTATION_DEFAULT_MATRIX_LAYOUT cool::matrix_layout::col
-#endif // COOL_ROTATION_DEFAULT_MATRIX_LAYOUT
+#ifndef COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT
+#define COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT cool::matrix_layout::col
+#endif // COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT
 
 
 namespace cool
@@ -110,16 +110,16 @@ namespace cool
 
 	// 2D rotations
 
-	template <class Ty, std::size_t _dim_padded = 2, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 2, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotation2d;
 
 
 	// 3D rotations
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotation_axis;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotation_quaternion;
 
 
@@ -141,7 +141,7 @@ namespace cool
 
 	template <class Ty> class template_rotation_angles_3d;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotation_angles_3d;
 
 	constexpr inline std::uint32_t _rotation_axis_order_val(std::size_t axis_order_index,
@@ -193,70 +193,70 @@ namespace cool
 	constexpr inline cool::rotation_axis_order index_as_axis_order(std::size_t _index) noexcept;
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationX;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationY;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationZ;
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationXY;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationXZ;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationYZ;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationYX;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationZX;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationZY;
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationXYZ;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationXZY;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationYZX;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationYXZ;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationZXY;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationZYX;
 
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationXYX2;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationXZX2;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationYZY2;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationYXY2;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationZXZ2;
 
-	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATION_DEFAULT_MATRIX_LAYOUT,
+	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotationZYZ2;
 
 
