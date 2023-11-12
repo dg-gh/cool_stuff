@@ -771,7 +771,7 @@ constexpr inline cool::bits<bit_count, word_Ty>::operator word_Ty() const noexce
 	}
 	else
 	{
-		constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << bit_count) - 1;
+		constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 		return m_field[0] & mask;
 	}
 }
