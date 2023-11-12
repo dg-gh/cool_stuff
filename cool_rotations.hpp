@@ -329,7 +329,7 @@ namespace cool
 		static inline cool::rotation_status get_axis_angle(Ty* v3_axis_ptr, Ty* angle_ptr, const Ty* m3x3_rotation_ptr, Ty angle_tol) noexcept;
 		static inline cool::rotation_status get_axis_angle(Ty* v3_axis_ptr, Ty* angle_ptr, const Ty* m3x3_rotation_ptr,
 			const Ty* v3_axis_way_ptr, Ty angle_tol) noexcept;
-		static inline Ty get_angle(const Ty* m3x3_rotation_ptr, Ty angle_tol = static_cast<Ty>(0)) noexcept;
+		static inline Ty get_angle(const Ty* m3x3_rotation_ptr) noexcept;
 
 	private:
 
@@ -1695,7 +1695,7 @@ inline cool::rotation_status cool::rotation_axis<Ty, _dim_padded, _layout, _func
 }
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
-inline Ty cool::rotation_axis<Ty, _dim_padded, _layout, _func_impl_number>::get_angle(const Ty* m3x3_rotation_ptr, Ty angle_tol) noexcept
+inline Ty cool::rotation_axis<Ty, _dim_padded, _layout, _func_impl_number>::get_angle(const Ty* m3x3_rotation_ptr) noexcept
 {
 	constexpr Ty three = cool::rotation_subroutine::two<Ty, _func_impl_number>()
 		+ cool::rotation_subroutine::one<Ty, _func_impl_number>();
@@ -1706,14 +1706,7 @@ inline Ty cool::rotation_axis<Ty, _dim_padded, _layout, _func_impl_number>::get_
 	Ty sin_angle_d2 = cool::rotation_subroutine::half<Ty, _func_impl_number>()
 		* cool::rotation_subroutine::sqrt<Ty, _func_impl_number>(temp);
 
-	constexpr Ty coeff_temp = (cool::rotation_subroutine::half<Ty, _func_impl_number>()
-		* cool::rotation_subroutine::pi<Ty, _func_impl_number>())
-		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
-
-	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
-
-	if (sin_angle_d2 < bound)
+	if (sin_angle_d2 < cool::rotation_subroutine::one<Ty, _func_impl_number>())
 	{
 		return cool::rotation_subroutine::two<Ty, _func_impl_number>()
 			* cool::rotation_subroutine::asin<Ty, _func_impl_number>(sin_angle_d2);
