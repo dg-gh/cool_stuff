@@ -170,18 +170,6 @@ namespace cool
 			std::initializer_list<std::size_t> block_counts,
 			std::initializer_list<std::size_t> block_alignments) noexcept;
 
-		inline void init_set_data_non_contiguous(std::initializer_list<void*> data_ptrs,
-			std::initializer_list<std::size_t> block_sizes,
-			std::initializer_list<std::size_t> block_counts) noexcept;
-		inline void init_set_data_non_contiguous(std::initializer_list<void*> data_ptrs,
-			std::initializer_list<std::size_t> block_sizes,
-			std::initializer_list<std::size_t> block_counts,
-			std::size_t block_alignment) noexcept;
-		inline void init_set_data_non_contiguous(std::initializer_list<void*> data_ptrs,
-			std::initializer_list<std::size_t> block_sizes,
-			std::initializer_list<std::size_t> block_counts,
-			std::initializer_list<std::size_t> block_alignments) noexcept;
-
 
 		inline void* allocate(std::size_t block_size) noexcept;
 
@@ -1105,94 +1093,6 @@ inline void* cool::mem_pools<pool_count, bad_alloc_address>::init_set_data(void*
 	}
 
 	return ptr;
-}
-
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline void cool::mem_pools<pool_count, bad_alloc_address>::init_set_data_non_contiguous(std::initializer_list<void*> data_ptrs,
-	std::initializer_list<std::size_t> block_sizes,
-	std::initializer_list<std::size_t> block_counts) noexcept
-{
-	clear();
-
-	std::size_t m = pool_count;
-	m = (m < data_ptrs.size()) ? m : data_ptrs.size();
-	m = (m < block_sizes.size()) ? m : block_sizes.size();
-	m = (m < block_counts.size()) ? m : block_counts.size();
-
-	using _cool_void_ptr = void*;
-	const _cool_void_ptr* data_ptrs_ptr = data_ptrs.begin();
-	const std::size_t* block_sizes_ptr = block_sizes.begin();
-	const std::size_t* block_counts_ptr = block_counts.begin();
-#ifdef __clang__
-#pragma unroll 1
-#endif // __clang__
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC unroll 1
-#endif // defined(__GNUC__) && !defined(__clang__)
-	for (std::size_t n = 0; n < m; n++)
-	{
-		m_pools[n].init_set_data(*data_ptrs_ptr++, *block_sizes_ptr++, *block_counts_ptr++);
-	}
-}
-
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline void cool::mem_pools<pool_count, bad_alloc_address>::init_set_data_non_contiguous(std::initializer_list<void*> data_ptrs,
-	std::initializer_list<std::size_t> block_sizes,
-	std::initializer_list<std::size_t> block_counts,
-	std::size_t block_alignment) noexcept
-{
-	clear();
-
-	std::size_t m = pool_count;
-	m = (m < data_ptrs.size()) ? m : data_ptrs.size();
-	m = (m < block_sizes.size()) ? m : block_sizes.size();
-	m = (m < block_counts.size()) ? m : block_counts.size();
-
-	using _cool_void_ptr = void*;
-	const _cool_void_ptr* data_ptrs_ptr = data_ptrs.begin();
-	const std::size_t* block_sizes_ptr = block_sizes.begin();
-	const std::size_t* block_counts_ptr = block_counts.begin();
-#ifdef __clang__
-#pragma unroll 1
-#endif // __clang__
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC unroll 1
-#endif // defined(__GNUC__) && !defined(__clang__)
-	for (std::size_t n = 0; n < m; n++)
-	{
-		m_pools[n].init_set_data(*data_ptrs_ptr++, *block_sizes_ptr++, *block_counts_ptr++, block_alignment);
-	}
-}
-
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline void cool::mem_pools<pool_count, bad_alloc_address>::init_set_data_non_contiguous(std::initializer_list<void*> data_ptrs,
-	std::initializer_list<std::size_t> block_sizes,
-	std::initializer_list<std::size_t> block_counts,
-	std::initializer_list<std::size_t> block_alignments) noexcept
-{
-	clear();
-
-	std::size_t m = pool_count;
-	m = (m < data_ptrs.size()) ? m : data_ptrs.size();
-	m = (m < block_sizes.size()) ? m : block_sizes.size();
-	m = (m < block_counts.size()) ? m : block_counts.size();
-	m = (m < block_alignments.size()) ? m : block_alignments.size();
-
-	using _cool_void_ptr = void*;
-	const _cool_void_ptr* data_ptrs_ptr = data_ptrs.begin();
-	const std::size_t* block_sizes_ptr = block_sizes.begin();
-	const std::size_t* block_counts_ptr = block_counts.begin();
-	const std::size_t* block_alignments_ptr = block_alignments.begin();
-#ifdef __clang__
-#pragma unroll 1
-#endif // __clang__
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC unroll 1
-#endif // defined(__GNUC__) && !defined(__clang__)
-	for (std::size_t n = 0; n < m; n++)
-	{
-		m_pools[n].init_set_data(*data_ptrs_ptr++, *block_sizes_ptr++, *block_counts_ptr++, *block_alignments_ptr++);
-	}
 }
 
 template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
