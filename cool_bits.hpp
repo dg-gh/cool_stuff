@@ -1117,12 +1117,12 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator==(const cool::bit
 template <std::size_t bit_count, class word_Ty>
 constexpr inline bool cool::bits<bit_count, word_Ty>::operator!=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept
 {
-	bool not_ret = true;
+	bool ret = false;
 
 	constexpr std::size_t word_capacity = bit_count / word_size;
 	for (std::size_t n = 0; n < word_capacity; n++)
 	{
-		not_ret &= (m_field[n] == rhs.m_field[n]);
+		ret |= (m_field[n] != rhs.m_field[n]);
 	}
 
 	constexpr bool end_mask_needed = bit_count % word_size != 0;
@@ -1130,12 +1130,12 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator!=(const cool::bit
 	{
 		constexpr word_Ty end_mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 
-		not_ret &= ((*(static_cast<const word_Ty*>(m_field) + word_capacity)
+		ret |= ((*(static_cast<const word_Ty*>(m_field) + word_capacity)
 			^ *(static_cast<const word_Ty*>(rhs.m_field) + word_capacity))
-			& end_mask) == static_cast<word_Ty>(0);
+			& end_mask) != static_cast<word_Ty>(0);
 	}
 
-	return !not_ret;
+	return ret;
 }
 template <std::size_t bit_count, class word_Ty>
 constexpr inline bool cool::bits<bit_count, word_Ty>::operator==(bool rhs) const noexcept
@@ -1162,12 +1162,12 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator==(bool rhs) const
 template <std::size_t bit_count, class word_Ty>
 constexpr inline bool cool::bits<bit_count, word_Ty>::operator!=(bool rhs) const noexcept
 {
-	bool not_ret = true;
+	bool ret = false;
 
 	word_Ty rhs_word = rhs ? static_cast<word_Ty>(-1) : 0;
 	for (std::size_t n = 0; n < word_capacity; n++)
 	{
-		not_ret &= (m_field[n] == rhs_word);
+		ret |= (m_field[n] != rhs_word);
 	}
 
 	constexpr bool end_mask_needed = bit_count % word_size != 0;
@@ -1175,11 +1175,11 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator!=(bool rhs) const
 	{
 		constexpr word_Ty end_mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 
-		not_ret &= (((*(static_cast<const word_Ty*>(m_field) + word_capacity)
-			^ rhs_word) & end_mask) == static_cast<word_Ty>(0));
+		ret |= (((*(static_cast<const word_Ty*>(m_field) + word_capacity)
+			^ rhs_word) & end_mask) != static_cast<word_Ty>(0));
 	}
 
-	return !not_ret;
+	return ret;
 }
 template <std::size_t bit_count, class word_Ty>
 inline bool cool::bits<bit_count, word_Ty>::operator==(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
