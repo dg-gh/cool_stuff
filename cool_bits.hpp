@@ -1432,7 +1432,7 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator>(const cool::bits
 
 		word_Ty word = *(static_cast<const word_Ty*>(m_field) + word_capacity);
 		word_Ty rhs_word = *(static_cast<const word_Ty*>(rhs.m_field) + word_capacity);
-		test_greater |= (((word & rhs_word) == rhs_word) & end_mask);
+		test_greater |= (((word & rhs_word) ^ rhs_word) & end_mask);
 		test_neq |= ((word ^ rhs_word) & end_mask);
 	}
 
