@@ -800,6 +800,7 @@ constexpr inline cool::bits<bit_count, word_Ty>::bits(std::initializer_list<bool
 	constexpr bool end_mask_needed = bit_count % word_size != 0;
 	if (end_mask_needed)
 	{
+		constexpr std::size_t word_count_m1 = word_count - 1;
 		constexpr std::size_t remainder = bit_count % word_size;
 
 		word_Ty val = 0;
@@ -807,7 +808,7 @@ constexpr inline cool::bits<bit_count, word_Ty>::bits(std::initializer_list<bool
 		{
 			val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
 		}
-		*(static_cast<word_Ty*>(m_field) + word_capacity) = val;
+		m_field[word_count_m1] = val;
 	}
 }
 template <std::size_t bit_count, class word_Ty>
@@ -845,6 +846,7 @@ template <std::size_t bit_count, class word_Ty>
 constexpr inline cool::bits<bit_count, word_Ty>::operator word_Ty() const noexcept
 {
 	static_assert(bit_count <= word_size, "cool::bits<bit_count, word_type> operator word_type requirement : word_count must be one");
+
 	constexpr bool no_mask_needed = bit_count == word_size;
 	if (no_mask_needed)
 	{
@@ -874,8 +876,9 @@ constexpr inline std::size_t cool::bits<bit_count, word_Ty>::count() const noexc
 		constexpr bool end_mask_needed = bit_count % word_size != 0;
 		if (end_mask_needed)
 		{
+			constexpr std::size_t word_count_m1 = word_count - 1;
 			constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
-			ret += _popcount_op(static_cast<unsigned int>(*(static_cast<const word_Ty*>(m_field) + word_capacity) & mask));
+			ret += _popcount_op(static_cast<unsigned int>(m_field[word_count_m1] & mask));
 		}
 
 		return ret;
@@ -892,8 +895,9 @@ constexpr inline std::size_t cool::bits<bit_count, word_Ty>::count() const noexc
 		constexpr bool end_mask_needed = bit_count % word_size != 0;
 		if (end_mask_needed)
 		{
+			constexpr std::size_t word_count_m1 = word_count - 1;
 			constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
-			ret += _popcount_op(*(static_cast<const word_Ty*>(m_field) + word_capacity) & mask);
+			ret += _popcount_op(m_field[word_count_m1] & mask);
 		}
 
 		return ret;
@@ -1229,11 +1233,10 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator==(const cool::bit
 	constexpr bool end_mask_needed = bit_count % word_size != 0;
 	if (end_mask_needed)
 	{
+		constexpr std::size_t word_count_m1 = word_count - 1;
 		constexpr word_Ty end_mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 
-		test |= ((*(static_cast<const word_Ty*>(m_field) + word_capacity)
-			^ *(static_cast<const word_Ty*>(rhs.m_field) + word_capacity))
-			& end_mask);
+		test |= ((m_field[word_count_m1] ^ rhs.m_field[word_count_m1]) & end_mask);
 	}
 
 	return test == static_cast<word_Ty>(0);
@@ -1251,11 +1254,10 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator!=(const cool::bit
 	constexpr bool end_mask_needed = bit_count % word_size != 0;
 	if (end_mask_needed)
 	{
+		constexpr std::size_t word_count_m1 = word_count - 1;
 		constexpr word_Ty end_mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 
-		test |= ((*(static_cast<const word_Ty*>(m_field) + word_capacity)
-			^ *(static_cast<const word_Ty*>(rhs.m_field) + word_capacity))
-			& end_mask);
+		test |= ((m_field[word_count_m1] ^ rhs.m_field[word_count_m1]) & end_mask);
 	}
 
 	return test != static_cast<word_Ty>(0);
@@ -1274,9 +1276,10 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator==(bool rhs) const
 	constexpr bool end_mask_needed = bit_count % word_size != 0;
 	if (end_mask_needed)
 	{
+		constexpr std::size_t word_count_m1 = word_count - 1;
 		constexpr word_Ty end_mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 
-		test |= ((*(static_cast<const word_Ty*>(m_field) + word_capacity) ^ rhs_word) & end_mask);
+		test |= ((m_field[word_count_m1] ^ rhs_word) & end_mask);
 	}
 
 	return test == static_cast<word_Ty>(0);
@@ -1295,9 +1298,10 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator!=(bool rhs) const
 	constexpr bool end_mask_needed = bit_count % word_size != 0;
 	if (end_mask_needed)
 	{
+		constexpr std::size_t word_count_m1 = word_count - 1;
 		constexpr word_Ty end_mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 
-		test |= ((*(static_cast<const word_Ty*>(m_field) + word_capacity) ^ rhs_word) & end_mask);
+		test |= ((m_field[word_count_m1] ^ rhs_word) & end_mask);
 	}
 
 	return test != static_cast<word_Ty>(0);
@@ -1331,11 +1335,10 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator<=(const cool::bit
 	constexpr bool end_mask_needed = bit_count % word_size != 0;
 	if (end_mask_needed)
 	{
+		constexpr std::size_t word_count_m1 = word_count - 1;
 		constexpr word_Ty end_mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 
-		word_Ty word = *(static_cast<const word_Ty*>(m_field) + word_capacity);
-		word_Ty rhs_word = *(static_cast<const word_Ty*>(rhs.m_field) + word_capacity);
-		test |= (((word | rhs_word) ^ rhs_word) & end_mask);
+		test |= (((m_field[word_count_m1] | rhs.m_field[word_count_m1]) ^ rhs.m_field[word_count_m1]) & end_mask);
 	}
 
 	return test == static_cast<word_Ty>(0);
@@ -1353,11 +1356,10 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator>=(const cool::bit
 	constexpr bool end_mask_needed = bit_count % word_size != 0;
 	if (end_mask_needed)
 	{
+		constexpr std::size_t word_count_m1 = word_count - 1;
 		constexpr word_Ty end_mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 
-		word_Ty word = *(static_cast<const word_Ty*>(m_field) + word_capacity);
-		word_Ty rhs_word = *(static_cast<const word_Ty*>(rhs.m_field) + word_capacity);
-		test |= (((word & rhs_word) ^ rhs_word) & end_mask);
+		test |= (((m_field[word_count_m1] & rhs.m_field[word_count_m1]) ^ rhs.m_field[word_count_m1]) & end_mask);
 	}
 
 	return test == static_cast<word_Ty>(0);
@@ -1403,12 +1405,11 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator<(const cool::bits
 	constexpr bool end_mask_needed = bit_count % word_size != 0;
 	if (end_mask_needed)
 	{
+		constexpr std::size_t word_count_m1 = word_count - 1;
 		constexpr word_Ty end_mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 
-		word_Ty word = *(static_cast<const word_Ty*>(m_field) + word_capacity);
-		word_Ty rhs_word = *(static_cast<const word_Ty*>(rhs.m_field) + word_capacity);
-		test_less |= (((word | rhs_word) ^ rhs_word) & end_mask);
-		test_neq |= ((word ^ rhs_word) & end_mask);
+		test_less |= (((m_field[word_count_m1] | rhs.m_field[word_count_m1]) ^ rhs.m_field[word_count_m1]) & end_mask);
+		test_neq |= ((m_field[word_count_m1] ^ rhs.m_field[word_count_m1]) & end_mask);
 	}
 
 	return (test_less == static_cast<word_Ty>(0)) && (test_neq != static_cast<word_Ty>(0));
@@ -1428,12 +1429,11 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator>(const cool::bits
 	constexpr bool end_mask_needed = bit_count % word_size != 0;
 	if (end_mask_needed)
 	{
+		constexpr std::size_t word_count_m1 = word_count - 1;
 		constexpr word_Ty end_mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 
-		word_Ty word = *(static_cast<const word_Ty*>(m_field) + word_capacity);
-		word_Ty rhs_word = *(static_cast<const word_Ty*>(rhs.m_field) + word_capacity);
-		test_greater |= (((word & rhs_word) ^ rhs_word) & end_mask);
-		test_neq |= ((word ^ rhs_word) & end_mask);
+		test_greater |= (((m_field[word_count_m1] & rhs.m_field[word_count_m1]) ^ rhs.m_field[word_count_m1]) & end_mask);
+		test_neq |= ((m_field[word_count_m1] ^ rhs.m_field[word_count_m1]) & end_mask);
 	}
 
 	return (test_greater == static_cast<word_Ty>(0)) && (test_neq != static_cast<word_Ty>(0));
