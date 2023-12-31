@@ -31,6 +31,7 @@
 #include <climits>
 #include <initializer_list>
 #include <type_traits>
+#include <iterator>
 #include <memory>
 
 
@@ -127,9 +128,10 @@ namespace cool
 	public:
 
 		using word_type = word_Ty;
+		using iterator_category = std::forward_iterator_tag;
 
-		static_assert(std::is_integral<word_type>::value,
-			"cool::bits<bit_count, word_type> requirement : word_type must be integral");
+		static_assert(std::is_integral<word_type>::value && std::is_unsigned<word_type>::value,
+			"cool::bits<bit_count, word_type> requirement : word_type must be integral and unsigned");
 
 		static_assert(bit_count != 0,
 			"cool::bits<bit_count, word_type> requirement : bit_count must be non-zero");
@@ -165,6 +167,8 @@ namespace cool
 		inline cool::bits<bit_count, word_Ty>& operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>& rhs) noexcept;
 		inline cool::bits<bit_count, word_Ty>& operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>& rhs) noexcept;
 
+		// misc
+
 		constexpr inline operator word_Ty() const noexcept;
 		constexpr inline std::size_t count() const noexcept;
 
@@ -185,6 +189,16 @@ namespace cool
 		template <class uint_Ty1, class uint_Ty2> inline bool vbit(uint_Ty1 bit_offset, uint_Ty2 additional_byte_offset) const volatile noexcept;
 		template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty>::vbit_proxy vbit(uint_Ty bit_offset) volatile noexcept;
 		template <class uint_Ty1, class uint_Ty2> inline typename cool::bits<bit_count, word_Ty>::vbit_proxy vbit(uint_Ty1 bit_offset, uint_Ty2 additional_byte_offset) volatile noexcept;
+
+		// iterators
+
+		class iterator;
+		class v_iterator;
+
+		inline typename cool::bits<bit_count, word_Ty>::iterator begin() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty>::iterator end() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty>::iterator cbegin() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty>::iterator cend() const noexcept;
 
 		// op assign
 
@@ -276,7 +290,6 @@ namespace cool
 		private:
 
 			template <std::size_t bit_count2, class word_Ty2> friend class bits;
-			friend class cool::bits<bit_count, word_Ty>;
 
 			bit_proxy(const typename cool::bits<bit_count, word_Ty>::bit_proxy&) noexcept = default;
 			bit_proxy(typename cool::bits<bit_count, word_Ty>::bit_proxy&&) noexcept = default;
@@ -306,7 +319,6 @@ namespace cool
 		private:
 
 			template <std::size_t bit_count2, class word_Ty2> friend class bits;
-			friend class cool::bits<bit_count, word_Ty>;
 
 			vbit_proxy(const typename cool::bits<bit_count, word_Ty>::vbit_proxy&) noexcept = default;
 			vbit_proxy(typename cool::bits<bit_count, word_Ty>::vbit_proxy&&) noexcept = default;
@@ -314,6 +326,82 @@ namespace cool
 
 			volatile word_Ty* m_data_ptr;
 			word_Ty m_mask;
+		};
+
+		class iterator
+		{
+
+		public:
+
+			iterator() = delete;
+			iterator(const typename cool::bits<bit_count, word_Ty>::iterator&) noexcept = default;
+			typename cool::bits<bit_count, word_Ty>::iterator& operator=(const typename cool::bits<bit_count, word_Ty>::iterator&) noexcept = default;
+			iterator(typename cool::bits<bit_count, word_Ty>::iterator&&) noexcept = default;
+			typename cool::bits<bit_count, word_Ty>::iterator& operator=(typename cool::bits<bit_count, word_Ty>::iterator&&) noexcept = default;
+			~iterator() = default;
+
+			inline std::size_t operator*() const noexcept;
+			inline typename cool::bits<bit_count, word_Ty>::iterator& operator++() noexcept;
+			inline typename cool::bits<bit_count, word_Ty>::iterator operator++(int) noexcept;
+
+			inline bool operator==(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept;
+			inline bool operator!=(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept;
+			inline bool operator<=(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept;
+			inline bool operator>=(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept;
+			inline bool operator<(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept;
+			inline bool operator>(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept;
+
+		private:
+
+			template <std::size_t bit_count2, class word_Ty2> friend class bits;
+
+			inline iterator(const word_Ty* data_ptr) noexcept;
+			inline iterator(const word_Ty* data_ptr, std::size_t end_word) noexcept;
+
+			const word_Ty* m_data_ptr;
+			std::size_t m_word_index;
+			std::size_t m_index_p1;
+			word_Ty m_data;
+		};
+
+		class v_iterator
+		{
+
+		public:
+
+			v_iterator() = delete;
+			v_iterator(const typename cool::bits<bit_count, word_Ty>::v_iterator&) noexcept = default;
+			typename cool::bits<bit_count, word_Ty>::v_iterator& operator=(const typename cool::bits<bit_count, word_Ty>::v_iterator&) noexcept = default;
+			v_iterator(typename cool::bits<bit_count, word_Ty>::v_iterator&&) noexcept = default;
+			typename cool::bits<bit_count, word_Ty>::v_iterator& operator=(typename cool::bits<bit_count, word_Ty>::v_iterator&&) noexcept = default;
+			~v_iterator() = default;
+
+			inline std::size_t operator*() const noexcept;
+			inline typename cool::bits<bit_count, word_Ty>::v_iterator& operator++() noexcept;
+			inline typename cool::bits<bit_count, word_Ty>::v_iterator operator++(int) noexcept;
+
+			inline bool operator==(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept;
+			inline bool operator!=(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept;
+			inline bool operator<=(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept;
+			inline bool operator>=(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept;
+			inline bool operator<(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept;
+			inline bool operator>(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept;
+
+		private:
+
+			template <std::size_t bit_count2, class word_Ty2> friend class cool::_vbits_proxy;
+			template <std::size_t bit_count2, class word_Ty2> friend class cool::_cvbits_proxy;
+
+			inline v_iterator(const volatile word_Ty* data_ptr) noexcept;
+			inline v_iterator(const volatile word_Ty* data_ptr, std::size_t end_word) noexcept;
+
+			static constexpr std::size_t end_word_index = cool::bits<bit_count, word_Ty>::word_count
+				* cool::bits<bit_count, word_Ty>::word_size;
+
+			const volatile word_Ty* m_data_ptr;
+			std::size_t m_word_index;
+			std::size_t m_index_p1;
+			word_Ty m_data;
 		};
 
 	private:
@@ -402,6 +490,19 @@ namespace cool
 
 	public:
 
+		using word_type = word_Ty;
+		using iterator_category = std::forward_iterator_tag;
+
+		static constexpr inline std::size_t size() noexcept;
+
+		static constexpr std::size_t byte_size = CHAR_BIT;
+		static constexpr std::size_t byte_capacity = bit_count / byte_size;
+		static constexpr std::size_t byte_count = (bit_count % byte_size == 0) ? bit_count / byte_size : bit_count / byte_size + 1;
+
+		static constexpr std::size_t word_size = CHAR_BIT * sizeof(word_Ty);
+		static constexpr std::size_t word_capacity = bit_count / word_size;
+		static constexpr std::size_t word_count = (bit_count % word_size == 0) ? bit_count / word_size : bit_count / word_size + 1;
+
 		// assign
 
 		inline cool::_vbits_proxy<bit_count, word_Ty>& operator=(const cool::bits<bit_count, word_Ty>& rhs) noexcept;
@@ -414,8 +515,17 @@ namespace cool
 		inline cool::_vbits_proxy<bit_count, word_Ty>& operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>& rhs) noexcept;
 		inline cool::_vbits_proxy<bit_count, word_Ty>& operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>& rhs) noexcept;
 
+		// misc
+
 		inline operator word_Ty() const noexcept;
 		inline std::size_t count() const noexcept;
+
+		// iterators
+
+		inline typename cool::bits<bit_count, word_Ty>::v_iterator begin() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty>::v_iterator end() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty>::v_iterator cbegin() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty>::v_iterator cend() const noexcept;
 
 		// op assign
 
@@ -493,8 +603,8 @@ namespace cool
 		_vbits_proxy(cool::_vbits_proxy<bit_count, word_Ty>&&) noexcept = default;
 		inline _vbits_proxy(volatile word_Ty* data_ptr) noexcept;
 
-		friend class cool::bits<bit_count, word_Ty>;
-		friend class cool::_cvbits_proxy<bit_count, word_Ty>;
+		template <std::size_t bit_count2, class word_Ty2> friend class cool::bits;
+		template <std::size_t bit_count2, class word_Ty2> friend class cool::_cvbits_proxy;
 
 		template <std::size_t bit_count2, class word_Ty2>
 		friend inline cool::_masked_proxy<bit_count2, const word_Ty2*, const volatile word_Ty2*> cool::masked(
@@ -524,8 +634,30 @@ namespace cool
 
 	public:
 
+		using word_type = word_Ty;
+		using iterator_category = std::forward_iterator_tag;
+
+		static constexpr inline std::size_t size() noexcept;
+
+		static constexpr std::size_t byte_size = CHAR_BIT;
+		static constexpr std::size_t byte_capacity = bit_count / byte_size;
+		static constexpr std::size_t byte_count = (bit_count % byte_size == 0) ? bit_count / byte_size : bit_count / byte_size + 1;
+
+		static constexpr std::size_t word_size = CHAR_BIT * sizeof(word_Ty);
+		static constexpr std::size_t word_capacity = bit_count / word_size;
+		static constexpr std::size_t word_count = (bit_count % word_size == 0) ? bit_count / word_size : bit_count / word_size + 1;
+
+		// misc
+
 		inline operator word_Ty() const noexcept;
 		inline std::size_t count() const noexcept;
+
+		// iterators
+
+		inline typename cool::bits<bit_count, word_Ty>::v_iterator begin() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty>::v_iterator end() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty>::v_iterator cbegin() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty>::v_iterator cend() const noexcept;
 
 		// op
 
@@ -588,8 +720,8 @@ namespace cool
 		_cvbits_proxy(cool::_cvbits_proxy<bit_count, word_Ty>&&) noexcept = default;
 		inline _cvbits_proxy(const volatile word_Ty* data_ptr) noexcept;
 
-		friend class cool::bits<bit_count, word_Ty>;
-		friend class cool::_vbits_proxy<bit_count, word_Ty>;
+		template <std::size_t bit_count2, class word_Ty2> friend class cool::bits;
+		template <std::size_t bit_count2, class word_Ty2> friend class cool::_vbits_proxy;
 
 		template <std::size_t bit_count2, class word_Ty2>
 		friend inline cool::_masked_proxy<bit_count2, const word_Ty2*, const volatile word_Ty2*> cool::masked(
@@ -842,10 +974,12 @@ inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator=
 	_assign_masked_op(m_field, rhs.m_rhs_ptr, rhs.m_mask_ptr); return *this;
 }
 
+// bits misc
+
 template <std::size_t bit_count, class word_Ty>
 constexpr inline cool::bits<bit_count, word_Ty>::operator word_Ty() const noexcept
 {
-	static_assert(bit_count <= word_size, "cool::bits<bit_count, word_type> operator word_type requirement : word_count must be one");
+	static_assert(bit_count <= word_size, "cool::bits<bit_count, word_type> operator word_type requirement : word_count must be equal to one");
 
 	constexpr bool no_mask_needed = bit_count == word_size;
 	if (no_mask_needed)
@@ -864,44 +998,36 @@ constexpr inline std::size_t cool::bits<bit_count, word_Ty>::count() const noexc
 {
 	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
 
-	if (cast_upward)
-	{
-		std::size_t ret = 0;
+	std::size_t ret = 0;
 
-		for (std::size_t n = 0; n < word_capacity; n++)
+	for (std::size_t n = 0; n < word_capacity; n++)
+	{
+		if (cast_upward)
 		{
 			ret += _popcount_op(static_cast<unsigned int>(m_field[n]));
 		}
-
-		constexpr bool end_mask_needed = bit_count % word_size != 0;
-		if (end_mask_needed)
-		{
-			constexpr std::size_t word_count_m1 = word_count - 1;
-			constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
-			ret += _popcount_op(static_cast<unsigned int>(m_field[word_count_m1] & mask));
-		}
-
-		return ret;
-	}
-	else
-	{
-		std::size_t ret = 0;
-
-		for (std::size_t n = 0; n < word_capacity; n++)
+		else
 		{
 			ret += _popcount_op(m_field[n]);
 		}
+	}
 
-		constexpr bool end_mask_needed = bit_count % word_size != 0;
-		if (end_mask_needed)
+	constexpr bool end_mask_needed = bit_count % word_size != 0;
+	if (end_mask_needed)
+	{
+		constexpr std::size_t word_count_m1 = word_count - 1;
+		constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
+		if (cast_upward)
 		{
-			constexpr std::size_t word_count_m1 = word_count - 1;
-			constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
+			ret += _popcount_op(static_cast<unsigned int>(m_field[word_count_m1] & mask));
+		}
+		else
+		{
 			ret += _popcount_op(m_field[word_count_m1] & mask);
 		}
-
-		return ret;
 	}
+
+	return ret;
 }
 
 // bit level accessors
@@ -1092,6 +1218,25 @@ template <class uint_Ty1, class uint_Ty2> inline typename cool::bits<bit_count, 
 		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (new_bit_offset % word_size));
 		return typename cool::bits<bit_count, word_Ty>::vbit_proxy(data_ptr, mask);
 	}
+}
+
+// bits iterators
+
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::iterator cool::bits<bit_count, word_Ty>::begin() const noexcept {
+	return cool::bits<bit_count, word_Ty>::iterator(static_cast<const word_Ty*>(m_field));
+}
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::iterator cool::bits<bit_count, word_Ty>::end() const noexcept {
+	return cool::bits<bit_count, word_Ty>::iterator(static_cast<const word_Ty*>(m_field), word_count);
+}
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::iterator cool::bits<bit_count, word_Ty>::cbegin() const noexcept {
+	return cool::bits<bit_count, word_Ty>::iterator(static_cast<const word_Ty*>(m_field));
+}
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::iterator cool::bits<bit_count, word_Ty>::cend() const noexcept {
+	return cool::bits<bit_count, word_Ty>::iterator(static_cast<const word_Ty*>(m_field), word_count);
 }
 
 // bits op assign
@@ -1619,6 +1764,11 @@ inline cool::bits<bit_count, word_Ty>::vbit_proxy::vbit_proxy(volatile word_Ty* 
 
 // _vbits_proxy
 
+template <std::size_t bit_count, class word_Ty>
+constexpr inline std::size_t cool::_vbits_proxy<bit_count, word_Ty>::size() noexcept {
+	return bit_count;
+}
+
 // _vbits_proxy assign
 
 template <std::size_t bit_count, class word_Ty>
@@ -1655,7 +1805,7 @@ inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, wor
 	cool::bits<bit_count, word_Ty>::_assign_masked_op(m_data_ptr, rhs.m_rhs_ptr, rhs.m_mask_ptr); return *this;
 }
 
-// _vbits_proxy op assign
+// _vbits_proxy misc
 
 template <std::size_t bit_count, class word_Ty>
 inline cool::_vbits_proxy<bit_count, word_Ty>::operator word_Ty() const noexcept {
@@ -1665,6 +1815,28 @@ template <std::size_t bit_count, class word_Ty>
 inline std::size_t cool::_vbits_proxy<bit_count, word_Ty>::count() const noexcept {
 	return cool::bits<bit_count, word_Ty>::_count_op(m_data_ptr);
 }
+
+// _vbits_proxy iterators
+
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_vbits_proxy<bit_count, word_Ty>::begin() const noexcept {
+	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr);
+}
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_vbits_proxy<bit_count, word_Ty>::end() const noexcept {
+	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr, cool::bits<bit_count, word_Ty>::word_count);
+}
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_vbits_proxy<bit_count, word_Ty>::cbegin() const noexcept {
+	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr);
+}
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_vbits_proxy<bit_count, word_Ty>::cend() const noexcept {
+	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr, cool::bits<bit_count, word_Ty>::word_count);
+}
+
+// _vbits_proxy op assign
+
 template <std::size_t bit_count, class word_Ty>
 inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator&=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
 	cool::bits<bit_count, word_Ty>::_and_assign_op(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return *this;
@@ -1879,7 +2051,12 @@ inline cool::_vbits_proxy<bit_count, word_Ty>::_vbits_proxy(volatile word_Ty* da
 
 // _cvbits_proxy
 
-// _cvbits_proxy op
+template <std::size_t bit_count, class word_Ty>
+constexpr inline std::size_t cool::_cvbits_proxy<bit_count, word_Ty>::size() noexcept {
+	return bit_count;
+}
+
+// _cvbits_proxy misc
 
 template <std::size_t bit_count, class word_Ty>
 inline cool::_cvbits_proxy<bit_count, word_Ty>::operator word_Ty() const noexcept {
@@ -1889,6 +2066,28 @@ template <std::size_t bit_count, class word_Ty>
 inline std::size_t cool::_cvbits_proxy<bit_count, word_Ty>::count() const noexcept {
 	return cool::bits<bit_count, word_Ty>::_count_op(m_data_ptr);
 }
+
+// _cvbits_proxy iterators
+
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_cvbits_proxy<bit_count, word_Ty>::begin() const noexcept {
+	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr);
+}
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_cvbits_proxy<bit_count, word_Ty>::end() const noexcept {
+	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr, cool::bits<bit_count, word_Ty>::word_count);
+}
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_cvbits_proxy<bit_count, word_Ty>::cbegin() const noexcept {
+	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr);
+}
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_cvbits_proxy<bit_count, word_Ty>::cend() const noexcept {
+	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr, cool::bits<bit_count, word_Ty>::word_count);
+}
+
+// _cvbits_proxy op
+
 template <std::size_t bit_count, class word_Ty>
 inline cool::bits<bit_count, word_Ty> cool::_cvbits_proxy<bit_count, word_Ty>::operator&(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
 	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_and_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return ret;
@@ -2050,6 +2249,496 @@ template <std::size_t bit_count, class word_Ty>
 inline cool::_cvbits_proxy<bit_count, word_Ty>::_cvbits_proxy(const volatile word_Ty* data_ptr) noexcept
 	: m_data_ptr(data_ptr) {}
 
+// bits iterator
+
+template <std::size_t bit_count, class word_Ty>
+inline std::size_t cool::bits<bit_count, word_Ty>::iterator::operator*() const noexcept {
+	return m_word_index + m_index_p1 - 1;
+}
+
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::iterator& cool::bits<bit_count, word_Ty>::iterator::operator++() noexcept
+{
+	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
+	constexpr bool end_mask_needed = bit_count % word_size != 0;
+	constexpr bool multi_word = bit_count > word_size;
+
+	if (m_data == static_cast<word_Ty>(0))
+	{
+		m_data_ptr++;
+
+		if (multi_word)
+		{
+			constexpr std::size_t end_word_index = word_count * word_size;
+
+			m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+
+			while (m_word_index < end_word_index)
+			{
+				if (end_mask_needed) {
+					constexpr std::size_t entire_words_size = word_size * word_capacity;
+					constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
+
+					m_data = (m_word_index < entire_words_size) ? *m_data_ptr : *m_data_ptr & mask;
+				}
+				else {
+					m_data = *m_data_ptr;
+				}
+
+				if (m_data != static_cast<word_Ty>(0))
+				{
+					if (cast_upward) {
+						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
+					}
+					else {
+						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+					}
+
+					m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ?
+						m_data >>= m_index_p1 : 0;
+
+					return *this;
+				}
+				else
+				{
+					m_data_ptr++;
+					m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+				}
+			}
+		}
+	}
+	else
+	{
+		std::size_t index_offset;
+		if (cast_upward) {
+			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data))) - 1) + 1;
+		}
+		else {
+			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+		}
+		m_index_p1 += index_offset;
+		m_data >>= index_offset;
+	}
+
+	return *this;
+}
+
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::iterator cool::bits<bit_count, word_Ty>::iterator::operator++(int) noexcept
+{
+	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
+	constexpr bool end_mask_needed = bit_count % word_size != 0;
+	constexpr bool multi_word = bit_count > word_size;
+
+	cool::bits<bit_count, word_Ty>::iterator ret = *this;
+
+	if (m_data == static_cast<word_Ty>(0))
+	{
+		m_data_ptr++;
+
+		if (multi_word)
+		{
+			constexpr std::size_t end_word_index = word_count * word_size;
+
+			m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+
+			while (m_word_index < end_word_index)
+			{
+				if (end_mask_needed) {
+					constexpr std::size_t entire_words_size = word_size * word_capacity;
+					constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
+
+					m_data = (m_word_index < entire_words_size) ? *m_data_ptr : *m_data_ptr & mask;
+				}
+				else {
+					m_data = *m_data_ptr;
+				}
+
+				if (m_data != static_cast<word_Ty>(0))
+				{
+					if (cast_upward) {
+						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
+					}
+					else {
+						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+					}
+
+					m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ?
+						m_data >>= m_index_p1 : 0;
+
+					return ret;
+				}
+				else
+				{
+					m_data_ptr++;
+					m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+				}
+			}
+		}
+	}
+	else
+	{
+		std::size_t index_offset;
+		if (cast_upward) {
+			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data))) - 1) + 1;
+		}
+		else {
+			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+		}
+		m_index_p1 += index_offset;
+		m_data >>= index_offset;
+	}
+
+	return ret;
+}
+
+template <std::size_t bit_count, class word_Ty>
+inline bool cool::bits<bit_count, word_Ty>::iterator::operator==(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept {
+	return m_data_ptr == rhs.m_data_ptr;
+}
+template <std::size_t bit_count, class word_Ty>
+inline bool cool::bits<bit_count, word_Ty>::iterator::operator!=(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept {
+	return m_data_ptr != rhs.m_data_ptr;
+}
+template <std::size_t bit_count, class word_Ty>
+inline bool cool::bits<bit_count, word_Ty>::iterator::operator<=(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept {
+	return m_data_ptr <= rhs.m_data_ptr;
+}
+template <std::size_t bit_count, class word_Ty>
+inline bool cool::bits<bit_count, word_Ty>::iterator::operator>=(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept {
+	return m_data_ptr >= rhs.m_data_ptr;
+}
+template <std::size_t bit_count, class word_Ty>
+inline bool cool::bits<bit_count, word_Ty>::iterator::operator<(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept {
+	return m_data_ptr < rhs.m_data_ptr;
+}
+template <std::size_t bit_count, class word_Ty>
+inline bool cool::bits<bit_count, word_Ty>::iterator::operator>(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept {
+	return m_data_ptr > rhs.m_data_ptr;
+}
+
+template <std::size_t bit_count, class word_Ty>
+inline cool::bits<bit_count, word_Ty>::iterator::iterator(const word_Ty* data_ptr) noexcept
+	: m_data_ptr(data_ptr), m_word_index(0)
+{
+	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
+	constexpr bool end_mask_needed = bit_count % word_size != 0;
+	constexpr bool one_word = bit_count <= word_size;
+
+	if (one_word)
+	{
+		if (end_mask_needed) {
+			constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
+			m_data = *m_data_ptr & mask;
+		}
+		else {
+			m_data = *m_data_ptr;
+		}
+
+		if (m_data != static_cast<word_Ty>(0))
+		{
+			if (cast_upward) {
+				m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
+			}
+			else {
+				m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+			}
+
+			m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ?
+				m_data >>= m_index_p1 : 0;
+		}
+		else
+		{
+			m_data_ptr++;
+		}
+	}
+	else
+	{
+		constexpr std::size_t end_word_index = word_count * word_size;
+
+		while (m_word_index < end_word_index)
+		{
+			if (end_mask_needed) {
+				constexpr std::size_t entire_words_size = word_size * word_capacity;
+				constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
+
+				m_data = (m_word_index < entire_words_size) ? *m_data_ptr : *m_data_ptr & mask;
+			}
+			else {
+				m_data = *m_data_ptr;
+			}
+
+			if (m_data != static_cast<word_Ty>(0))
+			{
+				if (cast_upward) {
+					m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
+				}
+				else {
+					m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+				}
+
+				m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ?
+					m_data >>= m_index_p1 : 0;
+
+				break;
+			}
+			else
+			{
+				m_data_ptr++;
+				m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+			}
+		}
+	}
+}
+
+template <std::size_t bit_count, class word_Ty>
+inline cool::bits<bit_count, word_Ty>::iterator::iterator(const word_Ty* data_ptr, std::size_t end_word) noexcept
+	: m_data_ptr(data_ptr + end_word), m_word_index(0), m_index_p1(0), m_data(0) {}
+
+// bits v_iterator
+
+template <std::size_t bit_count, class word_Ty>
+inline std::size_t cool::bits<bit_count, word_Ty>::v_iterator::operator*() const noexcept {
+	return m_word_index + m_index_p1 - 1;
+}
+
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::v_iterator& cool::bits<bit_count, word_Ty>::v_iterator::operator++() noexcept
+{
+	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
+	constexpr bool end_mask_needed = bit_count % word_size != 0;
+	constexpr bool multi_word = bit_count > word_size;
+
+	if (m_data == static_cast<word_Ty>(0))
+	{
+		m_data_ptr++;
+
+		if (multi_word)
+		{
+			constexpr std::size_t end_word_index = word_count * word_size;
+
+			m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+
+			while (m_word_index < end_word_index)
+			{
+				if (end_mask_needed) {
+					constexpr std::size_t entire_words_size = word_size * word_capacity;
+					constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
+
+					word_Ty temp = *m_data_ptr;
+					m_data = (m_word_index < entire_words_size) ? temp : temp & mask;
+				}
+				else {
+					m_data = *m_data_ptr;
+				}
+
+				if (m_data != static_cast<word_Ty>(0))
+				{
+					if (cast_upward) {
+						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
+					}
+					else {
+						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+					}
+
+					m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ?
+						m_data >>= m_index_p1 : 0;
+
+					return *this;
+				}
+				else
+				{
+					m_data_ptr++;
+					m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+				}
+			}
+		}
+	}
+	else
+	{
+		std::size_t index_offset;
+		if (cast_upward) {
+			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data))) - 1) + 1;
+		}
+		else {
+			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+		}
+		m_index_p1 += index_offset;
+		m_data >>= index_offset;
+	}
+
+	return *this;
+}
+
+template <std::size_t bit_count, class word_Ty>
+inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::bits<bit_count, word_Ty>::v_iterator::operator++(int) noexcept
+{
+	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
+	constexpr bool end_mask_needed = bit_count % word_size != 0;
+	constexpr bool multi_word = bit_count > word_size;
+
+	cool::bits<bit_count, word_Ty>::v_iterator ret = *this;
+
+	if (m_data == static_cast<word_Ty>(0))
+	{
+		m_data_ptr++;
+
+		if (multi_word)
+		{
+			constexpr std::size_t end_word_index = word_count * word_size;
+
+			m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+
+			while (m_word_index < end_word_index)
+			{
+				if (end_mask_needed) {
+					constexpr std::size_t entire_words_size = word_size * word_capacity;
+					constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
+
+					word_Ty temp = *m_data_ptr;
+					m_data = (m_word_index < entire_words_size) ? temp : temp & mask;
+				}
+				else {
+					m_data = *m_data_ptr;
+				}
+
+				if (m_data != static_cast<word_Ty>(0))
+				{
+					if (cast_upward) {
+						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
+					}
+					else {
+						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+					}
+
+					m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ?
+						m_data >>= m_index_p1 : 0;
+
+					return ret;
+				}
+				else
+				{
+					m_data_ptr++;
+					m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+				}
+			}
+		}
+	}
+	else
+	{
+		std::size_t index_offset;
+		if (cast_upward) {
+			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data))) - 1) + 1;
+		}
+		else {
+			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+		}
+		m_index_p1 += index_offset;
+		m_data >>= index_offset;
+	}
+
+	return ret;
+}
+
+template <std::size_t bit_count, class word_Ty>
+inline bool cool::bits<bit_count, word_Ty>::v_iterator::operator==(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept {
+	return m_data_ptr == rhs.m_data_ptr;
+}
+template <std::size_t bit_count, class word_Ty>
+inline bool cool::bits<bit_count, word_Ty>::v_iterator::operator!=(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept {
+	return m_data_ptr != rhs.m_data_ptr;
+}
+template <std::size_t bit_count, class word_Ty>
+inline bool cool::bits<bit_count, word_Ty>::v_iterator::operator<=(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept {
+	return m_data_ptr <= rhs.m_data_ptr;
+}
+template <std::size_t bit_count, class word_Ty>
+inline bool cool::bits<bit_count, word_Ty>::v_iterator::operator>=(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept {
+	return m_data_ptr >= rhs.m_data_ptr;
+}
+template <std::size_t bit_count, class word_Ty>
+inline bool cool::bits<bit_count, word_Ty>::v_iterator::operator<(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept {
+	return m_data_ptr < rhs.m_data_ptr;
+}
+template <std::size_t bit_count, class word_Ty>
+inline bool cool::bits<bit_count, word_Ty>::v_iterator::operator>(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept {
+	return m_data_ptr > rhs.m_data_ptr;
+}
+
+template <std::size_t bit_count, class word_Ty>
+inline cool::bits<bit_count, word_Ty>::v_iterator::v_iterator(const volatile word_Ty* data_ptr) noexcept
+	: m_data_ptr(data_ptr), m_word_index(0)
+{
+	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
+	constexpr bool end_mask_needed = bit_count % word_size != 0;
+	constexpr bool one_word = bit_count <= word_size;
+
+	if (one_word)
+	{
+		if (end_mask_needed) {
+			constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
+			m_data = *m_data_ptr & mask;
+		}
+		else {
+			m_data = *m_data_ptr;
+		}
+
+		if (m_data != static_cast<word_Ty>(0))
+		{
+			if (cast_upward) {
+				m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
+			}
+			else {
+				m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+			}
+			m_data >>= m_index_p1;
+		}
+		else
+		{
+			m_data_ptr++;
+		}
+	}
+	else
+	{
+		constexpr std::size_t end_word_index = word_count * word_size;
+
+		while (m_word_index < end_word_index)
+		{
+			if (end_mask_needed) {
+				constexpr std::size_t entire_words_size = word_size * word_capacity;
+				constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
+
+				word_Ty temp = *m_data_ptr;
+				m_data = (m_word_index < entire_words_size) ? temp : temp & mask;
+			}
+			else {
+				m_data = *m_data_ptr;
+			}
+
+			if (m_data != static_cast<word_Ty>(0))
+			{
+				if (cast_upward) {
+					m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
+				}
+				else {
+					m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+				}
+				m_data >>= m_index_p1;
+				break;
+			}
+			else
+			{
+				m_data_ptr++;
+				m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+			}
+		}
+	}
+}
+
+template <std::size_t bit_count, class word_Ty>
+inline cool::bits<bit_count, word_Ty>::v_iterator::v_iterator(const volatile word_Ty* data_ptr, std::size_t end_word) noexcept
+	: m_data_ptr(data_ptr + end_word), m_word_index(0), m_index_p1(0), m_data(0) {}
+
 // bits subroutines
 
 template <std::size_t bit_count, class word_Ty> template <class word_Ty2>
@@ -2095,42 +2784,35 @@ inline std::size_t cool::bits<bit_count, word_Ty>::_count_op(ptr_Ty data_ptr) no
 {
 	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
 
-	if (cast_upward)
-	{
-		std::size_t ret = 0;
+	std::size_t ret = 0;
 
-		for (std::size_t n = 0; n < word_capacity; n++)
+	for (std::size_t n = 0; n < word_capacity; n++)
+	{
+		if (cast_upward)
 		{
 			ret += _popcount_op(static_cast<unsigned int>(*(data_ptr + n)));
 		}
-
-		constexpr bool end_mask_needed = bit_count % word_size != 0;
-		if (end_mask_needed)
-		{
-			constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
-			ret += _popcount_op(static_cast<unsigned int>(*(data_ptr + word_capacity) & mask));
-		}
-
-		return ret;
-	}
-	else
-	{
-		std::size_t ret = 0;
-
-		for (std::size_t n = 0; n < word_capacity; n++)
+		else
 		{
 			ret += _popcount_op(*(data_ptr + n));
 		}
+	}
 
-		constexpr bool end_mask_needed = bit_count % word_size != 0;
-		if (end_mask_needed)
+	constexpr bool end_mask_needed = bit_count % word_size != 0;
+	if (end_mask_needed)
+	{
+		constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
+		if (cast_upward)
 		{
-			constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
+			ret += _popcount_op(static_cast<unsigned int>(*(data_ptr + word_capacity) & mask));
+		}
+		else
+		{
 			ret += _popcount_op(*(data_ptr + word_capacity) & mask);
 		}
-
-		return ret;
 	}
+
+	return ret;
 }
 
 template <std::size_t bit_count, class word_Ty> template <class ptr_Ty1, class ptr_Ty2>
