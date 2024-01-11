@@ -1772,19 +1772,19 @@ constexpr inline std::size_t cool::_vbits_proxy<bit_count, word_Ty>::size() noex
 // _vbits_proxy assign
 
 template <std::size_t bit_count, class word_Ty>
-inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
 	cool::bits<bit_count, word_Ty>::_assign_op(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return *this;
 }
 template <std::size_t bit_count, class word_Ty>
-inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(bool val) noexcept {
+inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(bool val) noexcept {
 	cool::bits<bit_count, word_Ty>::_assign_bool_op(m_data_ptr, val); return *this;
 }
 template <std::size_t bit_count, class word_Ty>
-inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(std::initializer_list<bool> lst) noexcept {
+inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(std::initializer_list<bool> lst) noexcept {
 	cool::bits<bit_count, word_Ty>::_assign_lst_op(m_data_ptr, lst); return *this;
 }
 template <std::size_t bit_count, class word_Ty>
-inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(const typename cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
 	cool::bits<bit_count, word_Ty>::_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
 
@@ -1838,43 +1838,43 @@ inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_vbits_proxy<bi
 // _vbits_proxy op assign
 
 template <std::size_t bit_count, class word_Ty>
-inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator&=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator&=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
 	cool::bits<bit_count, word_Ty>::_and_assign_op(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return *this;
 }
 template <std::size_t bit_count, class word_Ty>
-inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator|=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator|=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
 	cool::bits<bit_count, word_Ty>::_or_assign_op(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return *this;
 }
 template <std::size_t bit_count, class word_Ty>
-inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator^=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator^=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
 	cool::bits<bit_count, word_Ty>::_xor_assign_op(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return *this;
 }
 template <std::size_t bit_count, class word_Ty>
-inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::flip() noexcept {
+inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::flip() noexcept {
 	cool::bits<bit_count, word_Ty>::_not_assign_op(m_data_ptr); return *this;
 }
 template <std::size_t bit_count, class word_Ty>
-inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator&=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator&=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
 	cool::bits<bit_count, word_Ty>::_and_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
 template <std::size_t bit_count, class word_Ty>
-inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator|=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator|=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
 	cool::bits<bit_count, word_Ty>::_or_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
 template <std::size_t bit_count, class word_Ty>
-inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator^=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator^=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
 	cool::bits<bit_count, word_Ty>::_xor_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
 template <std::size_t bit_count, class word_Ty>
-inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator&=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator&=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
 	cool::bits<bit_count, word_Ty>::_and_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
 template <std::size_t bit_count, class word_Ty>
-inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator|=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator|=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
 	cool::bits<bit_count, word_Ty>::_or_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
 template <std::size_t bit_count, class word_Ty>
-inline typename cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator^=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator^=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
 	cool::bits<bit_count, word_Ty>::_xor_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
 
@@ -1955,19 +1955,19 @@ inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator!=(bool rhs) const n
 	return cool::bits<bit_count, word_Ty>::_not_equal_bool_cmp(m_data_ptr, rhs);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator==(const typename cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator==(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator!=(const typename cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator!=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_not_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator==(const typename cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator==(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator!=(const typename cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator!=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_not_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
@@ -1987,19 +1987,19 @@ inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>=(bool rhs) const n
 	return !rhs || cool::bits<bit_count, word_Ty>::_equal_bool_cmp(m_data_ptr, true);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<=(const typename cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>=(const typename cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(rhs.m_data_ptr, m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<=(const typename cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>=(const typename cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(rhs.m_data_ptr, m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
@@ -2019,19 +2019,19 @@ inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>(bool rhs) const no
 	return !rhs && cool::bits<bit_count, word_Ty>::_not_equal_bool_cmp(m_data_ptr, false);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<(const typename cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_lesscmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>(const typename cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_cmp(rhs.m_data_ptr, m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<(const typename cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>(const typename cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_cmp(rhs.m_data_ptr, m_data_ptr);
 }
 
@@ -2163,19 +2163,19 @@ inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator!=(bool rhs) const 
 	return cool::bits<bit_count, word_Ty>::_not_equal_bool_cmp(m_data_ptr, rhs);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator==(const typename cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator==(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator!=(const typename cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator!=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_not_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator==(const typename cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator==(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator!=(const typename cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator!=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_not_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
@@ -2195,19 +2195,19 @@ inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>=(bool rhs) const 
 	return !rhs || cool::bits<bit_count, word_Ty>::_equal_bool_cmp(m_data_ptr, true);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<=(const typename cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>=(const typename cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(rhs.m_data_ptr, m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<=(const typename cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>=(const typename cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(rhs.m_data_ptr, m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
@@ -2227,19 +2227,19 @@ inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>(bool rhs) const n
 	return !rhs && cool::bits<bit_count, word_Ty>::_not_equal_bool_cmp(m_data_ptr, false);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<(const typename cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>(const typename cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_cmp(rhs.m_data_ptr, m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<(const typename cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_cmp(m_data_ptr, rhs.m_data_ptr);
 }
 template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>(const typename cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
 	return cool::bits<bit_count, word_Ty>::_less_cmp(rhs.m_data_ptr, m_data_ptr);
 }
 
