@@ -178,6 +178,8 @@ namespace cool
 
 // detail
 
+// mem_blocks
+
 template <std::uintptr_t bad_alloc_address>
 inline cool::mem_blocks<bad_alloc_address>::mem_blocks() noexcept
 {
@@ -579,7 +581,7 @@ inline void cool::mem_blocks<bad_alloc_address>::deallocate_unchecked(void* ptr)
 }
 
 
-// mem_pools detail
+// mem_pools
 
 template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
 inline cool::mem_pools<pool_count, bad_alloc_address>::mem_pools(
