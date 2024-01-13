@@ -897,9 +897,9 @@ inline void* cool::mem_pools<pool_count, bad_alloc_address>::allocate(std::size_
 			&& (m_pools[n].m_next_block_ptr != static_cast<void**>(bad_alloc_ptr())))
 		{
 			m_pools[n].m_blocks_remaining--;
-			void** ret = m_pools[n].m_next_block_ptr;
+			void* ret = static_cast<void*>(m_pools[n].m_next_block_ptr);
 			m_pools[n].m_next_block_ptr = static_cast<void**>(*m_pools[n].m_next_block_ptr);
-			return static_cast<void*>(ret);
+			return ret;
 		}
 	}
 
