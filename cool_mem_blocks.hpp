@@ -266,18 +266,18 @@ inline cool::mem_blocks<bad_alloc_address>::mem_blocks(
 
 		void** _current_ptr = static_cast<void**>(data_ptr);
 		void** _next_ptr = static_cast<void**>(data_ptr) + block_offset;
-		block_count--;
+		std::size_t block_count_m1 = block_count - 1;
 #ifdef __clang__
 #pragma unroll 1
 #endif // __clang__
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC unroll 1
 #endif // defined(__GNUC__) && !defined(__clang__)
-		for (std::size_t n = 0; n < block_count; n++)
+		for (std::size_t n = 0; n < block_count_m1; n++)
 		{
-			new (_current_ptr + n * block_offset) void* { static_cast<void*>(_next_ptr + n * block_offset) };
+			new (_current_ptr + n * block_offset) void* (static_cast<void*>(_next_ptr + n * block_offset));
 		}
-		new (_current_ptr + block_count * block_offset) void* { static_cast<void*>(bad_alloc_ptr()) };
+		new (_current_ptr + block_count * block_offset) void* (static_cast<void*>(bad_alloc_ptr()));
 	}
 	else
 	{
@@ -447,18 +447,18 @@ inline void* cool::mem_blocks<bad_alloc_address>::init_set_data(
 
 		void** _current_ptr = static_cast<void**>(data_ptr);
 		void** _next_ptr = static_cast<void**>(data_ptr) + block_offset;
-		block_count--;
+		std::size_t block_count_m1 = block_count - 1;
 #ifdef __clang__
 #pragma unroll 1
 #endif // __clang__
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC unroll 1
 #endif // defined(__GNUC__) && !defined(__clang__)
-		for (std::size_t n = 0; n < block_count; n++)
+		for (std::size_t n = 0; n < block_count_m1; n++)
 		{
-			new (_current_ptr + n * block_offset) void* { static_cast<void*>(_next_ptr + n * block_offset) };
+			new (_current_ptr + n * block_offset) void* (static_cast<void*>(_next_ptr + n * block_offset));
 		}
-		new (_current_ptr + block_count * block_offset) void* { static_cast<void*>(bad_alloc_ptr()) };
+		new (_current_ptr + block_count * block_offset) void* (static_cast<void*>(bad_alloc_ptr()));
 	}
 	else
 	{
