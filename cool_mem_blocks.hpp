@@ -76,20 +76,21 @@ namespace cool
 
 		inline cool::mem_blocks<bad_alloc_address>& clear() noexcept;
 
-
+		// use only if this mem_blocks instance is known to have at least one block remaining
 		inline void* allocate_unchecked() noexcept;
 
+		// use only if this mem_blocks instance is known to own ptr 
 		inline void deallocate_unchecked(void* ptr) noexcept;
 
 	private:
 
 		template <std::size_t pool_count, std::uintptr_t bad_alloc_address2> friend class cool::mem_pools;
 
+		std::size_t m_block_size;
 		void** m_next_block_ptr;
+		std::size_t m_blocks_remaining;
 		void** m_first_block_ptr;
 		void** m_last_block_ptr;
-		std::size_t m_block_size;
-		std::size_t m_blocks_remaining;
 	};
 
 	template <std::size_t pool_count, std::uintptr_t bad_alloc_address> class mem_pools
@@ -183,43 +184,43 @@ namespace cool
 template <std::uintptr_t bad_alloc_address>
 inline cool::mem_blocks<bad_alloc_address>::mem_blocks() noexcept
 {
+	m_block_size = 0;
 	m_next_block_ptr = static_cast<void**>(bad_alloc_ptr());
+	m_blocks_remaining = 0;
 	m_first_block_ptr = static_cast<void**>(bad_alloc_ptr());
 	m_last_block_ptr = static_cast<void**>(bad_alloc_ptr());
-	m_block_size = 0;
-	m_blocks_remaining = 0;
 }
 
 template <std::uintptr_t bad_alloc_address>
 inline cool::mem_blocks<bad_alloc_address>::mem_blocks(cool::mem_blocks<bad_alloc_address>&& rhs) noexcept
 {
+	m_block_size = rhs.m_block_size;
 	m_next_block_ptr = rhs.m_next_block_ptr;
+	m_blocks_remaining = rhs.m_blocks_remaining;
 	m_first_block_ptr = rhs.m_first_block_ptr;
 	m_last_block_ptr = rhs.m_last_block_ptr;
-	m_block_size = rhs.m_block_size;
-	m_blocks_remaining = rhs.m_blocks_remaining;
 
+	rhs.m_block_size = 0;
 	rhs.m_next_block_ptr = static_cast<void**>(bad_alloc_ptr());
+	rhs.m_blocks_remaining = 0;
 	rhs.m_first_block_ptr = static_cast<void**>(bad_alloc_ptr());
 	rhs.m_last_block_ptr = static_cast<void**>(bad_alloc_ptr());
-	rhs.m_block_size = 0;
-	rhs.m_blocks_remaining = 0;
 }
 
 template <std::uintptr_t bad_alloc_address>
 inline cool::mem_blocks<bad_alloc_address>& cool::mem_blocks<bad_alloc_address>::operator=(cool::mem_blocks<bad_alloc_address>&& rhs) noexcept
 {
+	m_block_size = rhs.m_block_size;
 	m_next_block_ptr = rhs.m_next_block_ptr;
+	m_blocks_remaining = rhs.m_blocks_remaining;
 	m_first_block_ptr = rhs.m_first_block_ptr;
 	m_last_block_ptr = rhs.m_last_block_ptr;
-	m_block_size = rhs.m_block_size;
-	m_blocks_remaining = rhs.m_blocks_remaining;
 
+	rhs.m_block_size = 0;
 	rhs.m_next_block_ptr = static_cast<void**>(bad_alloc_ptr());
+	rhs.m_blocks_remaining = 0;
 	rhs.m_first_block_ptr = static_cast<void**>(bad_alloc_ptr());
 	rhs.m_last_block_ptr = static_cast<void**>(bad_alloc_ptr());
-	rhs.m_block_size = 0;
-	rhs.m_blocks_remaining = 0;
 
 	return *this;
 }
@@ -260,11 +261,11 @@ inline cool::mem_blocks<bad_alloc_address>::mem_blocks(
 			}
 		}
 
+		m_block_size = block_size;
 		m_next_block_ptr = static_cast<void**>(data_ptr);
 		m_blocks_remaining = block_count;
 		m_first_block_ptr = static_cast<void**>(data_ptr);
 		m_last_block_ptr = static_cast<void**>(data_ptr) + block_count * block_offset;
-		m_block_size = block_size;
 
 		void** _current_ptr = static_cast<void**>(data_ptr);
 		void** _next_ptr = static_cast<void**>(data_ptr) + block_offset;
@@ -283,11 +284,11 @@ inline cool::mem_blocks<bad_alloc_address>::mem_blocks(
 	}
 	else
 	{
+		m_block_size = 0;
 		m_next_block_ptr = static_cast<void**>(bad_alloc_ptr());
+		m_blocks_remaining = 0;
 		m_first_block_ptr = static_cast<void**>(bad_alloc_ptr());
 		m_last_block_ptr = static_cast<void**>(bad_alloc_ptr());
-		m_block_size = 0;
-		m_blocks_remaining = 0;
 	}
 }
 
@@ -441,11 +442,11 @@ inline void* cool::mem_blocks<bad_alloc_address>::init_set_data(
 			}
 		}
 
+		m_block_size = block_size;
 		m_next_block_ptr = static_cast<void**>(data_ptr);
+		m_blocks_remaining = block_count;
 		m_first_block_ptr = static_cast<void**>(data_ptr);
 		m_last_block_ptr = static_cast<void**>(data_ptr) + block_count * block_offset;
-		m_block_size = block_size;
-		m_blocks_remaining = block_count;
 
 		void** _current_ptr = static_cast<void**>(data_ptr);
 		void** _next_ptr = static_cast<void**>(data_ptr) + block_offset;
@@ -464,11 +465,11 @@ inline void* cool::mem_blocks<bad_alloc_address>::init_set_data(
 	}
 	else
 	{
+		m_block_size = 0;
 		m_next_block_ptr = static_cast<void**>(bad_alloc_ptr());
+		m_blocks_remaining = 0;
 		m_first_block_ptr = static_cast<void**>(bad_alloc_ptr());
 		m_last_block_ptr = static_cast<void**>(bad_alloc_ptr());
-		m_block_size = 0;
-		m_blocks_remaining = 0;
 	}
 
 	return m_last_block_ptr;
@@ -553,11 +554,11 @@ inline const void* cool::mem_blocks<bad_alloc_address>::data_end() const noexcep
 template <std::uintptr_t bad_alloc_address>
 inline cool::mem_blocks<bad_alloc_address>& cool::mem_blocks<bad_alloc_address>::clear() noexcept
 {
+	m_block_size = 0;
 	m_next_block_ptr = static_cast<void**>(bad_alloc_ptr());
+	m_blocks_remaining = 0;
 	m_first_block_ptr = static_cast<void**>(bad_alloc_ptr());
 	m_last_block_ptr = static_cast<void**>(bad_alloc_ptr());
-	m_block_size = 0;
-	m_blocks_remaining = 0;
 
 	return *this;
 }
@@ -610,7 +611,8 @@ inline cool::mem_pools<pool_count, bad_alloc_address>::mem_pools(
 }
 
 template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline cool::mem_pools<pool_count, bad_alloc_address>::mem_pools(void* data_ptr,
+inline cool::mem_pools<pool_count, bad_alloc_address>::mem_pools(
+	void* data_ptr,
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,
 	std::initializer_list<std::size_t> block_alignments) noexcept
