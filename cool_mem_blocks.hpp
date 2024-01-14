@@ -59,14 +59,13 @@ namespace cool
 
 
 		inline void* allocate() noexcept;
-
 		inline bool deallocate(void* ptr) noexcept;
 
-		static inline constexpr void* bad_alloc_ptr() noexcept;
-
 		inline std::size_t block_size() const noexcept;
-
+		inline std::size_t block_count() const noexcept;
 		inline std::size_t blocks_remaining() const noexcept;
+
+		static inline constexpr void* bad_alloc_ptr() noexcept;
 
 		inline void* data_begin() noexcept;
 		inline const void* data_begin() const noexcept;
@@ -78,7 +77,6 @@ namespace cool
 
 		// use only if this mem_blocks instance is known to have at least one block remaining
 		inline void* allocate_unchecked() noexcept;
-
 		// use only if this mem_blocks instance is known to own ptr 
 		inline void deallocate_unchecked(void* ptr) noexcept;
 
@@ -163,7 +161,6 @@ namespace cool
 
 
 		inline void* allocate(std::size_t block_size) noexcept;
-
 		inline bool deallocate(void* ptr) noexcept;
 
 		static inline constexpr void* bad_alloc_ptr() noexcept;
@@ -510,21 +507,34 @@ inline bool cool::mem_blocks<bad_alloc_address>::deallocate(void* ptr) noexcept
 }
 
 template <std::uintptr_t bad_alloc_address>
-inline constexpr void* cool::mem_blocks<bad_alloc_address>::bad_alloc_ptr() noexcept
-{
-	return reinterpret_cast<void*>(bad_alloc_address);
-}
-
-template <std::uintptr_t bad_alloc_address>
 inline std::size_t cool::mem_blocks<bad_alloc_address>::block_size() const noexcept
 {
 	return m_block_size;
 }
 
 template <std::uintptr_t bad_alloc_address>
+inline std::size_t cool::mem_blocks<bad_alloc_address>::block_count() const noexcept
+{
+	if (m_block_size != 0)
+	{
+		return static_cast<std::size_t>(m_last_block_ptr - m_first_block_ptr) / (m_block_size / sizeof(void*));
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+template <std::uintptr_t bad_alloc_address>
 inline std::size_t cool::mem_blocks<bad_alloc_address>::blocks_remaining() const noexcept
 {
 	return m_blocks_remaining;
+}
+
+template <std::uintptr_t bad_alloc_address>
+inline constexpr void* cool::mem_blocks<bad_alloc_address>::bad_alloc_ptr() noexcept
+{
+	return reinterpret_cast<void*>(bad_alloc_address);
 }
 
 template <std::uintptr_t bad_alloc_address>
