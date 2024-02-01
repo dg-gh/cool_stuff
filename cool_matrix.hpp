@@ -260,6 +260,20 @@ namespace cool
 		inline _const_matrix_ptr(const cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) noexcept;
 		inline ~_const_matrix_ptr() = default;
 
+		inline cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& operator=(
+			const cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) = delete;
+
+		template <std::size_t _rhs_rows, std::size_t _rhs_cols, std::size_t _rhs_rows_padded, std::size_t _rhs_align>
+		inline cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& operator=(
+			const cool::_const_matrix_ptr<Ty, _rhs_rows, _rhs_cols, _rhs_rows_padded, _rhs_align>& rhs) = delete;
+
+		inline cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& operator=(
+			const cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) = delete;
+
+		template <std::size_t _rhs_rows, std::size_t _rhs_cols, std::size_t _rhs_rows_padded, std::size_t _rhs_align>
+		inline cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& operator=(
+			const cool::_matrix_ptr<Ty, _rhs_rows, _rhs_cols, _rhs_rows_padded, _rhs_align>& rhs) = delete;
+
 		inline const Ty* data() const noexcept;
 
 	private:
