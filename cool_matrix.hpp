@@ -7,7 +7,6 @@
 
 #include <cstddef>
 #include <initializer_list>
-#include <utility>
 #include <iterator>
 #include <type_traits>
 #include <complex>
@@ -24,6 +23,11 @@
 #ifndef COOL_MATRIX_MM_DEFAULT_KERNEL_SPEC_PS
 #define COOL_MATRIX_MM_DEFAULT_KERNEL_SPEC_PS { 8, 2, 8 }
 #endif // COOL_MATRIX_MM_DEFAULT_KERNEL_SPEC_PS
+
+#ifndef COOL_MATRIX_DEFAULT_ALIGN_SPEC
+#define COOL_MATRIX_DEFAULT_ALIGN_SPEC { 8, 16, 32 }
+#endif // COOL_MATRIX_DEFAULT_ALIGN_SPEC
+
 
 // matrix multiply kernel specifications
 // values : { packed, broadcasted, repeat_threshold }
@@ -54,6 +58,18 @@
 //
 // number of multiply add scalar operations in kernel :
 // packed * broadcasted
+
+
+// matrix align specifications
+// values in byte alignments : { a0, a1, ... , aN }
+//
+// required : a0 < a1 < ... < aN and a1, a2, ... , aN are all powers of 2
+//
+// in a matrix of element type Ty and rows padded to _rows_padded elements,
+// default alignment of matrix will be aj for greatest the j such that
+// _rows_padded * sizeof(Ty) is a multiple of aj and aj is a multiple
+// of alignof(Ty)
+
 
 namespace cool
 {
@@ -94,22 +110,76 @@ namespace cool
 
 namespace cool
 {
-	template <class Ty, std::size_t _rows, std::size_t _cols = 1, std::size_t _rows_padded = _rows> class matrix;
+	// template specializable byte alignment for matrices with specific dimensions
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded = _rows> class matrix_align_spec
+	{
+
+	private:
+
+		static constexpr std::size_t _default_multiples[] = COOL_MATRIX_DEFAULT_ALIGN_SPEC;
+		inline static constexpr std::size_t compute_value() noexcept;
+
+	public:
+
+		// specializable align
+		static constexpr std::size_t value = compute_value();
+	};
+}
+
+
+namespace cool
+{
+#ifndef _COOL_NO_INIT_ENUM
+#define _COOL_NO_INIT_ENUM
+	enum no_init_t { no_init };
+#endif // _COOL_NO_INIT_ENUM
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align> class _matrix_ptr;
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align> class _const_matrix_ptr;
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align> class _matrix_array;
+
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty> class const_matrix_interface;
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty> class matrix_interface;
+
+
+	template <class Ty, std::size_t _rows, std::size_t _cols = 1, std::size_t _rows_padded = _rows,
+		std::size_t _align = cool::matrix_align_spec<Ty, _rows, _cols, _rows_padded>::value
+	>
+	using matrix = cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>>;
+
+	template <class Ty, std::size_t _rows, std::size_t _cols = 1, std::size_t _rows_padded = _rows, std::size_t _align = 0>
+	using matrix_span = cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>>;
+
+	template <class Ty, std::size_t _rows, std::size_t _cols = 1, std::size_t _rows_padded = _rows, std::size_t _align = 0>
+	using const_matrix_span = cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>>;
+
+
+	template <std::size_t _optional_dim, std::size_t _default_dim> class _opt_dim {
+	public:
+		static constexpr std::size_t value = _optional_dim != 0 ? _optional_dim : _default_dim;
+	};
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _opt_rows_padded, std::size_t _opt_align>
+	using matrix_result = cool::matrix<Ty, _rows, _cols, cool::_opt_dim<_opt_rows_padded, _rows>::value,
+		cool::_opt_dim<_opt_align, cool::matrix_align_spec<Ty, _rows, _cols, cool::_opt_dim<_opt_rows_padded, _rows>::value>::value>::value>;
+
+
+	template <class Ty> class cm;
+	template <class Ty> class rm;
+
 
 	namespace matrix_scalar_subroutine
 	{
 		// template specializable functions
 		template <class Ty> static inline Ty conj(const Ty& val) noexcept; // return type must be same type as val
-		template <class Ty> static inline Ty real(const Ty& val) noexcept; // return type must be same type as val
-		template <class Ty> static inline Ty imag(const Ty& val) noexcept; // return type must be same type as val
 		template <class Ty> static inline Ty abs_sq(const Ty& val) noexcept; // return type must be comparable with operator<
 
 		// template specializations
 		template <class Ty> static inline std::complex<Ty> conj(const std::complex<Ty>& val) noexcept;
-		template <class Ty> static inline std::complex<Ty> real(const std::complex<Ty>& val) noexcept;
-		template <class Ty> static inline std::complex<Ty> imag(const std::complex<Ty>& val) noexcept;
 		template <class Ty> static inline Ty abs_sq(const std::complex<Ty>& val) noexcept;
 	}
+
 
 	template <class Ty> class cm
 	{
@@ -121,8 +191,6 @@ namespace cool
 		inline cm(const Ty* ptr) noexcept { m_begin_ptr = ptr; }
 		cm(const cool::cm<Ty>&) noexcept = default;
 		cool::cm<Ty>& operator=(const cool::cm<Ty>&) noexcept = default;
-		cm(cool::cm<Ty>&&) noexcept = default;
-		cool::cm<Ty>& operator=(cool::cm<Ty>&&) noexcept = default;
 		~cm() = default;
 
 		inline const Ty* begin() const noexcept { return m_begin_ptr; }
@@ -142,8 +210,6 @@ namespace cool
 		inline rm(const Ty* ptr) noexcept { m_begin_ptr = ptr; }
 		rm(const cool::rm<Ty>&) noexcept = default;
 		cool::rm<Ty>& operator=(const cool::rm<Ty>&) noexcept = default;
-		rm(cool::rm<Ty>&&) noexcept = default;
-		cool::rm<Ty>& operator=(cool::rm<Ty>&&) noexcept = default;
 		~rm() = default;
 
 		inline const Ty* begin() const noexcept { return m_begin_ptr; }
@@ -153,17 +219,112 @@ namespace cool
 		const Ty* m_begin_ptr;
 	};
 
-#ifndef _COOL_NO_INIT_ENUM
-#define _COOL_NO_INIT_ENUM
-	enum no_init_t { no_init };
-#endif // _COOL_NO_INIT_ENUM
 
-	template <std::size_t _rows, std::size_t _cols> class _diag;
+	// _matrix_ptr
 
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> class matrix
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align> class _matrix_ptr
 	{
 
 	public:
+
+		_matrix_ptr() = delete;
+		inline _matrix_ptr(Ty* ptr) noexcept;
+		inline _matrix_ptr(const cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) noexcept = default;
+		inline ~_matrix_ptr() = default;
+
+		inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& operator=(
+			const cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) noexcept;
+
+		template <std::size_t _rhs_rows, std::size_t _rhs_cols, std::size_t _rhs_rows_padded, std::size_t _rhs_align>
+		inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& operator=(
+			const cool::_matrix_ptr<Ty, _rhs_rows, _rhs_cols, _rhs_rows_padded, _rhs_align>& rhs) noexcept;
+
+		inline Ty* data() noexcept;
+		inline const Ty* data() const noexcept;
+
+	private:
+
+		Ty* m_data_ptr;
+	};
+
+	// _const_matrix_ptr
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align> class _const_matrix_ptr
+	{
+
+	public:
+
+		_const_matrix_ptr() = delete;
+		inline _const_matrix_ptr(const Ty* ptr) noexcept;
+		inline _const_matrix_ptr(const cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) noexcept = default;
+		inline _const_matrix_ptr(const cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) noexcept;
+		inline ~_const_matrix_ptr() = default;
+
+		inline const Ty* data() const noexcept;
+
+	private:
+
+		const Ty* m_data_ptr;
+	};
+
+	// _matrix_array
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align> class alignas(_align) _matrix_array
+	{
+
+	public:
+
+		inline _matrix_array() = default;
+		inline _matrix_array(cool::no_init_t) {}
+
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align>
+		inline _matrix_array(const cool::_matrix_array<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align>& rhs);
+
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align>
+		inline _matrix_array(const cool::_const_matrix_ptr<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align>& rhs);
+
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align>
+		inline _matrix_array(const cool::_matrix_ptr<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align>& rhs);
+
+		inline _matrix_array(Ty rhs);
+
+		constexpr inline _matrix_array(std::initializer_list<Ty> rhs);
+		inline _matrix_array(cool::cm<Ty> rhs);
+		inline _matrix_array(cool::rm<Ty> rhs);
+
+		inline ~_matrix_array() = default;
+
+		inline Ty* data() noexcept;
+		inline const Ty* data() const noexcept;
+
+	private:
+
+		template <class Ty2, std::size_t _rows2, std::size_t _cols2, std::size_t _rows_padded2, std::size_t _align2>
+		friend class cool::_matrix_array;
+
+		Ty m_data[_rows_padded * _cols];
+	};
+
+
+	template <std::size_t _rows, std::size_t _cols> class _diag_length {
+	public:
+		static constexpr std::size_t value = _rows < _cols ? _rows : _cols;
+	};
+
+	// const_matrix_interface
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty> class const_matrix_interface : public _matrix_data_Ty
+	{
+
+	public:
+
+		static_assert(_rows != 0, "cool::matrix...<value_type, cols, rows, rows_padded, align, ...> requirement : rows != 0");
+		static_assert(_cols != 0, "cool::matrix...<value_type, cols, rows, rows_padded, align, ...> requirement : cols != 0");
+		static_assert(_rows <= _rows_padded, "cool::matrix...<value_type, cols, rows, rows_padded, align, ...> requirement : rows <= rows_padded");
+		static_assert(_align% alignof(Ty) == 0, "cool::matrix...<value_type, cols, rows, rows_padded, align, ...> requirement : align mutiple of alignof(value_type)");
+
+
+		using _matrix_data_Ty::_matrix_data_Ty;
 
 		using value_type = Ty;
 		using pointer = Ty*;
@@ -173,186 +334,96 @@ namespace cool
 		using size_type = std::size_t;
 		using difference_type = std::ptrdiff_t;
 
-		static constexpr std::size_t rows = _rows;
-		static constexpr std::size_t cols = _cols;
-		static constexpr std::size_t rows_padded = _rows_padded;
-		static constexpr std::size_t diag_length = _rows < _cols ? _rows : _cols;
-
-		static_assert(_rows != 0, "cool::matrix<value_type, cols, rows, rows_padded> requirement : rows != 0");
-		static_assert(_cols != 0, "cool::matrix<value_type, cols, rows, rows_padded> requirement : cols != 0");
-		static_assert(_rows <= _rows_padded, "cool::matrix<value_type, cols, rows, rows_padded> requirement : rows <= rows_padded");
-
-
-		matrix() = default;
-
-		inline matrix(cool::no_init_t) noexcept {};
-
-		template <std::size_t _rhs_rows_padded>
-		inline matrix(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) noexcept;
-
-		template <std::size_t _rhs_rows_padded>
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& operator=(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) noexcept;
-
-		template <std::size_t _rhs_rows_padded>
-		inline matrix(cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>&& rhs) noexcept;
-
-		template <std::size_t _rhs_rows_padded>
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& operator=(cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>&& rhs) noexcept;
-
-		inline matrix(Ty rhs) noexcept;
-
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& operator=(Ty rhs) noexcept;
-
-		constexpr inline matrix(std::initializer_list<Ty> lst) noexcept;
-
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& operator=(std::initializer_list<Ty> lst) noexcept;
-
-		inline matrix(cool::rm<Ty> lst) noexcept;
-
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& operator=(cool::rm<Ty> lst) noexcept;
-
-		inline matrix(cool::cm<Ty> lst) noexcept;
-
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& operator=(cool::cm<Ty> lst) noexcept;
-
-		~matrix() = default;
-
+		const_matrix_interface() = default;
 
 		constexpr inline std::size_t size() const noexcept;
 		constexpr inline std::size_t size_padded() const noexcept;
 
-		inline Ty* data() noexcept;
-		inline const Ty* data() const noexcept;
+		template <class uint_Ty1, class uint_Ty2> inline const Ty& operator()(uint_Ty1 i, uint_Ty2 j) const noexcept;
+		template <class uint_Ty> inline const Ty& operator[](uint_Ty mem_offset) const noexcept;
 
-		template<class uint_Ty1, class uint_Ty2> inline Ty& operator()(uint_Ty1 i, uint_Ty2 j) noexcept;
-		template<class uint_Ty1, class uint_Ty2> inline const Ty& operator()(uint_Ty1 i, uint_Ty2 j) const noexcept;
 
-		template<class uint_Ty> inline Ty& operator[](uint_Ty mem_offset) noexcept;
-		template<class uint_Ty> inline const Ty& operator[](uint_Ty mem_offset) const noexcept;
+		template <class uint_Ty> inline cool::const_matrix_span<Ty, _rows, 1, _rows, 0> col(uint_Ty j) const noexcept;
 
-		template<class uint_Ty> inline cool::matrix<Ty, _rows, 1, _rows>& col(uint_Ty j) noexcept;
-		template<class uint_Ty> inline const cool::matrix<Ty, _rows, 1, _rows>& col(uint_Ty j) const noexcept;
+		template <class uint_Ty> inline cool::const_matrix_span<Ty, 1, _cols, _rows_padded, 0> row(uint_Ty i) const noexcept;
 
-		template<class uint_Ty> inline cool::matrix<Ty, 1, _cols, _rows_padded>& row(uint_Ty i) noexcept;
-		template<class uint_Ty> inline const cool::matrix<Ty, 1, _cols, _rows_padded>& row(uint_Ty i) const noexcept;
-
-		inline cool::matrix<Ty, 1, cool::_diag<_rows, _cols>::length, _rows_padded + 1>& diag() noexcept;
-		inline const cool::matrix<Ty, 1, cool::_diag<_rows, _cols>::length, _rows_padded + 1>& diag() const noexcept;
+		inline cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0> diag() const noexcept;
 
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty1, class uint_Ty2>
-		inline cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>& blk(uint_Ty1 i, uint_Ty2 j) noexcept;
-		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty1, class uint_Ty2>
-		inline const cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>& blk(uint_Ty1 i, uint_Ty2 j) const noexcept;
-		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty>
-		inline cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>& blk(uint_Ty i) noexcept;
-		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty>
-		inline const cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>& blk(uint_Ty i) const noexcept;
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk(uint_Ty1 i, uint_Ty2 j) const noexcept;
+
+		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty1>
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk(uint_Ty1 i) const noexcept;
+
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1>
-		inline cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>& blk() noexcept;
-		template <std::size_t _blk_rows, std::size_t _blk_cols = 1>
-		inline const cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>& blk() const noexcept;
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk() const noexcept;
+
+		template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0>
+		cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator-() const noexcept;
+
+		template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator+(const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
+
+		template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator-(const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
+
+		template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0>
+		cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator+(Ty rhs) const noexcept;
+
+		template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0>
+		cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator-(Ty rhs) const noexcept;
+
+		template <std::size_t _res_rows_padded = _rows, std::size_t _res_align = cool::matrix_align_spec<Ty, _rows, _cols, _res_rows_padded>::value,
+			std::size_t _rhs_cols, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		cool::matrix<Ty, _rows, _rhs_cols, _res_rows_padded, _res_align> operator*(const cool::const_matrix_interface<Ty, _cols, _rhs_cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
 
 
-		template <std::size_t _rhs_rows_padded>
-		inline cool::matrix<Ty, _rows, _cols> operator-(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept;
-		template <std::size_t _rhs_rows_padded>
-		inline cool::matrix<Ty, _rows, _cols> operator+(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept;
-		inline cool::matrix<Ty, _rows, _cols> operator-(Ty rhs) const noexcept;
-		inline cool::matrix<Ty, _rows, _cols> operator+(Ty rhs) const noexcept;
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		inline bool operator==(const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
 
-		template <std::size_t _rhs_rows_padded>
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& operator-=(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& COOL_MATRIX_RESTRICT rhs) noexcept;
-		template <std::size_t _rhs_rows_padded>
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& operator+=(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& COOL_MATRIX_RESTRICT rhs) noexcept;
-		template <std::size_t _rhs_rows_padded>
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& operator*=(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& COOL_MATRIX_RESTRICT rhs) noexcept;
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		inline bool operator!=(const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
 
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& operator-=(Ty rhs) noexcept;
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& operator+=(Ty rhs) noexcept;
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& operator*=(Ty rhs) noexcept;
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		inline bool operator<=(const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
 
-		template <int _sign = 1, std::size_t _rhs_rows_padded>
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& fmadd(Ty s, const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& COOL_MATRIX_RESTRICT rhs) noexcept;
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		inline bool operator>=(const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
 
-		template <std::size_t _rhs_cols, std::size_t _rhs_rows_padded>
-		inline cool::matrix<Ty, _rows, _rhs_cols> operator*(const cool::matrix<Ty, _cols, _rhs_cols, _rhs_rows_padded>& rhs) const noexcept;
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		inline bool operator<(const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
 
-		template <int _sign = 1, std::size_t _lhs_cols, std::size_t _lhs_rows_padded, std::size_t _rhs_rows_padded>
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& fmadd(
-			const cool::matrix<Ty, _rows, _lhs_cols, _lhs_rows_padded>& COOL_MATRIX_RESTRICT lhs,
-			const cool::matrix<Ty, _lhs_cols, _cols, _rhs_rows_padded>& COOL_MATRIX_RESTRICT rhs) noexcept;
-		template <int _sign = 1, std::size_t _lhs_cols, std::size_t _lhs_rows_padded, std::size_t _rhs_rows_padded>
-		inline cool::matrix<Ty, _rows, _cols, _rows_padded>& fmadd(Ty s,
-			const cool::matrix<Ty, _rows, _lhs_cols, _lhs_rows_padded>& COOL_MATRIX_RESTRICT lhs,
-			const cool::matrix<Ty, _lhs_cols, _cols, _rhs_rows_padded>& COOL_MATRIX_RESTRICT rhs) noexcept;
-
-		template <std::size_t _rhs_rows_padded>
-		inline bool operator==(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept;
-		template <std::size_t _rhs_rows_padded>
-		inline bool operator!=(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept;
-		template <std::size_t _rhs_rows_padded>
-		inline bool operator<=(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept;
-		template <std::size_t _rhs_rows_padded>
-		inline bool operator>=(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept;
-		template <std::size_t _rhs_rows_padded>
-		inline bool operator<(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept;
-		template <std::size_t _rhs_rows_padded>
-		inline bool operator>(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept;
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		inline bool operator>(const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
 
 		inline bool operator==(Ty rhs) const noexcept;
+
 		inline bool operator!=(Ty rhs) const noexcept;
+
 		inline bool operator<=(Ty rhs) const noexcept;
+
 		inline bool operator>=(Ty rhs) const noexcept;
+
 		inline bool operator<(Ty rhs) const noexcept;
+
 		inline bool operator>(Ty rhs) const noexcept;
 
+		// iterator
 
-		class cm_iterator;
-		class cm_const_iterator;
-		class rm_iterator;
-		class rm_const_iterator;
-
-		class cm_iterator_proxy;
 		class cm_const_iterator_proxy;
-		class rm_iterator_proxy;
 		class rm_const_iterator_proxy;
 
-		inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator_proxy cm() noexcept;
-		inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator_proxy cm() const noexcept;
-		inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator_proxy rm() noexcept;
-		inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator_proxy rm() const noexcept;
+		class cm_const_iterator;
+		class rm_const_iterator;
 
-		inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator begin() noexcept;
-		inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator end() noexcept;
-		inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator begin() const noexcept;
-		inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator end() const noexcept;
-		inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cbegin() const noexcept;
-		inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cend() const noexcept;
+		inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator_proxy cm() const noexcept;
+		inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator_proxy rm() const noexcept;
 
-		class cm_iterator_proxy
-		{
+		inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator begin() const noexcept;
+		inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator end() const noexcept;
 
-		public:
-
-			using value_type = Ty;
-			using pointer = Ty*;
-			using const_pointer = const Ty*;
-			using reference = Ty&;
-			using const_reference = const Ty&;
-			using size_type = std::size_t;
-			using difference_type = std::ptrdiff_t;
-
-			inline cm_iterator_proxy(Ty* ptr) noexcept : m_data_ptr(ptr) {}
-
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator begin() const noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator end() const noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cbegin() const noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cend() const noexcept;
-
-		private:
-
-			Ty* m_data_ptr;
-		};
+		inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator cbegin() const noexcept;
+		inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator cend() const noexcept;
 
 		class cm_const_iterator_proxy
 		{
@@ -369,40 +440,14 @@ namespace cool
 
 			inline cm_const_iterator_proxy(const Ty* ptr) noexcept : m_data_ptr(ptr) {}
 
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator begin() const noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator end() const noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cbegin() const noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cend() const noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator begin() const noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator end() const noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator cbegin() const noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator cend() const noexcept;
 
 		private:
 
 			const Ty* m_data_ptr;
-		};
-
-
-		class rm_iterator_proxy
-		{
-
-		public:
-
-			using value_type = Ty;
-			using pointer = Ty*;
-			using const_pointer = const Ty*;
-			using reference = Ty&;
-			using const_reference = const Ty&;
-			using size_type = std::size_t;
-			using difference_type = std::ptrdiff_t;
-
-			inline rm_iterator_proxy(Ty* ptr) noexcept : m_data_ptr(ptr) {}
-
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator begin() const noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator end() const noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator cbegin() const noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator cend() const noexcept;
-
-		private:
-
-			Ty* m_data_ptr;
 		};
 
 		class rm_const_iterator_proxy
@@ -420,53 +465,14 @@ namespace cool
 
 			inline rm_const_iterator_proxy(const Ty* ptr) noexcept : m_data_ptr(ptr) {}
 
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator begin() const noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator end() const noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator cbegin() const noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator cend() const noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator begin() const noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator end() const noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator cbegin() const noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator cend() const noexcept;
 
 		private:
 
 			const Ty* m_data_ptr;
-		};
-
-		class cm_iterator
-		{
-
-		public:
-
-			using value_type = Ty;
-			using pointer = Ty*;
-			using const_pointer = const Ty*;
-			using reference = Ty&;
-			using const_reference = const Ty&;
-			using size_type = std::size_t;
-			using difference_type = std::ptrdiff_t;
-
-			using iterator_category = std::bidirectional_iterator_tag;
-
-			inline cm_iterator(Ty* ptr, std::size_t j) noexcept;
-
-			inline Ty& operator*() const noexcept;
-			inline Ty& operator->() const noexcept;
-
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& operator--() noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& operator++() noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator operator--(int) noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator operator++(int) noexcept;
-
-			inline bool operator==(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& rhs) const noexcept;
-			inline bool operator!=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& rhs) const noexcept;
-			inline bool operator<=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& rhs) const noexcept;
-			inline bool operator>=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& rhs) const noexcept;
-			inline bool operator<(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& rhs) const noexcept;
-			inline bool operator>(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& rhs) const noexcept;
-
-		private:
-
-			Ty* m_data_ptr;
-			std::size_t m_i;
-			std::size_t m_j;
 		};
 
 		class cm_const_iterator
@@ -489,60 +495,21 @@ namespace cool
 			inline const Ty& operator*() const noexcept;
 			inline const Ty& operator->() const noexcept;
 
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& operator--() noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& operator++() noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator operator--(int) noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator operator++(int) noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator& operator--() noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator& operator++() noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator operator--(int) noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator operator++(int) noexcept;
 
-			inline bool operator==(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& rhs) const noexcept;
-			inline bool operator!=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& rhs) const noexcept;
-			inline bool operator<=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& rhs) const noexcept;
-			inline bool operator>=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& rhs) const noexcept;
-			inline bool operator<(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& rhs) const noexcept;
-			inline bool operator>(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& rhs) const noexcept;
+			inline bool operator==(const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator& rhs) const noexcept;
+			inline bool operator!=(const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator& rhs) const noexcept;
+			inline bool operator<=(const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator& rhs) const noexcept;
+			inline bool operator>=(const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator& rhs) const noexcept;
+			inline bool operator<(const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator& rhs) const noexcept;
+			inline bool operator>(const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator& rhs) const noexcept;
 
 		private:
 
 			const Ty* m_data_ptr;
-			std::size_t m_i;
-			std::size_t m_j;
-		};
-
-		class rm_iterator
-		{
-
-		public:
-
-			using value_type = Ty;
-			using pointer = Ty*;
-			using const_pointer = const Ty*;
-			using reference = Ty&;
-			using const_reference = const Ty&;
-			using size_type = std::size_t;
-			using difference_type = std::ptrdiff_t;
-
-			using iterator_category = std::bidirectional_iterator_tag;
-
-			inline rm_iterator(Ty* ptr, std::size_t i) noexcept : m_data_ptr(ptr), m_i(i), m_j(0) {}
-
-			inline Ty& operator*() const noexcept;
-			inline Ty& operator->() const noexcept;
-
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& operator--() noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& operator++() noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator operator--(int) noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator operator++(int) noexcept;
-
-			inline bool operator==(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& rhs) const noexcept;
-			inline bool operator!=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& rhs) const noexcept;
-			inline bool operator<=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& rhs) const noexcept;
-			inline bool operator>=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& rhs) const noexcept;
-			inline bool operator<(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& rhs) const noexcept;
-			inline bool operator>(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& rhs) const noexcept;
-
-		private:
-
-			Ty* m_data_ptr;
 			std::size_t m_i;
 			std::size_t m_j;
 		};
@@ -567,17 +534,17 @@ namespace cool
 			inline const Ty& operator*() const noexcept;
 			inline const Ty& operator->() const noexcept;
 
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& operator--() noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& operator++() noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator operator--(int) noexcept;
-			inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator operator++(int) noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator& operator--() noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator& operator++() noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator operator--(int) noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator operator++(int) noexcept;
 
-			inline bool operator==(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& rhs) const noexcept;
-			inline bool operator!=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& rhs) const noexcept;
-			inline bool operator<=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& rhs) const noexcept;
-			inline bool operator>=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& rhs) const noexcept;
-			inline bool operator<(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& rhs) const noexcept;
-			inline bool operator>(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& rhs) const noexcept;
+			inline bool operator==(const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator& rhs) const noexcept;
+			inline bool operator!=(const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator& rhs) const noexcept;
+			inline bool operator<=(const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator& rhs) const noexcept;
+			inline bool operator>=(const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator& rhs) const noexcept;
+			inline bool operator<(const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator& rhs) const noexcept;
+			inline bool operator>(const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator& rhs) const noexcept;
 
 		private:
 
@@ -585,257 +552,568 @@ namespace cool
 			std::size_t m_i;
 			std::size_t m_j;
 		};
-
-	private:
-
-		Ty m_data[_rows_padded * _cols];
-
-		template <class Ty2, std::size_t _rows2, std::size_t _cols2, std::size_t _rows_padded2> friend class matrix;
 	};
 
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline cool::matrix<Ty, _rows, _cols> operator-(const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept;
 
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline cool::matrix<Ty, _rows, _cols> operator-(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept;
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline cool::matrix<Ty, _rows, _cols> operator+(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept;
+	// matrix_interface
 
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline cool::matrix<Ty, _rows, _cols> operator*(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept;
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty> class matrix_interface
+		: public cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>
+	{
 
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline bool operator==(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept;
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline bool operator!=(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept;
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline bool operator<=(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept;
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline bool operator>=(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept;
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline bool operator<(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept;
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline bool operator>(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept;
+	public:
 
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _lhs_rows_padded, std::size_t _rhs_rows_padded>
-	inline Ty dot(const cool::matrix<Ty, _rows, _cols, _lhs_rows_padded>& lhs, const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) noexcept;
+		using cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::const_matrix_interface;
 
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline cool::matrix<Ty, _cols, _rows> transp(const cool::matrix<Ty, _rows, _cols, _rows_padded>& A) noexcept;
+		matrix_interface() = default;
 
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline cool::matrix<Ty, _cols, _rows> adj(const cool::matrix<Ty, _rows, _cols, _rows_padded>& A) noexcept;
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		inline matrix_interface(const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs);
 
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline cool::matrix<Ty, _rows, _cols> conj(const cool::matrix<Ty, _rows, _cols, _rows_padded>& A) noexcept;
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator=(
+			const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs);
 
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline cool::matrix<Ty, _rows, _cols> real(const cool::matrix<Ty, _rows, _cols, _rows_padded>& A) noexcept;
+		inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator=(Ty rhs);
 
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-	inline cool::matrix<Ty, _rows, _cols> imag(const cool::matrix<Ty, _rows, _cols, _rows_padded>& A) noexcept;
+		inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator=(std::initializer_list<Ty> rhs);
+		inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator=(cool::cm<Ty> rhs);
+		inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator=(cool::rm<Ty> rhs);
 
-	template <class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-	inline cool::matrix<Ty, 3, 1> vxv(const cool::matrix<Ty, 3, 1, _x_rows_padded>& x, const cool::matrix<Ty, 3, 1, _y_rows_padded>& y) noexcept;
+		template <class uint_Ty1, class uint_Ty2> inline Ty& operator()(uint_Ty1 i, uint_Ty2 j) noexcept;
+		template <class uint_Ty1, class uint_Ty2> inline const Ty& operator()(uint_Ty1 i, uint_Ty2 j) const noexcept;
 
-	template <class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-	inline cool::matrix<Ty, 4, 1> vxv(const cool::matrix<Ty, 4, 1, _x_rows_padded>& x, const cool::matrix<Ty, 4, 1, _y_rows_padded>& y) noexcept;
+		template <class uint_Ty> inline Ty& operator[](uint_Ty mem_offset) noexcept;
+		template <class uint_Ty> inline const Ty& operator[](uint_Ty mem_offset) const noexcept;
 
-	template <class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-	inline cool::matrix<Ty, 4, 1> qxq(const cool::matrix<Ty, 4, 1, _x_rows_padded>& x, const cool::matrix<Ty, 4, 1, _y_rows_padded>& y) noexcept;
+		template <class uint_Ty>
+		inline cool::matrix_span<Ty, _rows, 1, _rows, 0> col(uint_Ty j) noexcept;
 
-	template <class Ty, std::size_t Ar, std::size_t _A_rows_padded>
-	inline Ty det(const cool::matrix<Ty, Ar, Ar, _A_rows_padded>& A) noexcept;
+		template <class uint_Ty>
+		inline cool::const_matrix_span<Ty, _rows, 1, _rows, 0> col(uint_Ty j) const noexcept;
 
-	template <class Ty, std::size_t _rows_padded> inline Ty det(const cool::matrix<Ty, 1, 1, _rows_padded>& A) noexcept;
+		template <class uint_Ty>
+		inline cool::matrix_span<Ty, 1, _cols, _rows_padded, 0> row(uint_Ty i) noexcept;
 
-	template <class Ty, std::size_t _rows_padded> inline Ty det(const cool::matrix<Ty, 2, 2, _rows_padded>& A) noexcept;
+		template <class uint_Ty>
+		inline cool::const_matrix_span<Ty, 1, _cols, _rows_padded, 0> row(uint_Ty i) const noexcept;
 
-	template <class Ty, std::size_t _rows_padded> inline Ty det(const cool::matrix<Ty, 3, 3, _rows_padded>& A) noexcept;
+		inline cool::matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0> diag() noexcept;
+		inline cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0> diag() const noexcept;
 
-	template <class Ty, std::size_t _rows_padded> inline Ty det(const cool::matrix<Ty, 4, 4, _rows_padded>& A) noexcept;
+		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty1, class uint_Ty2>
+		inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk(uint_Ty1 i, uint_Ty2 j) noexcept;
 
-	template <class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-	inline Ty det2v(const cool::matrix<Ty, 2, 1, _x_rows_padded>& x, const cool::matrix<Ty, 2, 1, _y_rows_padded>& y) noexcept;
+		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty1, class uint_Ty2>
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk(uint_Ty1 i, uint_Ty2 j) const noexcept;
 
-	template <class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded, std::size_t _z_rows_padded>
-	inline Ty det3v(const cool::matrix<Ty, 3, 1, _x_rows_padded>& x, const cool::matrix<Ty, 3, 1, _y_rows_padded>& y,
-		const cool::matrix<Ty, 3, 1, _z_rows_padded>& z) noexcept;
+		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty1>
+		inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk(uint_Ty1 i) noexcept;
 
-	template <class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded, std::size_t _z_rows_padded, std::size_t _w_rows_padded>
-	inline Ty det4v(const cool::matrix<Ty, 4, 1, _x_rows_padded>& x, const cool::matrix<Ty, 4, 1, _y_rows_padded>& y,
-		const cool::matrix<Ty, 4, 1, _z_rows_padded>& z, const cool::matrix<Ty, 4, 1, _w_rows_padded>& w) noexcept;
+		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty1>
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk(uint_Ty1 i) const noexcept;
 
-	template <class Ty, std::size_t Ar, std::size_t Yc, std::size_t _A_rows_padded, std::size_t _Y_rows_padded>
-	inline cool::matrix<Ty, Ar, Yc> solve(const cool::matrix<Ty, Ar, Ar, _A_rows_padded>& A, const cool::matrix<Ty, Ar, Yc, _Y_rows_padded>& Y) noexcept;
+		template <std::size_t _blk_rows, std::size_t _blk_cols = 1>
+		inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk() noexcept;
 
-	template <class Ty, std::size_t _A_rows_padded, std::size_t _y_rows_padded>
-	inline cool::matrix<Ty, 1, 1> solve(const cool::matrix<Ty, 1, 1, _A_rows_padded>& A, const cool::matrix<Ty, 1, 1, _y_rows_padded>& y) noexcept;
-
-	template <class Ty, std::size_t _A_rows_padded, std::size_t _y_rows_padded>
-	inline cool::matrix<Ty, 2, 1> solve(const cool::matrix<Ty, 2, 2, _A_rows_padded>& A, const cool::matrix<Ty, 2, 1, _y_rows_padded>& y) noexcept;
-
-	template <class Ty, std::size_t _A_rows_padded, std::size_t _y_rows_padded>
-	inline cool::matrix<Ty, 3, 1> solve(const cool::matrix<Ty, 3, 3, _A_rows_padded>& A, const cool::matrix<Ty, 3, 1, _y_rows_padded>& y) noexcept;
-
-	template <class Ty, std::size_t _A_rows_padded, std::size_t _y_rows_padded>
-	inline cool::matrix<Ty, 4, 1> solve(const cool::matrix<Ty, 4, 4, _A_rows_padded>& A, const cool::matrix<Ty, 4, 1, _y_rows_padded>& y) noexcept;
-
-	template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _y_rows_padded>
-	inline cool::matrix<Ty, 2, 1> solve2v(const cool::matrix<Ty, 2, 1, _a0_rows_padded>& a0, const cool::matrix<Ty, 2, 1, _a1_rows_padded>& a1,
-		const cool::matrix<Ty, 2, 1, _y_rows_padded>& y) noexcept;
-
-	template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded, std::size_t _y_rows_padded>
-	inline cool::matrix<Ty, 3, 1> solve3v(const cool::matrix<Ty, 3, 1, _a0_rows_padded>& a0, const cool::matrix<Ty, 3, 1, _a1_rows_padded>& a1,
-		const cool::matrix<Ty, 3, 1, _a2_rows_padded>& a2, const cool::matrix<Ty, 3, 1, _y_rows_padded>& y) noexcept;
-
-	template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded, std::size_t _a3_rows_padded, std::size_t _y_rows_padded>
-	inline cool::matrix<Ty, 4, 1> solve4v(const cool::matrix<Ty, 4, 1, _a0_rows_padded>& a0, const cool::matrix<Ty, 4, 1, _a1_rows_padded>& a1,
-		const cool::matrix<Ty, 4, 1, _a2_rows_padded>& a2, const cool::matrix<Ty, 4, 1, _a3_rows_padded>& a3, const cool::matrix<Ty, 4, 1, _y_rows_padded>& y) noexcept;
-
-	template <class Ty, std::size_t Ar, std::size_t _A_rows_padded>
-	inline cool::matrix<Ty, Ar, Ar> inv(const cool::matrix<Ty, Ar, Ar, _A_rows_padded>& A) noexcept;
-
-	template <class Ty, std::size_t _A_rows_padded>
-	inline cool::matrix<Ty, 1, 1> inv(const cool::matrix<Ty, 1, 1, _A_rows_padded>& A) noexcept;
-
-	template <class Ty, std::size_t _A_rows_padded>
-	inline cool::matrix<Ty, 2, 2> inv(const cool::matrix<Ty, 2, 2, _A_rows_padded>& A) noexcept;
-
-	template <class Ty, std::size_t _A_rows_padded>
-	inline cool::matrix<Ty, 3, 3> inv(const cool::matrix<Ty, 3, 3, _A_rows_padded>& A) noexcept;
-
-	template <class Ty, std::size_t _A_rows_padded>
-	inline cool::matrix<Ty, 4, 4> inv(const cool::matrix<Ty, 4, 4, _A_rows_padded>& A) noexcept;
-
-	template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded>
-	inline cool::matrix<Ty, 2, 2> inv2v(const cool::matrix<Ty, 2, 1, _a0_rows_padded>& a0, const cool::matrix<Ty, 2, 1, _a1_rows_padded>& a1) noexcept;
-
-	template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded>
-	inline cool::matrix<Ty, 3, 3> inv3v(const cool::matrix<Ty, 3, 1, _a0_rows_padded>& a0, const cool::matrix<Ty, 3, 1, _a1_rows_padded>& a1,
-		const cool::matrix<Ty, 3, 1, _a2_rows_padded>& a2) noexcept;
-
-	template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded, std::size_t _a3_rows_padded>
-	inline cool::matrix<Ty, 4, 4> inv4v(const cool::matrix<Ty, 4, 1, _a0_rows_padded>& a0, const cool::matrix<Ty, 4, 1, _a1_rows_padded>& a1,
-		const cool::matrix<Ty, 4, 1, _a2_rows_padded>& a2, const cool::matrix<Ty, 4, 1, _a3_rows_padded>& a3) noexcept;
+		template <std::size_t _blk_rows, std::size_t _blk_cols = 1>
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk() const noexcept;
 
 
-	template <class Ty, std::size_t dim, std::size_t _fx_rows_padded,
-		std::size_t _J_rows_padded, std::size_t _x_rows_padded>
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator+=(
+			const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept;
+
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator-=(
+			const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept;
+
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator*=(
+			const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept;
+
+		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator+=(Ty rhs) noexcept;
+
+		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator-=(Ty rhs) noexcept;
+
+		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator*=(Ty rhs) noexcept;
+
+		template <int _sign = 1, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& fmadd(Ty s,
+			const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept;
+
+		template <int _sign = 1, std::size_t _lhs_cols, std::size_t _rhs_rows_padded, std::size_t _lhs_rows_padded, std::size_t _lhs_align, std::size_t _rhs_align, class _lhs_matrix_data_Ty, class _rhs_matrix_data_Ty>
+		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& fmadd(
+			const cool::const_matrix_interface<Ty, _rows, _lhs_cols, _lhs_rows_padded, _lhs_align, _lhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT lhs,
+			const cool::const_matrix_interface<Ty, _lhs_cols, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept;
+
+		template <int _sign = 1, std::size_t _lhs_cols, std::size_t _rhs_rows_padded, std::size_t _lhs_rows_padded, std::size_t _lhs_align, std::size_t _rhs_align, class _lhs_matrix_data_Ty, class _rhs_matrix_data_Ty>
+		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& fmadd(Ty s,
+			const cool::const_matrix_interface<Ty, _rows, _lhs_cols, _lhs_rows_padded, _lhs_align, _lhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT lhs,
+			const cool::const_matrix_interface<Ty, _lhs_cols, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept;
+
+		// iterators
+
+		class cm_iterator_proxy;
+		class rm_iterator_proxy;
+
+		class cm_iterator;
+		class rm_iterator;
+
+		inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator_proxy cm() noexcept;
+		inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator_proxy rm() noexcept;
+
+		inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator_proxy cm() const noexcept;
+		inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator_proxy rm() const noexcept;
+
+		inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator begin() noexcept;
+		inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator end() noexcept;
+
+		inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator begin() const noexcept;
+		inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator end() const noexcept;
+
+		inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator cbegin() const noexcept;
+		inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator cend() const noexcept;
+
+		class cm_iterator_proxy
+		{
+
+		public:
+
+			using value_type = Ty;
+			using pointer = Ty*;
+			using const_pointer = const Ty*;
+			using reference = Ty&;
+			using const_reference = const Ty&;
+			using size_type = std::size_t;
+			using difference_type = std::ptrdiff_t;
+
+			inline cm_iterator_proxy(Ty* ptr) noexcept : m_data_ptr(ptr) {}
+
+			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator begin() const noexcept;
+			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator end() const noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator cbegin() const noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator cend() const noexcept;
+
+		private:
+
+			Ty* m_data_ptr;
+		};
+
+		class rm_iterator_proxy
+		{
+
+		public:
+
+			using value_type = Ty;
+			using pointer = Ty*;
+			using const_pointer = const Ty*;
+			using reference = Ty&;
+			using const_reference = const Ty&;
+			using size_type = std::size_t;
+			using difference_type = std::ptrdiff_t;
+
+			inline rm_iterator_proxy(Ty* ptr) noexcept : m_data_ptr(ptr) {}
+
+			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator begin() const noexcept;
+			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator end() const noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator cbegin() const noexcept;
+			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator cend() const noexcept;
+
+		private:
+
+			Ty* m_data_ptr;
+		};
+
+		class cm_iterator
+		{
+
+		public:
+
+			using value_type = Ty;
+			using pointer = Ty*;
+			using const_pointer = const Ty*;
+			using reference = Ty&;
+			using const_reference = const Ty&;
+			using size_type = std::size_t;
+			using difference_type = std::ptrdiff_t;
+
+			using iterator_category = std::bidirectional_iterator_tag;
+
+			inline cm_iterator(Ty* ptr, std::size_t j) noexcept;
+
+			inline Ty& operator*() const noexcept;
+			inline Ty& operator->() const noexcept;
+
+			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator& operator--() noexcept;
+			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator& operator++() noexcept;
+			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator operator--(int) noexcept;
+			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator operator++(int) noexcept;
+
+			inline bool operator==(const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator& rhs) const noexcept;
+			inline bool operator!=(const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator& rhs) const noexcept;
+			inline bool operator<=(const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator& rhs) const noexcept;
+			inline bool operator>=(const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator& rhs) const noexcept;
+			inline bool operator<(const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator& rhs) const noexcept;
+			inline bool operator>(const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator& rhs) const noexcept;
+
+		private:
+
+			Ty* m_data_ptr;
+			std::size_t m_i;
+			std::size_t m_j;
+		};
+
+		class rm_iterator
+		{
+
+		public:
+
+			using value_type = Ty;
+			using pointer = Ty*;
+			using const_pointer = const Ty*;
+			using reference = Ty&;
+			using const_reference = const Ty&;
+			using size_type = std::size_t;
+			using difference_type = std::ptrdiff_t;
+
+			using iterator_category = std::bidirectional_iterator_tag;
+
+			inline rm_iterator(Ty* ptr, std::size_t i) noexcept : m_data_ptr(ptr), m_i(i), m_j(0) {}
+
+			inline Ty& operator*() const noexcept;
+			inline Ty& operator->() const noexcept;
+
+			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator& operator--() noexcept;
+			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator& operator++() noexcept;
+			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator operator--(int) noexcept;
+			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator operator++(int) noexcept;
+
+			inline bool operator==(const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator& rhs) const noexcept;
+			inline bool operator!=(const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator& rhs) const noexcept;
+			inline bool operator<=(const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator& rhs) const noexcept;
+			inline bool operator>=(const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator& rhs) const noexcept;
+			inline bool operator<(const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator& rhs) const noexcept;
+			inline bool operator>(const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator& rhs) const noexcept;
+
+		private:
+
+			Ty* m_data_ptr;
+			std::size_t m_i;
+			std::size_t m_j;
+		};
+	};
+
+	// free operator
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator-(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator+(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator*(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept;
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline bool operator==(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept;
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline bool operator!=(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept;
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline bool operator<=(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept;
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline bool operator>=(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept;
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline bool operator<(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept;
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline bool operator>(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept;
+
+	// free functions
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _lhs_rows_padded, std::size_t _rhs_rows_padded,
+		std::size_t _lhs_align, std::size_t _rhs_align, class _lhs_matrix_data_Ty, class _rhs_matrix_data_Ty>
+	inline Ty dot(const cool::const_matrix_interface<Ty, _rows, _cols, _lhs_rows_padded, _lhs_align, _lhs_matrix_data_Ty>& lhs,
+		const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) noexcept;
+
+	template <class Ty, std::size_t _rows, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline Ty trace(const cool::const_matrix_interface<Ty, _rows, _rows, _rows_padded, _align, _matrix_data_Ty>& A) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _rows, std::size_t _cols,
+		std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_align> transp(
+		const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& A) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _rows, std::size_t _cols,
+		std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_align> adj(
+		const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& A) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded,
+		std::size_t _x_align, std::size_t _y_align, class _x_matrix_data_Ty, class _y_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> vxv(
+		const cool::const_matrix_interface<Ty, 3, 1, _x_rows_padded, _x_align, _x_matrix_data_Ty>& x,
+		const cool::const_matrix_interface<Ty, 3, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded,
+		std::size_t _x_align, std::size_t _y_align, class _x_matrix_data_Ty, class _y_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> vxv(
+		const cool::const_matrix_interface<Ty, 4, 1, _x_rows_padded, _x_align, _x_matrix_data_Ty>& x,
+		const cool::const_matrix_interface<Ty, 4, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded,
+		std::size_t _x_align, std::size_t _y_align, class _x_matrix_data_Ty, class _y_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> qxq(
+		const cool::const_matrix_interface<Ty, 4, 1, _x_rows_padded, _x_align, _x_matrix_data_Ty>& x,
+		const cool::const_matrix_interface<Ty, 4, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty,
+		std::size_t _x_rows_padded, std::size_t _x_align, class _x_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> qconj(
+		const cool::const_matrix_interface<Ty, 4, 1, _x_rows_padded, _x_align, _x_matrix_data_Ty>& x) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty,
+		std::size_t _x_rows_padded, std::size_t _x_align, class _x_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> qinv(
+		const cool::const_matrix_interface<Ty, 4, 1, _x_rows_padded, _x_align, _x_matrix_data_Ty>& x) noexcept;
+
+	template <class Ty, std::size_t _dim, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline Ty det(const cool::const_matrix_interface<Ty, _dim, _dim, _rows_padded, _align, _matrix_data_Ty>& A) noexcept;
+
+	template <class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline Ty det(const cool::const_matrix_interface<Ty, 1, 1, _rows_padded, _align, _matrix_data_Ty>& A) noexcept;
+
+	template <class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline Ty det(const cool::const_matrix_interface<Ty, 2, 2, _rows_padded, _align, _matrix_data_Ty>& A) noexcept;
+
+	template <class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline Ty det(const cool::const_matrix_interface<Ty, 3, 3, _rows_padded, _align, _matrix_data_Ty>& A) noexcept;
+
+	template <class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline Ty det(const cool::const_matrix_interface<Ty, 4, 4, _rows_padded, _align, _matrix_data_Ty>& A) noexcept;
+
+	template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded,
+		std::size_t _a0_align, std::size_t _a1_align,
+		class _a0_matrix_data_Ty, class _a1_matrix_data_Ty
+	>
+	inline Ty det2v(
+		const cool::const_matrix_interface<Ty, 2, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+		const cool::const_matrix_interface<Ty, 2, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1) noexcept;
+
+	template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded,
+		std::size_t _a0_align, std::size_t _a1_align, std::size_t _a2_align,
+		class _a0_matrix_data_Ty, class _a1_matrix_data_Ty, class _a2_matrix_data_Ty
+	>
+	inline Ty det3v(
+		const cool::const_matrix_interface<Ty, 3, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+		const cool::const_matrix_interface<Ty, 3, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1,
+		const cool::const_matrix_interface<Ty, 3, 1, _a2_rows_padded, _a2_align, _a2_matrix_data_Ty>& a2) noexcept;
+
+	template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded, std::size_t _a3_rows_padded,
+		std::size_t _a0_align, std::size_t _a1_align, std::size_t _a2_align, std::size_t _a3_align,
+		class _a0_matrix_data_Ty, class _a1_matrix_data_Ty, class _a2_matrix_data_Ty, class _a3_matrix_data_Ty
+	>
+	inline Ty det4v(
+		const cool::const_matrix_interface<Ty, 4, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+		const cool::const_matrix_interface<Ty, 4, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1,
+		const cool::const_matrix_interface<Ty, 4, 1, _a2_rows_padded, _a2_align, _a2_matrix_data_Ty>& a2,
+		const cool::const_matrix_interface<Ty, 4, 1, _a3_rows_padded, _a3_align, _a3_matrix_data_Ty>& a3) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _dim, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline cool::matrix_result<Ty, _dim, _dim, _opt_res_rows_padded, _opt_res_align> inv(
+		const cool::const_matrix_interface<Ty, _dim, _dim, _rows_padded, _align, _matrix_data_Ty>& A) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline cool::matrix_result<Ty, 1, 1, _opt_res_rows_padded, _opt_res_align> inv(
+		const cool::const_matrix_interface<Ty, 1, 1, _rows_padded, _align, _matrix_data_Ty>& A) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline cool::matrix_result<Ty, 2, 2, _opt_res_rows_padded, _opt_res_align> inv(
+		const cool::const_matrix_interface<Ty, 2, 2, _rows_padded, _align, _matrix_data_Ty>& A) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline cool::matrix_result<Ty, 3, 3, _opt_res_rows_padded, _opt_res_align> inv(
+		const cool::const_matrix_interface<Ty, 3, 3, _rows_padded, _align, _matrix_data_Ty>& A) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline cool::matrix_result<Ty, 4, 4, _opt_res_rows_padded, _opt_res_align> inv(
+		const cool::const_matrix_interface<Ty, 4, 4, _rows_padded, _align, _matrix_data_Ty>& A) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty,
+		std::size_t _a0_rows_padded, std::size_t _a1_rows_padded,
+		std::size_t _a0_align, std::size_t _a1_align,
+		class _a0_matrix_data_Ty, class _a1_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 2, 2, _opt_res_rows_padded, _opt_res_align> inv2v(
+		const cool::const_matrix_interface<Ty, 2, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+		const cool::const_matrix_interface<Ty, 2, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty,
+		std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded,
+		std::size_t _a0_align, std::size_t _a1_align, std::size_t _a2_align,
+		class _a0_matrix_data_Ty, class _a1_matrix_data_Ty, class _a2_matrix_data_Ty, class _y_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 3, 3, _opt_res_rows_padded, _opt_res_align> inv3v(
+		const cool::const_matrix_interface<Ty, 3, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+		const cool::const_matrix_interface<Ty, 3, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1,
+		const cool::const_matrix_interface<Ty, 3, 1, _a2_rows_padded, _a2_align, _a2_matrix_data_Ty>& a2) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty,
+		std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded, std::size_t _a3_rows_padded,
+		std::size_t _a0_align, std::size_t _a1_align, std::size_t _a2_align, std::size_t _a3_align,
+		class _a0_matrix_data_Ty, class _a1_matrix_data_Ty, class _a2_matrix_data_Ty, class _a3_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 4, 4, _opt_res_rows_padded, _opt_res_align> inv4v(
+		const cool::const_matrix_interface<Ty, 4, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+		const cool::const_matrix_interface<Ty, 4, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1,
+		const cool::const_matrix_interface<Ty, 4, 1, _a2_rows_padded, _a2_align, _a2_matrix_data_Ty>& a2,
+		const cool::const_matrix_interface<Ty, 4, 1, _a3_rows_padded, _a3_align, _a3_matrix_data_Ty>& a3) noexcept;
+
+	template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _dim, std::size_t _Y_cols,
+		std::size_t _A_rows_padded, std::size_t _Y_rows_padded, std::size_t _A_align, std::size_t _Y_align, class _A_matrix_data_Ty, class _Y_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, _dim, _Y_cols, _opt_res_rows_padded, _opt_res_align> solve(
+		const cool::const_matrix_interface<Ty, _dim, _dim, _A_rows_padded, _A_align, _A_matrix_data_Ty>& A,
+		const cool::const_matrix_interface<Ty, _dim, _Y_cols, _Y_rows_padded, _Y_align, _Y_matrix_data_Ty>& Y) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _A_rows_padded,
+		std::size_t _y_rows_padded, std::size_t _A_align, std::size_t _y_align, class _A_matrix_data_Ty, class _y_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 1, 1, _opt_res_rows_padded, _opt_res_align> solve(
+		const cool::const_matrix_interface<Ty, 1, 1, _A_rows_padded, _A_align, _A_matrix_data_Ty>& A,
+		const cool::const_matrix_interface<Ty, 1, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _A_rows_padded,
+		std::size_t _y_rows_padded, std::size_t _A_align, std::size_t _y_align, class _A_matrix_data_Ty, class _y_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 2, 1, _opt_res_rows_padded, _opt_res_align> solve(
+		const cool::const_matrix_interface<Ty, 2, 2, _A_rows_padded, _A_align, _A_matrix_data_Ty>& A,
+		const cool::const_matrix_interface<Ty, 2, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _A_rows_padded, std::size_t _y_rows_padded,
+		std::size_t _A_align, std::size_t _y_align, class _A_matrix_data_Ty, class _y_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> solve(
+		const cool::const_matrix_interface<Ty, 3, 3, _A_rows_padded, _A_align, _A_matrix_data_Ty>& A,
+		const cool::const_matrix_interface<Ty, 3, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _A_rows_padded, std::size_t _y_rows_padded,
+		std::size_t _A_align, std::size_t _y_align, class _A_matrix_data_Ty, class _y_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> solve(
+		const cool::const_matrix_interface<Ty, 4, 4, _A_rows_padded, _A_align, _A_matrix_data_Ty>& A,
+		const cool::const_matrix_interface<Ty, 4, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty,
+		std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _y_rows_padded,
+		std::size_t _a0_align, std::size_t _a1_align, std::size_t _y_align,
+		class _a0_matrix_data_Ty, class _a1_matrix_data_Ty, class _y_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 2, 1, _opt_res_rows_padded, _opt_res_align> solve2v(
+		const cool::const_matrix_interface<Ty, 2, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+		const cool::const_matrix_interface<Ty, 2, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1,
+		const cool::const_matrix_interface<Ty, 2, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty,
+		std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded, std::size_t _y_rows_padded,
+		std::size_t _a0_align, std::size_t _a1_align, std::size_t _a2_align, std::size_t _y_align,
+		class _a0_matrix_data_Ty, class _a1_matrix_data_Ty, class _a2_matrix_data_Ty, class _y_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> solve3v(
+		const cool::const_matrix_interface<Ty, 3, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+		const cool::const_matrix_interface<Ty, 3, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1,
+		const cool::const_matrix_interface<Ty, 3, 1, _a2_rows_padded, _a2_align, _a2_matrix_data_Ty>& a2,
+		const cool::const_matrix_interface<Ty, 3, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept;
+
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty,
+		std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded, std::size_t _a3_rows_padded, std::size_t _y_rows_padded,
+		std::size_t _a0_align, std::size_t _a1_align, std::size_t _a2_align, std::size_t _a3_align, std::size_t _y_align,
+		class _a0_matrix_data_Ty, class _a1_matrix_data_Ty, class _a2_matrix_data_Ty, class _a3_matrix_data_Ty, class _y_matrix_data_Ty
+	>
+	inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> solve4v(
+		const cool::const_matrix_interface<Ty, 4, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+		const cool::const_matrix_interface<Ty, 4, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1,
+		const cool::const_matrix_interface<Ty, 4, 1, _a2_rows_padded, _a2_align, _a2_matrix_data_Ty>& a2,
+		const cool::const_matrix_interface<Ty, 4, 1, _a3_rows_padded, _a3_align, _a3_matrix_data_Ty>& a3,
+		const cool::const_matrix_interface<Ty, 4, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept;
+
+	template <class params_Ty, class Ty, std::size_t _dim,
+		std::size_t _fx_rows_padded, std::size_t _J_rows_padded, std::size_t _xref_rows_padded, std::size_t _xarg_rows_padded, std::size_t _y_rows_padded,
+		std::size_t _fx_align, std::size_t _J_align, std::size_t _xref_align, std::size_t _xarg_align, std::size_t _y_align,
+		class _x_matrix_data_Ty, class _y_matrix_data_Ty
+	>
 	inline int nonlinear_solve(
-		cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&),
-		cool::matrix<Ty, dim, dim, _J_rows_padded>(*Jfn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&),
-		cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-		Ty tol, int iter);
+		cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty),
+		cool::matrix<Ty, _dim, _dim, _J_rows_padded, _J_align>(*Jfn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty),
+		cool::matrix_interface<Ty, _dim, 1, _xref_rows_padded, _xref_align, _x_matrix_data_Ty>& xref,
+		const cool::const_matrix_interface<Ty, _dim, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y,
+		Ty tol, int iter, params_Ty params) noexcept;
 
-	template <class Ty, std::size_t dim, std::size_t _fx_rows_padded, std::size_t _J_rows_padded,
-		std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-	inline int nonlinear_solve(
-		cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&),
-		cool::matrix<Ty, dim, dim, _J_rows_padded>(*Jfn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&),
-		cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-		const cool::matrix<Ty, dim, 1, _y_rows_padded>& y,
-		Ty tol, int iter);
-
-	template <class params_Ty, class Ty, std::size_t dim, std::size_t _fx_rows_padded,
-		std::size_t _J_rows_padded, std::size_t _x_rows_padded>
-	inline int nonlinear_solve(
-		cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&, params_Ty),
-		cool::matrix<Ty, dim, dim, _J_rows_padded>(*Jfn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&, params_Ty),
-		cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-		Ty tol, int iter, params_Ty params);
-
-	template <class params_Ty, class Ty, std::size_t dim, std::size_t _fx_rows_padded,
-		std::size_t _J_rows_padded, std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-	inline int nonlinear_solve(
-		cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&, params_Ty),
-		cool::matrix<Ty, dim, dim, _J_rows_padded>(*Jfn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&, params_Ty),
-		cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-		const cool::matrix<Ty, dim, 1, _y_rows_padded>& y,
-		Ty tol, int iter, params_Ty params);
-
-	template <class Ty, std::size_t dim, std::size_t _fx_rows_padded,
-		std::size_t _Jinv_rows_padded, std::size_t _x_rows_padded>
+	template <class params_Ty, class Ty, std::size_t dim,
+		std::size_t _fx_rows_padded, std::size_t _Jinv_rows_padded, std::size_t _xref_rows_padded, std::size_t _xarg_rows_padded, std::size_t _y_rows_padded,
+		std::size_t _fx_align, std::size_t _Jinv_align, std::size_t _xref_align, std::size_t _xarg_align, std::size_t _y_align,
+		class _Jinv_matrix_data_Ty, class _x_matrix_data_Ty, class _y_matrix_data_Ty
+	>
 	inline int nonlinear_qn_solve(
-		cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&),
-		cool::matrix<Ty, dim, dim, _Jinv_rows_padded>* Jinvptr,
-		cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-		Ty tol, int iter);
+		cool::matrix<Ty, dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty),
+		cool::matrix_interface<Ty, dim, dim, _Jinv_rows_padded, _Jinv_align, _Jinv_matrix_data_Ty>& Jinvref,
+		cool::matrix_interface<Ty, dim, 1, _xref_rows_padded, _xref_align, _x_matrix_data_Ty>& xref,
+		const cool::const_matrix_interface<Ty, dim, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y,
+		Ty tol, int iter, params_Ty params) noexcept;
 
-	template <class Ty, std::size_t dim, std::size_t _fx_rows_padded, std::size_t _Jinv_rows_padded,
-		std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-	inline int nonlinear_qn_solve(
-		cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&),
-		cool::matrix<Ty, dim, dim, _Jinv_rows_padded>* Jinvptr,
-		cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-		const cool::matrix<Ty, dim, 1, _y_rows_padded>& y,
-		Ty tol, int iter);
+	// lu_matrix
 
-	template <class params_Ty, class Ty, std::size_t dim, std::size_t _fx_rows_padded,
-		std::size_t _Jinv_rows_padded, std::size_t _x_rows_padded>
-	inline int nonlinear_qn_solve(
-		cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&, params_Ty),
-		cool::matrix<Ty, dim, dim, _Jinv_rows_padded>* Jinvptr,
-		cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-		Ty tol, int iter, params_Ty params);
-
-	template <class params_Ty, class Ty, std::size_t dim, std::size_t _fx_rows_padded,
-		std::size_t _Jinv_rows_padded, std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-	inline int nonlinear_qn_solve(
-		cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&, params_Ty),
-		cool::matrix<Ty, dim, dim, _Jinv_rows_padded>* Jinvptr,
-		cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-		const cool::matrix<Ty, dim, 1, _y_rows_padded>& y,
-		Ty tol, int iter, params_Ty params);
-
-
-	template <class Ty, std::size_t Ar> class lu_matrix : public cool::matrix<Ty, Ar, Ar>
+	template <class Ty, std::size_t _dim, std::size_t _rows_padded = _dim, std::size_t _align = cool::matrix_align_spec<Ty, _dim, _dim, _rows_padded>::value> class lu_matrix : public cool::matrix<Ty, _dim, _dim, _rows_padded, _align>
 	{
 
 	public:
 
 		lu_matrix() noexcept = default;
-		lu_matrix(const cool::lu_matrix<Ty, Ar>& rhs) noexcept = default;
-		cool::lu_matrix<Ty, Ar>& operator=(const cool::lu_matrix<Ty, Ar>& rhs) noexcept = default;
-		lu_matrix(cool::lu_matrix<Ty, Ar>&& rhs) noexcept = default;
-		cool::lu_matrix<Ty, Ar>& operator=(cool::lu_matrix<Ty, Ar>&& rhs) noexcept = default;
+		lu_matrix(const cool::lu_matrix<Ty, _dim, _rows_padded, _align>& rhs) noexcept = default;
+		cool::lu_matrix<Ty, _dim, _rows_padded, _align>& operator=(const cool::lu_matrix<Ty, _dim, _rows_padded, _align>& rhs) noexcept = default;
+		lu_matrix(cool::lu_matrix<Ty, _dim, _rows_padded, _align>&& rhs) noexcept = default;
+		cool::lu_matrix<Ty, _dim, _rows_padded, _align>& operator=(cool::lu_matrix<Ty, _dim, _rows_padded, _align>&& rhs) noexcept = default;
 		~lu_matrix() = default;
 
-		template <std::size_t _A_rows_padded>
-		inline lu_matrix(const cool::matrix<Ty, Ar, Ar, _A_rows_padded>& rhs) noexcept : cool::matrix<Ty, Ar, Ar>(rhs) {}
-		template <std::size_t _A_rows_padded>
-		inline lu_matrix(cool::matrix<Ty, Ar, Ar, _A_rows_padded>&& rhs) noexcept : cool::matrix<Ty, Ar, Ar>(std::move(rhs)) {}
+		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		inline lu_matrix(const cool::const_matrix_interface<Ty, _dim, _dim, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) noexcept : cool::matrix<Ty, _dim, _dim, _rows_padded, _align>(rhs) {}
 
 		inline Ty det() const noexcept;
-		inline Ty diag_ratio() const noexcept;
-		template <std::size_t Yc, std::size_t _Y_rows_padded> inline cool::matrix<Ty, Ar, Yc> solve(const cool::matrix<Ty, Ar, Yc, _Y_rows_padded>& Y) const noexcept;
-		inline cool::matrix<Ty, Ar, Ar> inv() const noexcept;
-		inline cool::matrix<Ty, Ar, Ar> lower() const noexcept;
-		inline cool::matrix<Ty, Ar, Ar> upper() const noexcept;
 
-		std::size_t perm[Ar];
+		inline Ty diag_ratio() const noexcept;
+
+		template <std::size_t _rhs_cols, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+		inline cool::matrix<Ty, _dim, _rhs_cols, _rows_padded, _align> solve(const cool::const_matrix_interface<Ty, _dim, _rhs_cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& Y) const noexcept;
+
+		inline cool::matrix<Ty, _dim, _dim, _rows_padded, _align> inv() const noexcept;
+
+		inline cool::matrix<Ty, _dim, _dim, _rows_padded, _align> lower() const noexcept;
+		inline cool::matrix<Ty, _dim, _dim, _rows_padded, _align> upper() const noexcept;
+
+		std::size_t perm[_dim];
 		bool flipped;
 	};
 
-	template <class Ty, std::size_t Ar, std::size_t _A_rows_padded>
-	inline cool::lu_matrix<Ty, Ar> lu(const cool::matrix<Ty, Ar, Ar, _A_rows_padded>& A) noexcept;
-
-	template <std::size_t _rows, std::size_t _cols> class _diag
-	{
-
-	public:
-
-		static constexpr std::size_t length = _rows < _cols ? _rows : _cols;
-	};
-
-#if defined(_COOL_MATRIX_HPP) && (defined(_LIBCPP_IOSTREAM) || defined(_GLIBCXX_IOSTREAM) || defined(_IOSTREAM_))
-	//	template <class Ty> inline void print_matrix(const Ty* const ptr, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded,
-	//		std::size_t _rows_blk, std::size_t _cols_blk, std::streamsize _cell_width) noexcept;
-#endif // defined(_COOL_MATRIX_HPP) && (defined(_LIBCPP_IOSTREAM) || defined(_GLIBCXX_IOSTREAM) || defined(_IOSTREAM_))
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _dim, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _matrix_data_Ty>
+	inline cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::value, cool::_opt_dim<_opt_res_align, cool::matrix_align_spec<Ty, _dim, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::value>::value>::value> lu(
+		const cool::const_matrix_interface<Ty, _dim, _dim, _rhs_rows_padded, _rhs_align, _matrix_data_Ty>& rhs) noexcept;
 }
 
 
 // detail
+
+// matrix_multiply_kernel_spec
 
 template <class Ty, std::size_t _lhs_rows, std::size_t _rhs_cols, std::size_t _lhs_cols>
 constexpr std::size_t cool::matrix_multiply_kernel_spec<Ty, _lhs_rows, _rhs_cols, _lhs_cols>::compute_packed_param() noexcept
@@ -874,49 +1152,147 @@ constexpr std::size_t cool::matrix_multiply_kernel_spec<Ty, _lhs_rows, _rhs_cols
 		_default_kernel_ps[2] : cool::matrix_type_multiply_kernel_spec<Ty>::repeat_threshold;
 }
 
-template <class Ty> inline Ty cool::matrix_scalar_subroutine::conj(const Ty& val) noexcept
+// matrix_align_spec
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
+inline constexpr std::size_t cool::matrix_align_spec<Ty, _rows, _cols, _rows_padded>::compute_value() noexcept
 {
-	return val;
+	constexpr std::size_t _multiple_count = sizeof(_default_multiples) / sizeof(std::size_t);
+
+	for (std::size_t n = _multiple_count; n > 0; )
+	{
+		n--;
+		if (_default_multiples[n] != 0)
+		{
+			if (((_rows_padded * sizeof(Ty)) % _default_multiples[n] == 0)
+				&& (_default_multiples[n] % alignof(Ty) == 0))
+			{
+				return _default_multiples[n];
+			}
+		}
+	}
+
+	return 0;
 }
 
-template <class Ty> inline std::complex<Ty> cool::matrix_scalar_subroutine::conj(const std::complex<Ty>& val) noexcept
-{
-	return std::conj(val);
-}
+// matrix_scalar_subroutine
 
-template <class Ty> inline Ty cool::matrix_scalar_subroutine::real(const Ty& val) noexcept
-{
-	return val;
-}
+template <class Ty> inline Ty cool::matrix_scalar_subroutine::conj(const Ty& val) noexcept { return val; }
 
-template <class Ty> inline std::complex<Ty> cool::matrix_scalar_subroutine::real(const std::complex<Ty>& val) noexcept
-{
-	return std::complex<Ty>(std::real(val));
-}
+template <class Ty> inline std::complex<Ty> cool::matrix_scalar_subroutine::conj(const std::complex<Ty>& val) noexcept { return std::conj(val); }
 
-template <class Ty> inline Ty cool::matrix_scalar_subroutine::imag(const Ty& val) noexcept
-{
-	return static_cast<Ty>(0);
-}
-
-template <class Ty> inline std::complex<Ty> cool::matrix_scalar_subroutine::imag(const std::complex<Ty>& val) noexcept
-{
-	return std::complex<Ty>(std::imag(val));
-}
-
-template <class Ty> inline Ty cool::matrix_scalar_subroutine::abs_sq(const Ty& val) noexcept
-{
-	return val * val;
-}
+template <class Ty> inline Ty cool::matrix_scalar_subroutine::abs_sq(const Ty& val) noexcept { return val * cool::matrix_scalar_subroutine::conj(val); }
 
 template <class Ty> inline Ty cool::matrix_scalar_subroutine::abs_sq(const std::complex<Ty>& val) noexcept
 {
-	return std::real(val) * std::real(val) + std::imag(val) * std::imag(val);
+	Ty re = val.real();
+	Ty im = val.imag();
+
+	return re * re + im * im;
 }
 
+// _matrix_ptr
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>::matrix(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>::_matrix_ptr(Ty* ptr) noexcept : m_data_ptr(ptr) {}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>::operator=(
+	const cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	Ty* res_ptr = m_data_ptr;
+	const Ty* rhs_ptr = rhs.data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
+		{
+			*(res_ptr + n) = *(rhs_ptr + n);
+		}
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _rows_padded * j) = *(rhs_ptr + i + _rows_padded * j);
+			}
+		}
+	}
+
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+template <std::size_t _rhs_rows, std::size_t _rhs_cols, std::size_t _rhs_rows_padded, std::size_t _rhs_align>
+inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>::operator=(
+	const cool::_matrix_ptr<Ty, _rhs_rows, _rhs_cols, _rhs_rows_padded, _rhs_align>& rhs) noexcept
+{
+	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+
+	Ty* res_ptr = m_data_ptr;
+	const Ty* rhs_ptr = rhs.data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
+		{
+			*(res_ptr + n) = *(rhs_ptr + n);
+		}
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _rows_padded * j) = *(rhs_ptr + i + _rows_padded * j);
+			}
+		}
+	}
+
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+inline Ty* cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>::data() noexcept
+{
+	return m_data_ptr;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+inline const Ty* cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>::data() const noexcept
+{
+	return m_data_ptr;
+}
+
+// _const_matrix_ptr
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+inline cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>::_const_matrix_ptr(const Ty* ptr) noexcept : m_data_ptr(ptr) {}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+inline cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>::_const_matrix_ptr(const cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) noexcept
+	: m_data_ptr(rhs.data()) {}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+inline const Ty* cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>::data() const noexcept
+{
+	return m_data_ptr;
+}
+
+// _matrix_array
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+template <std::size_t _rhs_rows_padded, std::size_t _rhs_align>
+inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_array(const cool::_matrix_array<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align>& rhs)
 {
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 
@@ -941,18 +1317,22 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>::matrix(const cool::matrix<T
 	}
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator=(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+template <std::size_t _rhs_rows_padded, std::size_t _rhs_align>
+inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_array(const cool::_const_matrix_ptr<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align>& rhs)
 {
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 
+	Ty* res_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
+
 	if (_contiguous)
 	{
 		constexpr std::size_t _size = _rows * _cols;
 
 		for (std::size_t n = 0; n < _size; n++)
 		{
-			m_data[n] = rhs.m_data[n];
+			m_data[n] = *(rhs_ptr + n);
 		}
 	}
 	else
@@ -961,25 +1341,27 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 		{
 			for (std::size_t i = 0; i < _rows; i++)
 			{
-				m_data[i + _rows_padded * j] = rhs.m_data[i + _rhs_rows_padded * j];
+				m_data[i + _rows_padded * j] = *(rhs_ptr + i + _rhs_rows_padded * j);
 			}
 		}
 	}
-	return *this;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>::matrix(cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>&& rhs) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+template <std::size_t _rhs_rows_padded, std::size_t _rhs_align>
+inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_array(const cool::_matrix_ptr<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align>& rhs)
 {
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 
+	const Ty* rhs_ptr = rhs.data();
+
 	if (_contiguous)
 	{
 		constexpr std::size_t _size = _rows * _cols;
 
 		for (std::size_t n = 0; n < _size; n++)
 		{
-			m_data[n] = std::move(rhs.m_data[n]);
+			m_data[n] = *(rhs_ptr + n);
 		}
 	}
 	else
@@ -988,51 +1370,39 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>::matrix(cool::matrix<Ty, _ro
 		{
 			for (std::size_t i = 0; i < _rows; i++)
 			{
-				m_data[i + _rows_padded * j] = std::move(rhs.m_data[i + _rhs_rows_padded * j]);
+				m_data[i + _rows_padded * j] = *(rhs_ptr + i + _rhs_rows_padded * j);
 			}
 		}
 	}
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator=(cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>&& rhs) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_array(Ty rhs)
 {
-	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	constexpr std::size_t _size_padded = _rows_padded * _cols;
 
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
+	Ty* res_ptr = this->data();
 
-		for (std::size_t n = 0; n < _size; n++)
-		{
-			m_data[n] = std::move(rhs.m_data[n]);
-		}
-	}
-	else
+	for (std::size_t n = 0; n < _size_padded; n++)
 	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				m_data[i + _rows_padded * j] = std::move(rhs.m_data[i + _rhs_rows_padded * j]);
-			}
-		}
+		*(res_ptr + n) = rhs;
 	}
-	return *this;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>::matrix(Ty rhs) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+constexpr inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_array(std::initializer_list<Ty> rhs) : m_data{}
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 
+	const Ty* rhs_ptr = rhs.begin();
+
 	if (_contiguous)
 	{
 		constexpr std::size_t _size = _rows * _cols;
 
 		for (std::size_t n = 0; n < _size; n++)
 		{
-			m_data[n] = rhs;
+			m_data[n] = *(rhs_ptr + n);
 		}
 	}
 	else
@@ -1041,24 +1411,26 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>::matrix(Ty rhs) noexcept
 		{
 			for (std::size_t i = 0; i < _rows; i++)
 			{
-				m_data[i + _rows_padded * j] = rhs;
+				m_data[i + _rows_padded * j] = *(rhs_ptr + i + _rows * j);
 			}
 		}
 	}
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator=(Ty rhs) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_array(cool::cm<Ty> rhs)
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 
+	const Ty* rhs_ptr = rhs.begin();
+
 	if (_contiguous)
 	{
 		constexpr std::size_t _size = _rows * _cols;
 
 		for (std::size_t n = 0; n < _size; n++)
 		{
-			m_data[n] = rhs;
+			m_data[n] = *(rhs_ptr + n);
 		}
 	}
 	else
@@ -1067,284 +1439,114 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 		{
 			for (std::size_t i = 0; i < _rows; i++)
 			{
-				m_data[i + _rows_padded * j] = rhs;
-			}
-		}
-	}
-	return *this;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-constexpr inline cool::matrix<Ty, _rows, _cols, _rows_padded>::matrix(std::initializer_list<Ty> lst) noexcept : m_data{}
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	const Ty* ptr = lst.begin();
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-
-		for (std::size_t n = 0; n < _size; n++)
-		{
-			m_data[n] = *ptr++;
-		}
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				m_data[i + _rows_padded * j] = *ptr++;
+				m_data[i + _rows_padded * j] = *(rhs_ptr + i + _rows * j);
 			}
 		}
 	}
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator=(std::initializer_list<Ty> lst) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_array(cool::rm<Ty> rhs)
 {
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+	const Ty* rhs_ptr = rhs.begin();
 
-	const Ty* ptr = lst.begin();
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-
-		for (std::size_t n = 0; n < _size; n++)
-		{
-			m_data[n] = *ptr++;
-		}
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				m_data[i + _rows_padded * j] = *ptr++;
-			}
-		}
-	}
-	return *this;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>::matrix(cool::cm<Ty> lst) noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	const Ty* ptr = lst.begin();
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-
-		for (std::size_t n = 0; n < _size; n++)
-		{
-			m_data[n] = *ptr++;
-		}
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				m_data[i + _rows_padded * j] = *ptr++;
-			}
-		}
-	}
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator=(cool::cm<Ty> lst) noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	const Ty* ptr = lst.begin();
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-
-		for (std::size_t n = 0; n < _size; n++)
-		{
-			m_data[n] = *ptr++;
-		}
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				m_data[i + _rows_padded * j] = *ptr++;
-			}
-		}
-	}
-	return *this;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>::matrix(cool::rm<Ty> lst) noexcept
-{
-	const Ty* ptr = lst.begin();
 	for (std::size_t i = 0; i < _rows; i++)
 	{
 		for (std::size_t j = 0; j < _cols; j++)
 		{
-			m_data[i + _rows_padded * j] = *ptr++;
+			m_data[i + _rows_padded * j] = *rhs_ptr++;
 		}
 	}
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator=(cool::rm<Ty> lst) noexcept
-{
-	const Ty* ptr = lst.begin();
-	for (std::size_t i = 0; i < _rows; i++)
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			m_data[i + _rows_padded * j] = *ptr++;
-		}
-	}
-	return *this;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-constexpr inline std::size_t cool::matrix<Ty, _rows, _cols, _rows_padded>::size() const noexcept
-{
-	return _rows * _cols;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-constexpr inline std::size_t cool::matrix<Ty, _rows, _cols, _rows_padded>::size_padded() const noexcept
-{
-	return _rows_padded * _cols;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline Ty* cool::matrix<Ty, _rows, _cols, _rows_padded>::data() noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+inline Ty* cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::data() noexcept
 {
 	return static_cast<Ty*>(m_data);
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline const Ty* cool::matrix<Ty, _rows, _cols, _rows_padded>::data() const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
+inline const Ty* cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::data() const noexcept
 {
 	return static_cast<const Ty*>(m_data);
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template<class uint_Ty1, class uint_Ty2>
-inline Ty& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator()(uint_Ty1 i, uint_Ty2 j) noexcept
+// const_matrix_interface
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+constexpr inline std::size_t cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::size() const noexcept
 {
-	return m_data[static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j)];
+	return _rows * _cols;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template<class uint_Ty1, class uint_Ty2>
-inline const Ty& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator()(uint_Ty1 i, uint_Ty2 j) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+constexpr inline std::size_t cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::size_padded() const noexcept
 {
-	return m_data[static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j)];
+	return _rows_padded * _cols;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template<class uint_Ty>
-inline Ty& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator[](uint_Ty mem_offset) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty> template <class uint_Ty1, class uint_Ty2>
+inline const Ty& cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator()(uint_Ty1 i, uint_Ty2 j) const noexcept
 {
-	return m_data[static_cast<std::size_t>(mem_offset)];
+	return *(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template<class uint_Ty>
-inline const Ty& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator[](uint_Ty mem_offset) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty> template <class uint_Ty>
+inline const Ty& cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator[](uint_Ty mem_offset) const noexcept
 {
-	return m_data[static_cast<std::size_t>(mem_offset)];
+	return *(this->data() + static_cast<std::size_t>(mem_offset));
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <class uint_Ty>
-inline cool::matrix<Ty, _rows, 1, _rows>& cool::matrix<Ty, _rows, _cols, _rows_padded>::col(uint_Ty j) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <class uint_Ty> inline cool::const_matrix_span<Ty, _rows, 1, _rows, 0> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::col(uint_Ty j) const noexcept
 {
-	return reinterpret_cast<cool::matrix<Ty, _rows, 1, _rows>&>(m_data[_rows_padded * static_cast<std::size_t>(j)]);
+	return cool::const_matrix_span<Ty, _rows, 1, _rows, 0>(this->data() + _rows_padded * static_cast<std::size_t>(j));
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <class uint_Ty>
-inline const cool::matrix<Ty, _rows, 1, _rows>& cool::matrix<Ty, _rows, _cols, _rows_padded>::col(uint_Ty j) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <class uint_Ty> inline cool::const_matrix_span<Ty, 1, _cols, _rows_padded, 0> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::row(uint_Ty i) const noexcept
 {
-	return reinterpret_cast<const cool::matrix<Ty, _rows, 1, _rows>&>(m_data[_rows_padded * static_cast<std::size_t>(j)]);
+	return cool::const_matrix_span<Ty, 1, _cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i));
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <class uint_Ty>
-inline cool::matrix<Ty, 1, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::row(uint_Ty i) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::diag() const noexcept
 {
-	return reinterpret_cast<cool::matrix<Ty, 1, _cols, _rows_padded>&>(m_data[static_cast<std::size_t>(i)]);
+	return cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0>(this->data());
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <class uint_Ty>
-inline const cool::matrix<Ty, 1, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::row(uint_Ty i) const noexcept
-{
-	return reinterpret_cast<const cool::matrix<Ty, 1, _cols, _rows_padded>&>(m_data[static_cast<std::size_t>(i)]);
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, 1, cool::_diag<_rows, _cols>::length, _rows_padded + 1>& cool::matrix<Ty, _rows, _cols, _rows_padded>::diag() noexcept
-{
-	return reinterpret_cast<cool::matrix<Ty, 1, cool::_diag<_rows, _cols>::length, _rows_padded + 1>&>(m_data[0]);
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline const cool::matrix<Ty, 1, cool::_diag<_rows, _cols>::length, _rows_padded + 1>& cool::matrix<Ty, _rows, _cols, _rows_padded>::diag() const noexcept
-{
-	return reinterpret_cast<const cool::matrix<Ty, 1, cool::_diag<_rows, _cols>::length, _rows_padded + 1>&>(m_data[0]);
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty1, class uint_Ty2>
-inline cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::blk(uint_Ty1 i, uint_Ty2 j) noexcept
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i, uint_Ty2 j) const noexcept
 {
-	return reinterpret_cast<cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>&>(m_data[static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j)]);
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty1, class uint_Ty2>
-inline const cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::blk(uint_Ty1 i, uint_Ty2 j) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty1>
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i) const noexcept
 {
-	return reinterpret_cast<const cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>&>(m_data[static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j)]);
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i));
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty>
-inline cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::blk(uint_Ty i) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _blk_rows, std::size_t _blk_cols>
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk() const noexcept
 {
-	return reinterpret_cast<cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>&>(m_data[static_cast<std::size_t>(i)]);
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data());
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty>
-inline const cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::blk(uint_Ty i) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align>
+cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator-() const noexcept
 {
-	return reinterpret_cast<const cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>&>(m_data[static_cast<std::size_t>(i)]);
-}
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
+	constexpr bool _contiguous = ((_rows == _res_rows_padded) && (_rows == _rows_padded)) || (_cols == 1);
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _blk_rows, std::size_t _blk_cols>
-inline cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::blk() noexcept
-{
-	return reinterpret_cast<cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>&>(m_data[0]);
-}
+	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _blk_rows, std::size_t _blk_cols>
-inline const cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::blk() const noexcept
-{
-	return reinterpret_cast<const cool::matrix<Ty, _blk_rows, _blk_cols, _rows_padded>&>(m_data[0]);
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline cool::matrix<Ty, _rows, _cols> cool::matrix<Ty, _rows, _cols, _rows_padded>::operator-(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept
-{
-	cool::matrix<Ty, _rows, _cols> ret;
-
-	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	Ty* res_ptr = ret.data();
+	const Ty* ptr = this->data();
 
 	if (_contiguous)
 	{
@@ -1352,7 +1554,7 @@ inline cool::matrix<Ty, _rows, _cols> cool::matrix<Ty, _rows, _cols, _rows_padde
 
 		for (std::size_t n = 0; n < _size; n++)
 		{
-			ret.m_data[n] = m_data[n] - rhs.m_data[n];
+			*(res_ptr + n) = -*(ptr + n);
 		}
 	}
 	else
@@ -1361,19 +1563,27 @@ inline cool::matrix<Ty, _rows, _cols> cool::matrix<Ty, _rows, _cols, _rows_padde
 		{
 			for (std::size_t i = 0; i < _rows; i++)
 			{
-				ret.m_data[i + _rows * j] = m_data[i + _rows_padded * j] - rhs.m_data[i + _rhs_rows_padded * j];
+				*(res_ptr + i + _res_rows_padded * j) = -*(ptr + i + _rows_padded * j);
 			}
 		}
 	}
+
 	return ret;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline cool::matrix<Ty, _rows, _cols> cool::matrix<Ty, _rows, _cols, _rows_padded>::operator+(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator+(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept
 {
-	cool::matrix<Ty, _rows, _cols> ret;
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
+	constexpr bool _contiguous = ((_rows == _res_rows_padded) && (_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 
-	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
+	const Ty* lhs_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
 
 	if (_contiguous)
 	{
@@ -1381,7 +1591,7 @@ inline cool::matrix<Ty, _rows, _cols> cool::matrix<Ty, _rows, _cols, _rows_padde
 
 		for (std::size_t n = 0; n < _size; n++)
 		{
-			ret.m_data[n] = m_data[n] + rhs.m_data[n];
+			*(res_ptr + n) = *(lhs_ptr + n) + *(rhs_ptr + n);
 		}
 	}
 	else
@@ -1390,19 +1600,27 @@ inline cool::matrix<Ty, _rows, _cols> cool::matrix<Ty, _rows, _cols, _rows_padde
 		{
 			for (std::size_t i = 0; i < _rows; i++)
 			{
-				ret.m_data[i + _rows * j] = m_data[i + _rows_padded * j] + rhs.m_data[i + _rhs_rows_padded * j];
+				*(res_ptr + i + _res_rows_padded * j) = *(lhs_ptr + i + _rows_padded * j) + *(rhs_ptr + i + _rhs_rows_padded * j);
 			}
 		}
 	}
+
 	return ret;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols> cool::matrix<Ty, _rows, _cols, _rows_padded>::operator-(Ty rhs) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator-(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept
 {
-	cool::matrix<Ty, _rows, _cols> ret;
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
+	constexpr bool _contiguous = ((_rows == _res_rows_padded) && (_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
+	const Ty* lhs_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
 
 	if (_contiguous)
 	{
@@ -1410,7 +1628,7 @@ inline cool::matrix<Ty, _rows, _cols> cool::matrix<Ty, _rows, _cols, _rows_padde
 
 		for (std::size_t n = 0; n < _size; n++)
 		{
-			ret.m_data[n] = m_data[n] - rhs;
+			*(res_ptr + n) = *(lhs_ptr + n) - *(rhs_ptr + n);
 		}
 	}
 	else
@@ -1419,19 +1637,25 @@ inline cool::matrix<Ty, _rows, _cols> cool::matrix<Ty, _rows, _cols, _rows_padde
 		{
 			for (std::size_t i = 0; i < _rows; i++)
 			{
-				ret.m_data[i + _rows * j] = m_data[i + _rows_padded * j] - rhs;
+				*(res_ptr + i + _res_rows_padded * j) = *(lhs_ptr + i + _rows_padded * j) - *(rhs_ptr + i + _rhs_rows_padded * j);
 			}
 		}
 	}
+
 	return ret;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols> cool::matrix<Ty, _rows, _cols, _rows_padded>::operator+(Ty rhs) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align>
+cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator+(Ty rhs) const noexcept
 {
-	cool::matrix<Ty, _rows, _cols> ret;
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
+	constexpr bool _contiguous = ((_rows == _res_rows_padded) && (_rows == _rows_padded)) || (_cols == 1);
 
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
+	const Ty* lhs_ptr = this->data();
 
 	if (_contiguous)
 	{
@@ -1439,7 +1663,7 @@ inline cool::matrix<Ty, _rows, _cols> cool::matrix<Ty, _rows, _cols, _rows_padde
 
 		for (std::size_t n = 0; n < _size; n++)
 		{
-			ret.m_data[n] = m_data[n] + rhs;
+			*(res_ptr + n) = *(lhs_ptr + n) + rhs;
 		}
 	}
 	else
@@ -1448,17 +1672,25 @@ inline cool::matrix<Ty, _rows, _cols> cool::matrix<Ty, _rows, _cols, _rows_padde
 		{
 			for (std::size_t i = 0; i < _rows; i++)
 			{
-				ret.m_data[i + _rows * j] = m_data[i + _rows_padded * j] + rhs;
+				*(res_ptr + i + _res_rows_padded * j) = *(lhs_ptr + i + _rows_padded * j) + rhs;
 			}
 		}
 	}
+
 	return ret;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator-=(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& COOL_MATRIX_RESTRICT rhs) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align>
+cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator-(Ty rhs) const noexcept
 {
-	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
+	constexpr bool _contiguous = ((_rows == _res_rows_padded) && (_rows == _rows_padded)) || (_cols == 1);
+
+	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
+	const Ty* lhs_ptr = this->data();
 
 	if (_contiguous)
 	{
@@ -1466,7 +1698,7 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 
 		for (std::size_t n = 0; n < _size; n++)
 		{
-			m_data[n] -= rhs.m_data[n];
+			*(res_ptr + n) = *(lhs_ptr + n) - rhs;
 		}
 	}
 	else
@@ -1475,215 +1707,24 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 		{
 			for (std::size_t i = 0; i < _rows; i++)
 			{
-				m_data[i + _rows_padded * j] -= rhs.m_data[i + _rhs_rows_padded * j];
+				*(res_ptr + i + _res_rows_padded * j) = *(lhs_ptr + i + _rows_padded * j) - rhs;
 			}
 		}
 	}
-	return *this;
+
+	return ret;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator+=(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& COOL_MATRIX_RESTRICT rhs) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _res_rows_padded, std::size_t _res_align, std::size_t _rhs_cols, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+cool::matrix<Ty, _rows, _rhs_cols, _res_rows_padded, _res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator*(
+	const cool::const_matrix_interface<Ty, _cols, _rhs_cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept
 {
-	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-
-		for (std::size_t n = 0; n < _size; n++)
-		{
-			m_data[n] += rhs.m_data[n];
-		}
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				m_data[i + _rows_padded * j] += rhs.m_data[i + _rhs_rows_padded * j];
-			}
-		}
-	}
-	return *this;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator*=(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& COOL_MATRIX_RESTRICT rhs) noexcept
-{
-	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-
-		for (std::size_t n = 0; n < _size; n++)
-		{
-			m_data[n] *= rhs.m_data[n];
-		}
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				m_data[i + _rows_padded * j] *= rhs.m_data[i + _rhs_rows_padded * j];
-			}
-		}
-	}
-	return *this;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>template <int _sign, std::size_t _rhs_rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::fmadd(Ty s, const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& COOL_MATRIX_RESTRICT rhs) noexcept
-{
-	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
-	constexpr bool _positive = _sign >= 0;
-
-	static_assert(_sign == 1 || _sign == -1,
-		"first template argument of cool::matrix< ... >::fmadd requirement : value must be 1 or -1");
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-
-		if (_positive)
-		{
-			for (std::size_t n = 0; n < _size; n++)
-			{
-				m_data[n] += s * rhs.m_data[n];
-			}
-		}
-		else
-		{
-			for (std::size_t n = 0; n < _size; n++)
-			{
-				m_data[n] -= s * rhs.m_data[n];
-			}
-		}
-	}
-	else
-	{
-		if (_positive)
-		{
-			for (std::size_t j = 0; j < _cols; j++)
-			{
-				for (std::size_t i = 0; i < _rows; i++)
-				{
-					m_data[i + _rows_padded * j] += s * rhs.m_data[i + _rhs_rows_padded * j];
-				}
-			}
-		}
-		else
-		{
-			for (std::size_t j = 0; j < _cols; j++)
-			{
-				for (std::size_t i = 0; i < _rows; i++)
-				{
-					m_data[i + _rows_padded * j] -= s * rhs.m_data[i + _rhs_rows_padded * j];
-				}
-			}
-		}
-	}
-	return *this;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator-=(Ty rhs) noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-
-		for (std::size_t n = 0; n < _size; n++)
-		{
-			m_data[n] -= rhs;
-		}
-	}
-	else
-	{
-
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				m_data[i + _rows_padded * j] -= rhs;
-			}
-		}
-	}
-	return *this;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator+=(Ty rhs) noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-
-		for (std::size_t n = 0; n < _size; n++)
-		{
-			m_data[n] += rhs;
-		}
-	}
-	else
-	{
-
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				m_data[i + _rows_padded * j] += rhs;
-			}
-		}
-	}
-	return *this;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::operator*=(Ty rhs) noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-
-		for (std::size_t n = 0; n < _size; n++)
-		{
-			m_data[n] *= rhs;
-		}
-	}
-	else
-	{
-
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				m_data[i + _rows_padded * j] *= rhs;
-			}
-		}
-	}
-	return *this;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_cols, std::size_t _rhs_rows_padded>
-inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_padded>::operator*(const cool::matrix<Ty, _cols, _rhs_cols, _rhs_rows_padded>& rhs) const noexcept
-{
-	cool::matrix<Ty, _rows, _rhs_cols> ret;
-
 	constexpr std::size_t i_size = cool::matrix_multiply_kernel_spec<Ty, _rows, _rhs_cols, _cols>::packed;
 	constexpr std::size_t j_size = cool::matrix_multiply_kernel_spec<Ty, _rows, _rhs_cols, _cols>::broadcasted;
-	constexpr bool _cols_small = _cols < cool::matrix_multiply_kernel_spec<Ty, _rows, _rhs_cols, _cols>::repeat_threshold;
+	constexpr bool _lhs_cols_small = _cols < cool::matrix_multiply_kernel_spec<Ty, _rows, _rhs_cols, _cols>::repeat_threshold;
 
-	constexpr std::size_t _rows_mult_i_size = _rows - _rows % i_size;
+	constexpr std::size_t _lhs_rows_mult_i_size = _rows - _rows % i_size;
 	constexpr std::size_t i_remainder = _rows % i_size;
 	constexpr std::size_t i_remainder_padded = (i_remainder != 0) ? i_remainder : 1;
 	constexpr bool i_remainder_non_zero = i_remainder != 0;
@@ -1693,9 +1734,15 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 	constexpr std::size_t j_remainder_padded = (j_remainder != 0) ? j_remainder : 1;
 	constexpr bool j_remainder_non_zero = j_remainder != 0;
 
-	if (_cols_small)
+	cool::matrix<Ty, _rows, _rhs_cols, _res_rows_padded, _res_align> ret;
+
+	Ty* res_ptr = ret.data();
+	const Ty* lhs_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
+
+	if (_lhs_cols_small)
 	{
-		for (std::size_t i = 0; i < _rows_mult_i_size; i += i_size)
+		for (std::size_t i = 0; i < _lhs_rows_mult_i_size; i += i_size)
 		{
 			for (std::size_t j = 0; j < _rhs_cols_mult_j_size; j += j_size)
 			{
@@ -1703,10 +1750,11 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 
 				for (std::size_t m = 0; m < j_size; m++)
 				{
-					Ty rhs_temp = rhs.m_data[_rhs_rows_padded * (j + m)];
+					Ty rhs_temp = *(rhs_ptr + _rhs_rows_padded * (j + m));
+					const Ty* ptr = lhs_ptr + i;
 					for (std::size_t n = 0; n < i_size; n++)
 					{
-						acc[m][n] = m_data[i + n] * rhs_temp;
+						acc[m][n] = *(ptr + n) * rhs_temp;
 					}
 				}
 
@@ -1714,19 +1762,21 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (j + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (j + m));
+						const Ty* ptr = lhs_ptr + i + _rows_padded * k;
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							acc[m][n] += m_data[i + n + _rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
 
 				for (std::size_t m = 0; m < j_size; m++)
 				{
+					Ty* ptr = res_ptr + i + _res_rows_padded * (j + m);
 					for (std::size_t n = 0; n < i_size; n++)
 					{
-						ret.m_data[i + n + _rows * (j + m)] = acc[m][n];
+						*(ptr + n) = acc[m][n];
 					}
 				}
 			}
@@ -1737,10 +1787,11 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 
 				for (std::size_t m = 0; m < j_remainder; m++)
 				{
-					Ty rhs_temp = rhs.m_data[_rhs_rows_padded * (_rhs_cols_mult_j_size + m)];
+					Ty rhs_temp = *(rhs_ptr + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+					const Ty* ptr = lhs_ptr + i;
 					for (std::size_t n = 0; n < i_size; n++)
 					{
-						acc[m][n] = m_data[i + n] * rhs_temp;
+						acc[m][n] = *(ptr + n) * rhs_temp;
 					}
 				}
 
@@ -1748,19 +1799,21 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+						const Ty* ptr = lhs_ptr + i + _rows_padded * k;
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							acc[m][n] += m_data[i + n + _rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
 
 				for (std::size_t m = 0; m < j_remainder; m++)
 				{
+					Ty* ptr = res_ptr + i + _res_rows_padded * (_rhs_cols_mult_j_size + m);
 					for (std::size_t n = 0; n < i_size; n++)
 					{
-						ret.m_data[i + n + _rows * (_rhs_cols_mult_j_size + m)] = acc[m][n];
+						*(ptr + n) = acc[m][n];
 					}
 				}
 			}
@@ -1774,10 +1827,11 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 
 				for (std::size_t m = 0; m < j_size; m++)
 				{
-					Ty rhs_temp = rhs.m_data[_rhs_rows_padded * (j + m)];
+					Ty rhs_temp = *(rhs_ptr + _rhs_rows_padded * (j + m));
+					const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size;
 					for (std::size_t n = 0; n < i_remainder; n++)
 					{
-						acc[m][n] = m_data[_rows_mult_i_size + n] * rhs_temp;
+						acc[m][n] = *(ptr + n) * rhs_temp;
 					}
 				}
 
@@ -1785,19 +1839,21 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (j + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (j + m));
+						const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size + _rows_padded * k;
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							acc[m][n] += m_data[_rows_mult_i_size + n + _rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
 
 				for (std::size_t m = 0; m < j_size; m++)
 				{
+					Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _res_rows_padded * (j + m);
 					for (std::size_t n = 0; n < i_remainder; n++)
 					{
-						ret.m_data[_rows_mult_i_size + n + _rows * (j + m)] = acc[m][n];
+						*(ptr + n) = acc[m][n];
 					}
 				}
 			}
@@ -1808,10 +1864,11 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 
 				for (std::size_t m = 0; m < j_remainder; m++)
 				{
-					Ty rhs_temp = rhs.m_data[_rhs_rows_padded * (_rhs_cols_mult_j_size + m)];
+					Ty rhs_temp = *(rhs_ptr + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+					const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size;
 					for (std::size_t n = 0; n < i_remainder; n++)
 					{
-						acc[m][n] = m_data[_rows_mult_i_size + n] * rhs_temp;
+						acc[m][n] = *(ptr + n) * rhs_temp;
 					}
 				}
 
@@ -1819,19 +1876,21 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+						const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size + _rows_padded * k;
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							acc[m][n] += m_data[_rows_mult_i_size + n + _rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
 
 				for (std::size_t m = 0; m < j_remainder; m++)
 				{
+					Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _res_rows_padded * (_rhs_cols_mult_j_size + m);
 					for (std::size_t n = 0; n < i_remainder; n++)
 					{
-						ret.m_data[_rows_mult_i_size + n + _rows * (_rhs_cols_mult_j_size + m)] = acc[m][n];
+						*(ptr + n) = acc[m][n];
 					}
 				}
 			}
@@ -1839,7 +1898,7 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 	}
 	else
 	{
-		for (std::size_t i = 0; i < _rows_mult_i_size; i += i_size)
+		for (std::size_t i = 0; i < _lhs_rows_mult_i_size; i += i_size)
 		{
 			for (std::size_t j = 0; j < _rhs_cols_mult_j_size; j += j_size)
 			{
@@ -1855,19 +1914,21 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (j + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (j + m));
+						const Ty* ptr = lhs_ptr + i + _rows_padded * k;
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							acc[m][n] += m_data[i + n + _rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
 
 				for (std::size_t m = 0; m < j_size; m++)
 				{
+					Ty* ptr = res_ptr + i + _res_rows_padded * (j + m);
 					for (std::size_t n = 0; n < i_size; n++)
 					{
-						ret.m_data[i + n + _rows * (j + m)] = acc[m][n];
+						*(ptr + n) = acc[m][n];
 					}
 				}
 			}
@@ -1886,19 +1947,21 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+						const Ty* ptr = lhs_ptr + i + _rows_padded * k;
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							acc[m][n] += m_data[i + n + _rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
 
 				for (std::size_t m = 0; m < j_remainder; m++)
 				{
+					Ty* ptr = res_ptr + i + _res_rows_padded * (_rhs_cols_mult_j_size + m);
 					for (std::size_t n = 0; n < i_size; n++)
 					{
-						ret.m_data[i + n + _rows * (_rhs_cols_mult_j_size + m)] = acc[m][n];
+						*(ptr + n) = acc[m][n];
 					}
 				}
 			}
@@ -1914,19 +1977,21 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (j + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (j + m));
+						const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size + _rows_padded * k;
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							acc[m][n] += m_data[_rows_mult_i_size + n + _rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
 
 				for (std::size_t m = 0; m < j_size; m++)
 				{
+					Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _res_rows_padded * (j + m);
 					for (std::size_t n = 0; n < i_remainder; n++)
 					{
-						ret.m_data[_rows_mult_i_size + n + _rows * (j + m)] = acc[m][n];
+						*(ptr + n) = acc[m][n];
 					}
 				}
 			}
@@ -1939,19 +2004,21 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+						const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size + _rows_padded * k;
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							acc[m][n] += m_data[_rows_mult_i_size + n + _rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
 
 				for (std::size_t m = 0; m < j_remainder; m++)
 				{
+					Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _res_rows_padded * (_rhs_cols_mult_j_size + m);
 					for (std::size_t n = 0; n < i_remainder; n++)
 					{
-						ret.m_data[_rows_mult_i_size + n + _rows * (_rhs_cols_mult_j_size + m)] = acc[m][n];
+						*(ptr + n) = acc[m][n];
 					}
 				}
 			}
@@ -1961,45 +2028,2166 @@ inline cool::matrix<Ty, _rows, _rhs_cols> cool::matrix<Ty, _rows, _cols, _rows_p
 	return ret;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-template <int _sign, std::size_t _lhs_cols, std::size_t _lhs_rows_padded, std::size_t _rhs_rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::fmadd(
-	const cool::matrix<Ty, _rows, _lhs_cols, _lhs_rows_padded>& COOL_MATRIX_RESTRICT lhs,
-	const cool::matrix<Ty, _lhs_cols, _cols, _rhs_rows_padded>& COOL_MATRIX_RESTRICT rhs) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator==(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept
+{
+	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	constexpr bool _line_matrix = _rows == 1;
+
+	const Ty* lhs_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + i + k) == *(rhs_ptr + i + k));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + size_mult8 + k) == *(rhs_ptr + size_mult8 + k));
+		}
+		return ret;
+	}
+	else if (_line_matrix)
+	{
+		constexpr std::size_t _size = _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + _rows_padded * (i + k)) == *(rhs_ptr + _rhs_rows_padded * (i + k)));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + _rows_padded * (size_mult8 + k)) == *(rhs_ptr + _rhs_rows_padded * (size_mult8 + k)));
+		}
+		return ret;
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			constexpr std::size_t _size = _rows;
+			constexpr std::size_t size_mult8 = _size - _size % 8;
+			constexpr std::size_t size_mod8 = _size % 8;
+
+			for (std::size_t i = 0; i < size_mult8; i += 8)
+			{
+				bool ret = true;
+				for (std::size_t k = 0; k < 8; k++)
+				{
+					ret &= (*(lhs_ptr + i + k + _rows_padded * j) == *(rhs_ptr + i + k + _rhs_rows_padded * j));
+				}
+				if (!ret)
+				{
+					return false;
+				}
+			}
+
+			bool ret = true;
+			for (std::size_t k = 0; k < size_mod8; k++)
+			{
+				ret &= (*(lhs_ptr + size_mult8 + k + _rows_padded * j) == *(rhs_ptr + size_mult8 + k + _rhs_rows_padded * j));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator!=(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept
+{
+	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	constexpr bool _line_matrix = _rows == 1;
+
+	const Ty* lhs_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool not_ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				not_ret &= (*(lhs_ptr + i + k) == *(rhs_ptr + i + k));
+			}
+			if (!not_ret)
+			{
+				return true;
+			}
+		}
+
+		bool not_ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			not_ret &= (*(lhs_ptr + size_mult8 + k) == *(rhs_ptr + size_mult8 + k));
+		}
+		return !not_ret;
+	}
+	else if (_line_matrix)
+	{
+		constexpr std::size_t _size = _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool not_ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				not_ret &= (*(lhs_ptr + _rows_padded * (i + k)) == *(rhs_ptr + _rhs_rows_padded * (i + k)));
+			}
+			if (!not_ret)
+			{
+				return true;
+			}
+		}
+
+		bool not_ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			not_ret &= (*(lhs_ptr + _rows_padded * (size_mult8 + k)) == *(rhs_ptr + _rhs_rows_padded * (size_mult8 + k)));
+		}
+		return !not_ret;
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			constexpr std::size_t _size = _rows;
+			constexpr std::size_t size_mult8 = _size - _size % 8;
+			constexpr std::size_t size_mod8 = _size % 8;
+
+			for (std::size_t i = 0; i < size_mult8; i += 8)
+			{
+				bool not_ret = true;
+				for (std::size_t k = 0; k < 8; k++)
+				{
+					not_ret &= (*(lhs_ptr + i + k + _rows_padded * j) == *(rhs_ptr + i + k + _rhs_rows_padded * j));
+				}
+				if (!not_ret)
+				{
+					return true;
+				}
+			}
+
+			bool not_ret = true;
+			for (std::size_t k = 0; k < size_mod8; k++)
+			{
+				not_ret &= (*(lhs_ptr + size_mult8 + k + _rows_padded * j) == *(rhs_ptr + size_mult8 + k + _rhs_rows_padded * j));
+			}
+			if (!not_ret)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator<=(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept
+{
+	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	constexpr bool _line_matrix = _rows == 1;
+
+	const Ty* lhs_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + i + k) <= *(rhs_ptr + i + k));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + size_mult8 + k) <= *(rhs_ptr + size_mult8 + k));
+		}
+		return ret;
+	}
+	else if (_line_matrix)
+	{
+		constexpr std::size_t _size = _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + _rows_padded * (i + k)) <= *(rhs_ptr + _rhs_rows_padded * (i + k)));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + _rows_padded * (size_mult8 + k)) <= *(rhs_ptr + _rhs_rows_padded * (size_mult8 + k)));
+		}
+		return ret;
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			constexpr std::size_t _size = _rows;
+			constexpr std::size_t size_mult8 = _size - _size % 8;
+			constexpr std::size_t size_mod8 = _size % 8;
+
+			for (std::size_t i = 0; i < size_mult8; i += 8)
+			{
+				bool ret = true;
+				for (std::size_t k = 0; k < 8; k++)
+				{
+					ret &= (*(lhs_ptr + i + k + _rows_padded * j) <= *(rhs_ptr + i + k + _rhs_rows_padded * j));
+				}
+				if (!ret)
+				{
+					return false;
+				}
+			}
+
+			bool ret = true;
+			for (std::size_t k = 0; k < size_mod8; k++)
+			{
+				ret &= (*(lhs_ptr + size_mult8 + k + _rows_padded * j) <= *(rhs_ptr + size_mult8 + k + _rhs_rows_padded * j));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator>=(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept
+{
+	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	constexpr bool _line_matrix = _rows == 1;
+
+	const Ty* lhs_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + i + k) >= *(rhs_ptr + i + k));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + size_mult8 + k) >= *(rhs_ptr + size_mult8 + k));
+		}
+		return ret;
+	}
+	else if (_line_matrix)
+	{
+		constexpr std::size_t _size = _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + _rows_padded * (i + k)) >= *(rhs_ptr + _rhs_rows_padded * (i + k)));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + _rows_padded * (size_mult8 + k)) >= *(rhs_ptr + _rhs_rows_padded * (size_mult8 + k)));
+		}
+		return ret;
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			constexpr std::size_t _size = _rows;
+			constexpr std::size_t size_mult8 = _size - _size % 8;
+			constexpr std::size_t size_mod8 = _size % 8;
+
+			for (std::size_t i = 0; i < size_mult8; i += 8)
+			{
+				bool ret = true;
+				for (std::size_t k = 0; k < 8; k++)
+				{
+					ret &= (*(lhs_ptr + i + k + _rows_padded * j) >= *(rhs_ptr + i + k + _rhs_rows_padded * j));
+				}
+				if (!ret)
+				{
+					return false;
+				}
+			}
+
+			bool ret = true;
+			for (std::size_t k = 0; k < size_mod8; k++)
+			{
+				ret &= (*(lhs_ptr + size_mult8 + k + _rows_padded * j) >= *(rhs_ptr + size_mult8 + k + _rhs_rows_padded * j));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator<(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept
+{
+	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	constexpr bool _line_matrix = _rows == 1;
+
+	const Ty* lhs_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + i + k) < *(rhs_ptr + i + k));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + size_mult8 + k) < *(rhs_ptr + size_mult8 + k));
+		}
+		return ret;
+	}
+	else if (_line_matrix)
+	{
+		constexpr std::size_t _size = _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + _rows_padded * (i + k)) < *(rhs_ptr + _rhs_rows_padded * (i + k)));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + _rows_padded * (size_mult8 + k)) < *(rhs_ptr + _rhs_rows_padded * (size_mult8 + k)));
+		}
+		return ret;
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			constexpr std::size_t _size = _rows;
+			constexpr std::size_t size_mult8 = _size - _size % 8;
+			constexpr std::size_t size_mod8 = _size % 8;
+
+			for (std::size_t i = 0; i < size_mult8; i += 8)
+			{
+				bool ret = true;
+				for (std::size_t k = 0; k < 8; k++)
+				{
+					ret &= (*(lhs_ptr + i + k + _rows_padded * j) < *(rhs_ptr + i + k + _rhs_rows_padded * j));
+				}
+				if (!ret)
+				{
+					return false;
+				}
+			}
+
+			bool ret = true;
+			for (std::size_t k = 0; k < size_mod8; k++)
+			{
+				ret &= (*(lhs_ptr + size_mult8 + k + _rows_padded * j) < *(rhs_ptr + size_mult8 + k + _rhs_rows_padded * j));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator>(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept
+{
+	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	constexpr bool _line_matrix = _rows == 1;
+
+	const Ty* lhs_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + i + k) > *(rhs_ptr + i + k));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + size_mult8 + k) > *(rhs_ptr + size_mult8 + k));
+		}
+		return ret;
+	}
+	else if (_line_matrix)
+	{
+		constexpr std::size_t _size = _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + _rows_padded * (i + k)) > *(rhs_ptr + _rhs_rows_padded * (i + k)));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + _rows_padded * (size_mult8 + k)) > *(rhs_ptr + _rhs_rows_padded * (size_mult8 + k)));
+		}
+		return ret;
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			constexpr std::size_t _size = _rows;
+			constexpr std::size_t size_mult8 = _size - _size % 8;
+			constexpr std::size_t size_mod8 = _size % 8;
+
+			for (std::size_t i = 0; i < size_mult8; i += 8)
+			{
+				bool ret = true;
+				for (std::size_t k = 0; k < 8; k++)
+				{
+					ret &= (*(lhs_ptr + i + k + _rows_padded * j) > *(rhs_ptr + i + k + _rhs_rows_padded * j));
+				}
+				if (!ret)
+				{
+					return false;
+				}
+			}
+
+			bool ret = true;
+			for (std::size_t k = 0; k < size_mod8; k++)
+			{
+				ret &= (*(lhs_ptr + size_mult8 + k + _rows_padded * j) > *(rhs_ptr + size_mult8 + k + _rhs_rows_padded * j));
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator==(Ty rhs) const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+	constexpr bool _line_matrix = _rows == 1;
+
+	const Ty* lhs_ptr = this->data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + i + k) == rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + size_mult8 + k) == rhs);
+		}
+		return ret;
+	}
+	else if (_line_matrix)
+	{
+		constexpr std::size_t _size = _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + _rows_padded * (i + k)) == rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + _rows_padded * (size_mult8 + k)) == rhs);
+		}
+		return ret;
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			constexpr std::size_t _size = _rows;
+			constexpr std::size_t size_mult8 = _size - _size % 8;
+			constexpr std::size_t size_mod8 = _size % 8;
+
+			for (std::size_t i = 0; i < size_mult8; i += 8)
+			{
+				bool ret = true;
+				for (std::size_t k = 0; k < 8; k++)
+				{
+					ret &= (*(lhs_ptr + i + k + _rows_padded * j) == rhs);
+				}
+				if (!ret)
+				{
+					return false;
+				}
+			}
+
+			bool ret = true;
+			for (std::size_t k = 0; k < size_mod8; k++)
+			{
+				ret &= (*(lhs_ptr + size_mult8 + k + _rows_padded * j) == rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator!=(Ty rhs) const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+	constexpr bool _line_matrix = _rows == 1;
+
+	const Ty* lhs_ptr = this->data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool not_ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				not_ret &= (*(lhs_ptr + i + k) == rhs);
+			}
+			if (!not_ret)
+			{
+				return true;
+			}
+		}
+
+		bool not_ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			not_ret &= (*(lhs_ptr + size_mult8 + k) == rhs);
+		}
+		return !not_ret;
+	}
+	else if (_line_matrix)
+	{
+		constexpr std::size_t _size = _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool not_ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				not_ret &= (*(lhs_ptr + _rows_padded * (i + k)) == rhs);
+			}
+			if (!not_ret)
+			{
+				return true;
+			}
+		}
+
+		bool not_ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			not_ret &= (*(lhs_ptr + _rows_padded * (size_mult8 + k)) == rhs);
+		}
+		return !not_ret;
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			constexpr std::size_t _size = _rows;
+			constexpr std::size_t size_mult8 = _size - _size % 8;
+			constexpr std::size_t size_mod8 = _size % 8;
+
+			for (std::size_t i = 0; i < size_mult8; i += 8)
+			{
+				bool not_ret = true;
+				for (std::size_t k = 0; k < 8; k++)
+				{
+					not_ret &= (*(lhs_ptr + i + k + _rows_padded * j) == rhs);
+				}
+				if (!not_ret)
+				{
+					return true;
+				}
+			}
+
+			bool not_ret = true;
+			for (std::size_t k = 0; k < size_mod8; k++)
+			{
+				not_ret &= (*(lhs_ptr + size_mult8 + k + _rows_padded * j) == rhs);
+			}
+			if (!not_ret)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator<=(Ty rhs) const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+	constexpr bool _line_matrix = _rows == 1;
+
+	const Ty* lhs_ptr = this->data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + i + k) <= rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + size_mult8 + k) <= rhs);
+		}
+		return ret;
+	}
+	else if (_line_matrix)
+	{
+		constexpr std::size_t _size = _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + _rows_padded * (i + k)) <= rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + _rows_padded * (size_mult8 + k)) <= rhs);
+		}
+		return ret;
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			constexpr std::size_t _size = _rows;
+			constexpr std::size_t size_mult8 = _size - _size % 8;
+			constexpr std::size_t size_mod8 = _size % 8;
+
+			for (std::size_t i = 0; i < size_mult8; i += 8)
+			{
+				bool ret = true;
+				for (std::size_t k = 0; k < 8; k++)
+				{
+					ret &= (*(lhs_ptr + i + k + _rows_padded * j) <= rhs);
+				}
+				if (!ret)
+				{
+					return false;
+				}
+			}
+
+			bool ret = true;
+			for (std::size_t k = 0; k < size_mod8; k++)
+			{
+				ret &= (*(lhs_ptr + size_mult8 + k + _rows_padded * j) <= rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator>=(Ty rhs) const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+	constexpr bool _line_matrix = _rows == 1;
+
+	const Ty* lhs_ptr = this->data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + i + k) >= rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + size_mult8 + k) >= rhs);
+		}
+		return ret;
+	}
+	else if (_line_matrix)
+	{
+		constexpr std::size_t _size = _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + _rows_padded * (i + k)) >= rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + _rows_padded * (size_mult8 + k)) >= rhs);
+		}
+		return ret;
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			constexpr std::size_t _size = _rows;
+			constexpr std::size_t size_mult8 = _size - _size % 8;
+			constexpr std::size_t size_mod8 = _size % 8;
+
+			for (std::size_t i = 0; i < size_mult8; i += 8)
+			{
+				bool ret = true;
+				for (std::size_t k = 0; k < 8; k++)
+				{
+					ret &= (*(lhs_ptr + i + k + _rows_padded * j) >= rhs);
+				}
+				if (!ret)
+				{
+					return false;
+				}
+			}
+
+			bool ret = true;
+			for (std::size_t k = 0; k < size_mod8; k++)
+			{
+				ret &= (*(lhs_ptr + size_mult8 + k + _rows_padded * j) >= rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator<(Ty rhs) const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+	constexpr bool _line_matrix = _rows == 1;
+
+	const Ty* lhs_ptr = this->data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + i + k) < rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + size_mult8 + k) < rhs);
+		}
+		return ret;
+	}
+	else if (_line_matrix)
+	{
+		constexpr std::size_t _size = _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + _rows_padded * (i + k)) < rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + _rows_padded * (size_mult8 + k)) < rhs);
+		}
+		return ret;
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			constexpr std::size_t _size = _rows;
+			constexpr std::size_t size_mult8 = _size - _size % 8;
+			constexpr std::size_t size_mod8 = _size % 8;
+
+			for (std::size_t i = 0; i < size_mult8; i += 8)
+			{
+				bool ret = true;
+				for (std::size_t k = 0; k < 8; k++)
+				{
+					ret &= (*(lhs_ptr + i + k + _rows_padded * j) < rhs);
+				}
+				if (!ret)
+				{
+					return false;
+				}
+			}
+
+			bool ret = true;
+			for (std::size_t k = 0; k < size_mod8; k++)
+			{
+				ret &= (*(lhs_ptr + size_mult8 + k + _rows_padded * j) < rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator>(Ty rhs) const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+	constexpr bool _line_matrix = _rows == 1;
+
+	const Ty* lhs_ptr = this->data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + i + k) > rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + size_mult8 + k) > rhs);
+		}
+		return ret;
+	}
+	else if (_line_matrix)
+	{
+		constexpr std::size_t _size = _cols;
+		constexpr std::size_t size_mult8 = _size - _size % 8;
+		constexpr std::size_t size_mod8 = _size % 8;
+
+		for (std::size_t i = 0; i < size_mult8; i += 8)
+		{
+			bool ret = true;
+			for (std::size_t k = 0; k < 8; k++)
+			{
+				ret &= (*(lhs_ptr + _rows_padded * (i + k)) > rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		bool ret = true;
+		for (std::size_t k = 0; k < size_mod8; k++)
+		{
+			ret &= (*(lhs_ptr + _rows_padded * (size_mult8 + k)) > rhs);
+		}
+		return ret;
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			constexpr std::size_t _size = _rows;
+			constexpr std::size_t size_mult8 = _size - _size % 8;
+			constexpr std::size_t size_mod8 = _size % 8;
+
+			for (std::size_t i = 0; i < size_mult8; i += 8)
+			{
+				bool ret = true;
+				for (std::size_t k = 0; k < 8; k++)
+				{
+					ret &= (*(lhs_ptr + i + k + _rows_padded * j) > rhs);
+				}
+				if (!ret)
+				{
+					return false;
+				}
+			}
+
+			bool ret = true;
+			for (std::size_t k = 0; k < size_mod8; k++)
+			{
+				ret &= (*(lhs_ptr + size_mult8 + k + _rows_padded * j) > rhs);
+			}
+			if (!ret)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator_proxy
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator_proxy(this->data());
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator_proxy
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator_proxy(this->data());
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::begin() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator(this->data(), 0);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::end() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator(this->data(), _cols);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cbegin() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator(this->data(), 0);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cend() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator(this->data(), _cols);
+}
+
+// const_matrix_interface<...>::cm_const_iterator_proxy
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator_proxy::begin() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator(m_data_ptr, 0);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator_proxy::end() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator(m_data_ptr, _cols);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator_proxy::cbegin() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator(m_data_ptr, 0);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator_proxy::cend() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator(m_data_ptr, _cols);
+}
+
+// const_matrix_interface<...>::rm_const_iterator_proxy
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator_proxy::begin() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator(m_data_ptr, 0);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator_proxy::end() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator(m_data_ptr, _rows);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator_proxy::cbegin() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator(m_data_ptr, 0);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator_proxy::cend() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator(m_data_ptr, _rows);
+}
+
+// const_matrix_interface<...>::cm_const_iterator
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator::cm_const_iterator(const Ty* ptr, std::size_t j) noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	m_data_ptr = ptr;
+
+	if (_contiguous)
+	{
+		m_i = _rows * j;
+		m_j = 0;
+	}
+	else
+	{
+		m_i = 0;
+		m_j = j;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline const Ty& cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator::cm_const_iterator::operator*() const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	if (_contiguous)
+	{
+		return *(m_data_ptr + m_i);
+	}
+	else
+	{
+		return *(m_data_ptr + m_i + _rows_padded * m_j);
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline const Ty& cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator::operator->() const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	if (_contiguous)
+	{
+		return m_data_ptr + m_i;
+	}
+	else
+	{
+		return m_data_ptr + m_i + _rows_padded * m_j;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator&
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator::operator--() noexcept
+{
+	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
+
+	if (_not_contiguous)
+	{
+		if (m_i == 0)
+		{
+			m_i = _rows;
+			m_j--;
+		}
+	}
+	m_i--;
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator&
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator::operator++() noexcept
+{
+	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
+
+	m_i++;
+	if (_not_contiguous)
+	{
+		if (m_i == _rows)
+		{
+			m_i = 0;
+			m_j++;
+		}
+	}
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator::operator--(int) noexcept
+{
+	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
+
+	typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator temp = *this;
+	if (_not_contiguous)
+	{
+		if (m_i == 0)
+		{
+			m_i = _rows;
+			m_j--;
+		}
+	}
+	m_i--;
+	return temp;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator::operator++(int) noexcept
+{
+	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
+
+	typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator temp = *this;
+	m_i++;
+	if (_not_contiguous)
+	{
+		if (m_i == _rows)
+		{
+			m_i = 0;
+			m_j++;
+		}
+	}
+	return temp;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator::operator==(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator& rhs) const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	if (_contiguous)
+	{
+		return m_i == rhs.m_i;
+	}
+	else
+	{
+		return m_i == rhs.m_i && m_j == rhs.m_j;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator::operator!=(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator& rhs) const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	if (_contiguous)
+	{
+		return m_i != rhs.m_i;
+	}
+	else
+	{
+		return !(m_i == rhs.m_i && m_j == rhs.m_j);
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator::operator<=(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator& rhs) const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	if (_contiguous)
+	{
+		return m_i <= rhs.m_i;
+	}
+	else
+	{
+		return m_i + _rows * m_j <= rhs.m_i + _rows * rhs.m_j;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator::operator>=(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator& rhs) const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	if (_contiguous)
+	{
+		return m_i >= rhs.m_i;
+	}
+	else
+	{
+		return m_i + _rows * m_j >= rhs.m_i + _rows * rhs.m_j;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator::operator<(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator& rhs) const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	if (_contiguous)
+	{
+		return m_i < rhs.m_i;
+	}
+	else
+	{
+		return m_i + _rows * m_j < rhs.m_i + _rows * rhs.m_j;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator::operator>(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator& rhs) const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	if (_contiguous)
+	{
+		return m_i > rhs.m_i;
+	}
+	else
+	{
+		return m_i + _rows * m_j > rhs.m_i + _rows * rhs.m_j;
+	}
+}
+
+// const_matrix_interface<...>::rm_const_iterator
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline const Ty& cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator::operator*() const noexcept
+{
+	return *(m_data_ptr + m_i + _rows_padded * m_j);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline const Ty& cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator::operator->() const noexcept
+{
+	return m_data_ptr + m_i + _rows_padded * m_j;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator&
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator::operator--() noexcept
+{
+	if (m_j == 0)
+	{
+		m_j = _cols;
+		m_i--;
+	}
+	m_j--;
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator&
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator::operator++() noexcept
+{
+	m_j++;
+	if (m_j == _cols)
+	{
+		m_j = 0;
+		m_i++;
+	}
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator::operator--(int) noexcept
+{
+	typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator temp = *this;
+	if (m_j == 0)
+	{
+		m_j = _cols;
+		m_i--;
+	}
+	m_j--;
+	return temp;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator
+cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator::operator++(int) noexcept
+{
+	typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator temp = *this;
+	m_j++;
+	if (m_j == _cols)
+	{
+		m_j = 0;
+		m_i++;
+	}
+	return temp;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator::operator==(
+	const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator& rhs) const noexcept
+{
+	return m_i == rhs.m_i && m_j == rhs.m_j;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator::operator!=(
+	const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator& rhs) const noexcept
+{
+	return !(m_i == rhs.m_i && m_j == rhs.m_j);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator::operator<=(
+	const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator& rhs) const noexcept
+{
+	return _cols * m_i + m_j <= _cols * rhs.m_i + rhs.m_j;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator::operator>=(
+	const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator& rhs) const noexcept
+{
+	return _cols * m_i + m_j >= _cols * rhs.m_i + rhs.m_j;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator::operator<(
+	const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator& rhs) const noexcept
+{
+	return _cols * m_i + m_j < _cols * rhs.m_i + rhs.m_j;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator::operator>(
+	const typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator& rhs) const noexcept
+{
+	return _cols * m_i + m_j > _cols * rhs.m_i + rhs.m_j;
+}
+
+// matrix_interface
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::matrix_interface(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs)
+	: cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>(rhs) {}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator=(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs)
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	Ty* res_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
+		{
+			*(res_ptr + n) = *(rhs_ptr + n);
+		}
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _rows_padded * j) = *(rhs_ptr + i + _rhs_rows_padded * j);
+			}
+		}
+	}
+
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator=(Ty rhs)
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	Ty* res_ptr = this->data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
+		{
+			*(res_ptr + n) = rhs;
+		}
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _rows_padded * j) = rhs;
+			}
+		}
+	}
+
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator=(std::initializer_list<Ty> rhs)
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	Ty* res_ptr = this->data();
+	const Ty* rhs_ptr = rhs.begin();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
+		{
+			*(res_ptr + n) = *rhs_ptr++;
+		}
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _rows_padded * j) = *rhs_ptr++;
+			}
+		}
+	}
+
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator=(cool::cm<Ty> rhs)
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	Ty* res_ptr = this->data();
+	const Ty* rhs_ptr = rhs.begin();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
+		{
+			*(res_ptr + n) = *rhs_ptr++;
+		}
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _rows_padded * j) = *rhs_ptr++;
+			}
+		}
+	}
+
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator=(cool::rm<Ty> rhs)
+{
+	Ty* res_ptr = this->data();
+	const Ty* rhs_ptr = rhs.begin();
+
+	for (std::size_t i = 0; i < _rows; i++)
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			*(res_ptr + i + _rows_padded * j) = *rhs_ptr++;
+		}
+	}
+
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <class uint_Ty1, class uint_Ty2> inline Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator()(uint_Ty1 i, uint_Ty2 j) noexcept
+{
+	return *(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <class uint_Ty1, class uint_Ty2> inline const Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator()(uint_Ty1 i, uint_Ty2 j) const noexcept
+{
+	return *(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <class uint_Ty> inline Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator[](uint_Ty mem_offset) noexcept
+{
+	return *(this->data() + static_cast<std::size_t>(mem_offset));
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <class uint_Ty> inline const Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator[](uint_Ty mem_offset) const noexcept
+{
+	return *(this->data() + static_cast<std::size_t>(mem_offset));
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty> template <class uint_Ty>
+inline cool::matrix_span<Ty, _rows, 1, _rows, 0>
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::col(uint_Ty j) noexcept
+{
+	return cool::matrix_span<Ty, _rows, 1, _rows, 0>(this->data() + _rows_padded * static_cast<std::size_t>(j));
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty> template <class uint_Ty>
+inline cool::const_matrix_span<Ty, _rows, 1, _rows, 0>
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::col(uint_Ty j) const noexcept
+{
+	return cool::const_matrix_span<Ty, _rows, 1, _rows, 0>(this->data() + _rows_padded * static_cast<std::size_t>(j));
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty> template <class uint_Ty>
+inline cool::matrix_span<Ty, 1, _cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::row(uint_Ty i) noexcept
+{
+	return cool::matrix_span<Ty, 1, _cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i));
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty> template <class uint_Ty>
+inline cool::const_matrix_span<Ty, 1, _cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::row(uint_Ty i) const noexcept
+{
+	return cool::const_matrix_span<Ty, 1, _cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i));
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::diag() noexcept
+{
+	return cool::matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0>(this->data());
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::diag() const noexcept
+{
+	return cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0>(this->data());
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty1, class uint_Ty2>
+inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i, uint_Ty2 j) noexcept
+{
+	return cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty1, class uint_Ty2>
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i, uint_Ty2 j) const noexcept
+{
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty1>
+inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i) noexcept
+{
+	return cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i));
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty1>
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i) const noexcept
+{
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i));
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _blk_rows, std::size_t _blk_cols>
+inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk() noexcept
+{
+	return cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data());
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _blk_rows, std::size_t _blk_cols>
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk() const noexcept
+{
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data());
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator+=(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
+{
+	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+
+	Ty* res_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
+		{
+			*(res_ptr + n) += *(rhs_ptr + n);
+		}
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _rows_padded * j) += *(rhs_ptr + i + _rhs_rows_padded * j);
+			}
+		}
+	}
+
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator-=(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
+{
+	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+
+	Ty* res_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
+		{
+			*(res_ptr + n) -= *(rhs_ptr + n);
+		}
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _rows_padded * j) -= *(rhs_ptr + i + _rhs_rows_padded * j);
+			}
+		}
+	}
+
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator*=(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
+{
+	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+
+	Ty* res_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
+		{
+			*(res_ptr + n) *= *(rhs_ptr + n);
+		}
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _rows_padded * j) *= *(rhs_ptr + i + _rhs_rows_padded * j);
+			}
+		}
+	}
+
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator+=(Ty rhs) noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	Ty* res_ptr = this->data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
+		{
+			*(res_ptr + n) += rhs;
+		}
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _rows_padded * j) += rhs;
+			}
+		}
+	}
+
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator-=(Ty rhs) noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	Ty* res_ptr = this->data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
+		{
+			*(res_ptr + n) -= rhs;
+		}
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _rows_padded * j) -= rhs;
+			}
+		}
+	}
+
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator*=(Ty rhs) noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	Ty* res_ptr = this->data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
+		{
+			*(res_ptr + n) *= rhs;
+		}
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _rows_padded * j) *= rhs;
+			}
+		}
+	}
+
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <int _sign, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::fmadd(Ty s,
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
+{
+	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	constexpr bool _positive = _sign >= 0;
+
+	static_assert(_sign == 1 || _sign == -1, "sign template argument requirement : value must be 1 or -1");
+
+	Ty* res_ptr = this->data();
+	const Ty* rhs_ptr = rhs.data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+
+		if (_positive)
+		{
+			for (std::size_t n = 0; n < _size; n++)
+			{
+				*(res_ptr + n) += s * *(rhs_ptr + n);
+			}
+		}
+		else
+		{
+			for (std::size_t n = 0; n < _size; n++)
+			{
+				*(res_ptr + n) -= s * *(rhs_ptr + n);
+			}
+		}
+	}
+	else
+	{
+		if (_positive)
+		{
+			for (std::size_t j = 0; j < _cols; j++)
+			{
+				for (std::size_t i = 0; i < _rows; i++)
+				{
+					*(res_ptr + i + _rows_padded * j) += s * *(rhs_ptr + i + _rhs_rows_padded * j);
+				}
+			}
+		}
+		else
+		{
+			for (std::size_t j = 0; j < _cols; j++)
+			{
+				for (std::size_t i = 0; i < _rows; i++)
+				{
+					*(res_ptr + i + _rows_padded * j) -= s * *(rhs_ptr + i + _rhs_rows_padded * j);
+				}
+			}
+		}
+	}
+
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <int _sign, std::size_t _lhs_cols, std::size_t _rhs_rows_padded, std::size_t _lhs_rows_padded, std::size_t _lhs_align, std::size_t _rhs_align, class _lhs_matrix_data_Ty, class _rhs_matrix_data_Ty>
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::fmadd(
+	const cool::const_matrix_interface<Ty, _rows, _lhs_cols, _lhs_rows_padded, _lhs_align, _lhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT lhs,
+	const cool::const_matrix_interface<Ty, _lhs_cols, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
 {
 	constexpr std::size_t i_size = cool::matrix_multiply_kernel_spec<Ty, _rows, _cols, _lhs_cols>::packed;
 	constexpr std::size_t j_size = cool::matrix_multiply_kernel_spec<Ty, _rows, _cols, _lhs_cols>::broadcasted;
 	constexpr bool _lhs_cols_small = _lhs_cols < cool::matrix_multiply_kernel_spec<Ty, _rows, _cols, _lhs_cols>::repeat_threshold;
 
-	constexpr std::size_t _rows_mult_i_size = _rows - _rows % i_size;
+	constexpr std::size_t _lhs_rows_mult_i_size = _rows - _rows % i_size;
 	constexpr std::size_t i_remainder = _rows % i_size;
 	constexpr std::size_t i_remainder_padded = (i_remainder != 0) ? i_remainder : 1;
 	constexpr bool i_remainder_non_zero = i_remainder != 0;
 
-	constexpr std::size_t _cols_mult_j_size = _cols - _cols % j_size;
+	constexpr std::size_t _rhs_cols_mult_j_size = _cols - _cols % j_size;
 	constexpr std::size_t j_remainder = _cols % j_size;
 	constexpr std::size_t j_remainder_padded = (j_remainder != 0) ? j_remainder : 1;
 	constexpr bool j_remainder_non_zero = j_remainder != 0;
 
 	constexpr bool _positive = _sign >= 0;
 
-	static_assert(_sign == 1 || _sign == -1,
-		"first template argument of cool::matrix< ... >::fmadd requirement : value must be 1 or -1");
+	static_assert(_sign == 1 || _sign == -1, "sign template argument requirement : value must be 1 or -1");
+
+	const Ty* lhs_ptr = lhs.data();
+	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = this->data();
 
 	if (_lhs_cols_small)
 	{
-		for (std::size_t i = 0; i < _rows_mult_i_size; i += i_size)
+		for (std::size_t i = 0; i < _lhs_rows_mult_i_size; i += i_size)
 		{
-			for (std::size_t j = 0; j < _cols_mult_j_size; j += j_size)
+			for (std::size_t j = 0; j < _rhs_cols_mult_j_size; j += j_size)
 			{
 				Ty acc[j_size][i_size];
 
 				for (std::size_t m = 0; m < j_size; m++)
 				{
-					Ty rhs_temp = rhs.m_data[_rhs_rows_padded * (j + m)];
+					Ty rhs_temp = *(rhs_ptr + _rhs_rows_padded * (j + m));
+					const Ty* ptr = lhs_ptr + i;
 					for (std::size_t n = 0; n < i_size; n++)
 					{
-						acc[m][n] = lhs.m_data[i + n] * rhs_temp;
+						acc[m][n] = *(ptr + n) * rhs_temp;
 					}
 				}
 
@@ -2007,10 +4195,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (j + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (j + m));
+						const Ty* ptr = lhs_ptr + i + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							acc[m][n] += lhs.m_data[i + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2019,9 +4208,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (j + m)] += acc[m][n];
+							*(ptr + n) += acc[m][n];
 						}
 					}
 				}
@@ -2029,9 +4219,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (j + m)] -= acc[m][n];
+							*(ptr + n) -= acc[m][n];
 						}
 					}
 				}
@@ -2043,10 +4234,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 
 				for (std::size_t m = 0; m < j_remainder; m++)
 				{
-					Ty rhs_temp = rhs.m_data[_rhs_rows_padded * (_cols_mult_j_size + m)];
+					Ty rhs_temp = *(rhs_ptr + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+					const Ty* ptr = lhs_ptr + i;
 					for (std::size_t n = 0; n < i_size; n++)
 					{
-						acc[m][n] = lhs.m_data[i + n] * rhs_temp;
+						acc[m][n] = *(ptr + n) * rhs_temp;
 					}
 				}
 
@@ -2054,10 +4246,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (_cols_mult_j_size + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+						const Ty* ptr = lhs_ptr + i + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							acc[m][n] += lhs.m_data[i + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2066,9 +4259,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (_cols_mult_j_size + m)] += acc[m][n];
+							*(ptr + n) += acc[m][n];
 						}
 					}
 				}
@@ -2076,9 +4270,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (_cols_mult_j_size + m)] -= acc[m][n];
+							*(ptr + n) -= acc[m][n];
 						}
 					}
 				}
@@ -2087,16 +4282,17 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 
 		if (i_remainder_non_zero)
 		{
-			for (std::size_t j = 0; j < _cols_mult_j_size; j += j_size)
+			for (std::size_t j = 0; j < _rhs_cols_mult_j_size; j += j_size)
 			{
 				Ty acc[j_size][i_remainder_padded];
 
 				for (std::size_t m = 0; m < j_size; m++)
 				{
-					Ty rhs_temp = rhs.m_data[_rhs_rows_padded * (j + m)];
+					Ty rhs_temp = *(rhs_ptr + _rhs_rows_padded * (j + m));
+					const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size;
 					for (std::size_t n = 0; n < i_remainder; n++)
 					{
-						acc[m][n] = lhs.m_data[_rows_mult_i_size + n] * rhs_temp;
+						acc[m][n] = *(ptr + n) * rhs_temp;
 					}
 				}
 
@@ -2104,10 +4300,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (j + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (j + m));
+						const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							acc[m][n] += lhs.m_data[_rows_mult_i_size + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2116,9 +4313,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (j + m)] += acc[m][n];
+							*(ptr + n) += acc[m][n];
 						}
 					}
 				}
@@ -2126,9 +4324,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (j + m)] -= acc[m][n];
+							*(ptr + n) -= acc[m][n];
 						}
 					}
 				}
@@ -2140,10 +4339,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 
 				for (std::size_t m = 0; m < j_remainder; m++)
 				{
-					Ty rhs_temp = rhs.m_data[_rhs_rows_padded * (_cols_mult_j_size + m)];
+					Ty rhs_temp = *(rhs_ptr + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+					const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size;
 					for (std::size_t n = 0; n < i_remainder; n++)
 					{
-						acc[m][n] = lhs.m_data[_rows_mult_i_size + n] * rhs_temp;
+						acc[m][n] = *(ptr + n) * rhs_temp;
 					}
 				}
 
@@ -2151,10 +4351,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (_cols_mult_j_size + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+						const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							acc[m][n] += lhs.m_data[_rows_mult_i_size + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2163,9 +4364,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (_cols_mult_j_size + m)] += acc[m][n];
+							*(ptr + n) += acc[m][n];
 						}
 					}
 				}
@@ -2173,9 +4375,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (_cols_mult_j_size + m)] -= acc[m][n];
+							*(ptr + n) -= acc[m][n];
 						}
 					}
 				}
@@ -2184,12 +4387,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 	}
 	else
 	{
-		for (std::size_t i = 0; i < _rows_mult_i_size; i += i_size)
+		for (std::size_t i = 0; i < _lhs_rows_mult_i_size; i += i_size)
 		{
-			for (std::size_t j = 0; j < _cols_mult_j_size; j += j_size)
+			for (std::size_t j = 0; j < _rhs_cols_mult_j_size; j += j_size)
 			{
 				Ty acc[j_size][i_size] = { {} };
-
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -2200,10 +4402,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (j + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (j + m));
+						const Ty* ptr = lhs_ptr + i + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							acc[m][n] += lhs.m_data[i + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2212,9 +4415,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (j + m)] += acc[m][n];
+							*(ptr + n) += acc[m][n];
 						}
 					}
 				}
@@ -2222,9 +4426,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (j + m)] -= acc[m][n];
+							*(ptr + n) -= acc[m][n];
 						}
 					}
 				}
@@ -2233,7 +4438,6 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 			if (j_remainder_non_zero)
 			{
 				Ty acc[j_remainder_padded][i_size] = { {} };
-
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -2244,10 +4448,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (_cols_mult_j_size + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+						const Ty* ptr = lhs_ptr + i + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							acc[m][n] += lhs.m_data[i + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2256,9 +4461,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (_cols_mult_j_size + m)] += acc[m][n];
+							*(ptr + n) += acc[m][n];
 						}
 					}
 				}
@@ -2266,9 +4472,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (_cols_mult_j_size + m)] -= acc[m][n];
+							*(ptr + n) -= acc[m][n];
 						}
 					}
 				}
@@ -2277,7 +4484,7 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 
 		if (i_remainder_non_zero)
 		{
-			for (std::size_t j = 0; j < _cols_mult_j_size; j += j_size)
+			for (std::size_t j = 0; j < _rhs_cols_mult_j_size; j += j_size)
 			{
 				Ty acc[j_size][i_remainder_padded] = { {} };
 
@@ -2285,10 +4492,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (j + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (j + m));
+						const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							acc[m][n] += lhs.m_data[_rows_mult_i_size + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2297,9 +4505,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (j + m)] += acc[m][n];
+							*(ptr + n) += acc[m][n];
 						}
 					}
 				}
@@ -2307,9 +4516,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (j + m)] -= acc[m][n];
+							*(ptr + n) -= acc[m][n];
 						}
 					}
 				}
@@ -2323,10 +4533,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (_cols_mult_j_size + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+						const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							acc[m][n] += lhs.m_data[_rows_mult_i_size + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2335,9 +4546,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (_cols_mult_j_size + m)] += acc[m][n];
+							*(ptr + n) += acc[m][n];
 						}
 					}
 				}
@@ -2345,9 +4557,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (_cols_mult_j_size + m)] -= acc[m][n];
+							*(ptr + n) -= acc[m][n];
 						}
 					}
 				}
@@ -2358,45 +4571,50 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 	return *this;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-template <int _sign, std::size_t _lhs_cols, std::size_t _lhs_rows_padded, std::size_t _rhs_rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _cols, _rows_padded>::fmadd(Ty s,
-	const cool::matrix<Ty, _rows, _lhs_cols, _lhs_rows_padded>& COOL_MATRIX_RESTRICT lhs,
-	const cool::matrix<Ty, _lhs_cols, _cols, _rhs_rows_padded>& COOL_MATRIX_RESTRICT rhs) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+template <int _sign, std::size_t _lhs_cols, std::size_t _rhs_rows_padded, std::size_t _lhs_rows_padded, std::size_t _lhs_align, std::size_t _rhs_align, class _lhs_matrix_data_Ty, class _rhs_matrix_data_Ty>
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::fmadd(Ty s,
+	const cool::const_matrix_interface<Ty, _rows, _lhs_cols, _lhs_rows_padded, _lhs_align, _lhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT lhs,
+	const cool::const_matrix_interface<Ty, _lhs_cols, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
 {
 	constexpr std::size_t i_size = cool::matrix_multiply_kernel_spec<Ty, _rows, _cols, _lhs_cols>::packed;
 	constexpr std::size_t j_size = cool::matrix_multiply_kernel_spec<Ty, _rows, _cols, _lhs_cols>::broadcasted;
 	constexpr bool _lhs_cols_small = _lhs_cols < cool::matrix_multiply_kernel_spec<Ty, _rows, _cols, _lhs_cols>::repeat_threshold;
 
-	constexpr std::size_t _rows_mult_i_size = _rows - _rows % i_size;
+	constexpr std::size_t _lhs_rows_mult_i_size = _rows - _rows % i_size;
 	constexpr std::size_t i_remainder = _rows % i_size;
 	constexpr std::size_t i_remainder_padded = (i_remainder != 0) ? i_remainder : 1;
 	constexpr bool i_remainder_non_zero = i_remainder != 0;
 
-	constexpr std::size_t _cols_mult_j_size = _cols - _cols % j_size;
+	constexpr std::size_t _rhs_cols_mult_j_size = _cols - _cols % j_size;
 	constexpr std::size_t j_remainder = _cols % j_size;
 	constexpr std::size_t j_remainder_padded = (j_remainder != 0) ? j_remainder : 1;
 	constexpr bool j_remainder_non_zero = j_remainder != 0;
 
 	constexpr bool _positive = _sign >= 0;
 
-	static_assert(_sign == 1 || _sign == -1,
-		"first template argument of cool::matrix< ... >::fmadd requirement : value must be 1 or -1");
+	static_assert(_sign == 1 || _sign == -1, "sign template argument requirement : value must be 1 or -1");
+
+	const Ty* lhs_ptr = lhs.data();
+	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = this->data();
 
 	if (_lhs_cols_small)
 	{
-		for (std::size_t i = 0; i < _rows_mult_i_size; i += i_size)
+		for (std::size_t i = 0; i < _lhs_rows_mult_i_size; i += i_size)
 		{
-			for (std::size_t j = 0; j < _cols_mult_j_size; j += j_size)
+			for (std::size_t j = 0; j < _rhs_cols_mult_j_size; j += j_size)
 			{
 				Ty acc[j_size][i_size];
 
 				for (std::size_t m = 0; m < j_size; m++)
 				{
-					Ty rhs_temp = rhs.m_data[_rhs_rows_padded * (j + m)];
+					Ty rhs_temp = *(rhs_ptr + _rhs_rows_padded * (j + m));
+					const Ty* ptr = lhs_ptr + i;
 					for (std::size_t n = 0; n < i_size; n++)
 					{
-						acc[m][n] = lhs.m_data[i + n] * rhs_temp;
+						acc[m][n] = *(ptr + n) * rhs_temp;
 					}
 				}
 
@@ -2404,10 +4622,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (j + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (j + m));
+						const Ty* ptr = lhs_ptr + i + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							acc[m][n] += lhs.m_data[i + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2416,9 +4635,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (j + m)] += s * acc[m][n];
+							*(ptr + n) += s * acc[m][n];
 						}
 					}
 				}
@@ -2426,9 +4646,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (j + m)] -= s * acc[m][n];
+							*(ptr + n) -= s * acc[m][n];
 						}
 					}
 				}
@@ -2440,10 +4661,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 
 				for (std::size_t m = 0; m < j_remainder; m++)
 				{
-					Ty rhs_temp = rhs.m_data[_rhs_rows_padded * (_cols_mult_j_size + m)];
+					Ty rhs_temp = *(rhs_ptr + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+					const Ty* ptr = lhs_ptr + i;
 					for (std::size_t n = 0; n < i_size; n++)
 					{
-						acc[m][n] = lhs.m_data[i + n] * rhs_temp;
+						acc[m][n] = *(ptr + n) * rhs_temp;
 					}
 				}
 
@@ -2451,10 +4673,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (_cols_mult_j_size + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+						const Ty* ptr = lhs_ptr + i + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							acc[m][n] += lhs.m_data[i + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2463,9 +4686,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (_cols_mult_j_size + m)] += s * acc[m][n];
+							*(ptr + n) += s * acc[m][n];
 						}
 					}
 				}
@@ -2473,9 +4697,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (_cols_mult_j_size + m)] -= s * acc[m][n];
+							*(ptr + n) -= s * acc[m][n];
 						}
 					}
 				}
@@ -2484,16 +4709,17 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 
 		if (i_remainder_non_zero)
 		{
-			for (std::size_t j = 0; j < _cols_mult_j_size; j += j_size)
+			for (std::size_t j = 0; j < _rhs_cols_mult_j_size; j += j_size)
 			{
 				Ty acc[j_size][i_remainder_padded];
 
 				for (std::size_t m = 0; m < j_size; m++)
 				{
-					Ty rhs_temp = rhs.m_data[_rhs_rows_padded * (j + m)];
+					Ty rhs_temp = *(rhs_ptr + _rhs_rows_padded * (j + m));
+					const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size;
 					for (std::size_t n = 0; n < i_remainder; n++)
 					{
-						acc[m][n] = lhs.m_data[_rows_mult_i_size + n] * rhs_temp;
+						acc[m][n] = *(ptr + n) * rhs_temp;
 					}
 				}
 
@@ -2501,10 +4727,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (j + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (j + m));
+						const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							acc[m][n] += lhs.m_data[_rows_mult_i_size + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2513,9 +4740,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (j + m)] += s * acc[m][n];
+							*(ptr + n) += s * acc[m][n];
 						}
 					}
 				}
@@ -2523,9 +4751,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (j + m)] -= s * acc[m][n];
+							*(ptr + n) -= s * acc[m][n];
 						}
 					}
 				}
@@ -2537,10 +4766,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 
 				for (std::size_t m = 0; m < j_remainder; m++)
 				{
-					Ty rhs_temp = rhs.m_data[_rhs_rows_padded * (_cols_mult_j_size + m)];
+					Ty rhs_temp = *(rhs_ptr + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+					const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size;
 					for (std::size_t n = 0; n < i_remainder; n++)
 					{
-						acc[m][n] = lhs.m_data[_rows_mult_i_size + n] * rhs_temp;
+						acc[m][n] = *(ptr + n) * rhs_temp;
 					}
 				}
 
@@ -2548,10 +4778,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (_cols_mult_j_size + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+						const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							acc[m][n] += lhs.m_data[_rows_mult_i_size + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2560,9 +4791,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (_cols_mult_j_size + m)] += s * acc[m][n];
+							*(ptr + n) += s * acc[m][n];
 						}
 					}
 				}
@@ -2570,9 +4802,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (_cols_mult_j_size + m)] -= s * acc[m][n];
+							*(ptr + n) -= s * acc[m][n];
 						}
 					}
 				}
@@ -2581,12 +4814,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 	}
 	else
 	{
-		for (std::size_t i = 0; i < _rows_mult_i_size; i += i_size)
+		for (std::size_t i = 0; i < _lhs_rows_mult_i_size; i += i_size)
 		{
-			for (std::size_t j = 0; j < _cols_mult_j_size; j += j_size)
+			for (std::size_t j = 0; j < _rhs_cols_mult_j_size; j += j_size)
 			{
 				Ty acc[j_size][i_size] = { {} };
-
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -2597,10 +4829,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (j + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (j + m));
+						const Ty* ptr = lhs_ptr + i + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							acc[m][n] += lhs.m_data[i + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2609,9 +4842,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (j + m)] += s * acc[m][n];
+							*(ptr + n) += s * acc[m][n];
 						}
 					}
 				}
@@ -2619,9 +4853,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (j + m)] -= s * acc[m][n];
+							*(ptr + n) -= s * acc[m][n];
 						}
 					}
 				}
@@ -2630,7 +4865,6 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 			if (j_remainder_non_zero)
 			{
 				Ty acc[j_remainder_padded][i_size] = { {} };
-
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -2641,10 +4875,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (_cols_mult_j_size + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+						const Ty* ptr = lhs_ptr + i + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							acc[m][n] += lhs.m_data[i + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2653,9 +4888,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (_cols_mult_j_size + m)] += s * acc[m][n];
+							*(ptr + n) += s * acc[m][n];
 						}
 					}
 				}
@@ -2663,9 +4899,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + i + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_size; n++)
 						{
-							m_data[i + n + _rows_padded * (_cols_mult_j_size + m)] -= s * acc[m][n];
+							*(ptr + n) -= s * acc[m][n];
 						}
 					}
 				}
@@ -2674,7 +4911,7 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 
 		if (i_remainder_non_zero)
 		{
-			for (std::size_t j = 0; j < _cols_mult_j_size; j += j_size)
+			for (std::size_t j = 0; j < _rhs_cols_mult_j_size; j += j_size)
 			{
 				Ty acc[j_size][i_remainder_padded] = { {} };
 
@@ -2682,10 +4919,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (j + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (j + m));
+						const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							acc[m][n] += lhs.m_data[_rows_mult_i_size + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2694,9 +4932,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (j + m)] += s * acc[m][n];
+							*(ptr + n) += s * acc[m][n];
 						}
 					}
 				}
@@ -2704,9 +4943,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_size; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (j + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (j + m)] -= s * acc[m][n];
+							*(ptr + n) -= s * acc[m][n];
 						}
 					}
 				}
@@ -2720,10 +4960,11 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
-						Ty rhs_temp = rhs.m_data[k + _rhs_rows_padded * (_cols_mult_j_size + m)];
+						Ty rhs_temp = *(rhs_ptr + k + _rhs_rows_padded * (_rhs_cols_mult_j_size + m));
+						const Ty* ptr = lhs_ptr + _lhs_rows_mult_i_size + _lhs_rows_padded * k;
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							acc[m][n] += lhs.m_data[_rows_mult_i_size + n + _lhs_rows_padded * k] * rhs_temp;
+							acc[m][n] += *(ptr + n) * rhs_temp;
 						}
 					}
 				}
@@ -2732,9 +4973,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (_cols_mult_j_size + m)] += s * acc[m][n];
+							*(ptr + n) += s * acc[m][n];
 						}
 					}
 				}
@@ -2742,9 +4984,10 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 				{
 					for (std::size_t m = 0; m < j_remainder; m++)
 					{
+						Ty* ptr = res_ptr + _lhs_rows_mult_i_size + _rows_padded * (_rhs_cols_mult_j_size + m);
 						for (std::size_t n = 0; n < i_remainder; n++)
 						{
-							m_data[_rows_mult_i_size + n + _rows_padded * (_cols_mult_j_size + m)] -= s * acc[m][n];
+							*(ptr + n) -= s * acc[m][n];
 						}
 					}
 				}
@@ -2755,1885 +4998,615 @@ inline cool::matrix<Ty, _rows, _cols, _rows_padded>& cool::matrix<Ty, _rows, _co
 	return *this;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::operator==(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept
+// matrix_interface iterator_proxy/begin/end
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator_proxy
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm() noexcept
 {
-	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[i + k] == rhs.m_data[i + k]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[i + k] == rhs.m_data[i + k]);
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[_rows_padded * (i + k)] == rhs.m_data[_rhs_rows_padded * (i + k)]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[_rows_padded * (i + k)] == rhs.m_data[_rhs_rows_padded * (i + k)]);
-		}
-		return ret;
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (m_data[i + k + _rows_padded * j] == rhs.m_data[i + k + _rhs_rows_padded * j]);
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (m_data[i + k + _rows_padded * j] == rhs.m_data[i + k + _rhs_rows_padded * j]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator_proxy(this->data());
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::operator!=(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator_proxy
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm() noexcept
 {
-	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool not_ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				not_ret &= (m_data[i + k] == rhs.m_data[i + k]);
-			}
-			if (!not_ret)
-			{
-				return true;
-			}
-		}
-
-		bool not_ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			not_ret &= (m_data[i + k] == rhs.m_data[i + k]);
-		}
-		return !not_ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool not_ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				not_ret &= (m_data[_rows_padded * (i + k)] == rhs.m_data[_rhs_rows_padded * (i + k)]);
-			}
-			if (!not_ret)
-			{
-				return true;
-			}
-		}
-
-		bool not_ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			not_ret &= (m_data[_rows_padded * (i + k)] == rhs.m_data[_rhs_rows_padded * (i + k)]);
-		}
-		return !not_ret;
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool not_ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					not_ret &= (m_data[i + k + _rows_padded * j] == rhs.m_data[i + k + _rhs_rows_padded * j]);
-				}
-				if (!not_ret)
-				{
-					return true;
-				}
-			}
-
-			bool not_ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				not_ret &= (m_data[i + k + _rows_padded * j] == rhs.m_data[i + k + _rhs_rows_padded * j]);
-			}
-			if (!not_ret)
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator_proxy(this->data());
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::operator<=(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator_proxy
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm() const noexcept
 {
-	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[i + k] <= rhs.m_data[i + k]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[i + k] <= rhs.m_data[i + k]);
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[_rows_padded * (i + k)] <= rhs.m_data[_rhs_rows_padded * (i + k)]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[_rows_padded * (i + k)] <= rhs.m_data[_rhs_rows_padded * (i + k)]);
-		}
-		return ret;
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (m_data[i + k + _rows_padded * j] <= rhs.m_data[i + k + _rhs_rows_padded * j]);
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (m_data[i + k + _rows_padded * j] <= rhs.m_data[i + k + _rhs_rows_padded * j]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator_proxy(this->data());
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::operator>=(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator_proxy
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm() const noexcept
 {
-	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[i + k] >= rhs.m_data[i + k]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[i + k] >= rhs.m_data[i + k]);
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[_rows_padded * (i + k)] >= rhs.m_data[_rhs_rows_padded * (i + k)]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[_rows_padded * (i + k)] >= rhs.m_data[_rhs_rows_padded * (i + k)]);
-		}
-		return ret;
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (m_data[i + k + _rows_padded * j] >= rhs.m_data[i + k + _rhs_rows_padded * j]);
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (m_data[i + k + _rows_padded * j] >= rhs.m_data[i + k + _rhs_rows_padded * j]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator_proxy(this->data());
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::operator<(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::begin() noexcept
 {
-	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[i + k] < rhs.m_data[i + k]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[i + k] < rhs.m_data[i + k]);
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[_rows_padded * (i + k)] < rhs.m_data[_rhs_rows_padded * (i + k)]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[_rows_padded * (i + k)] < rhs.m_data[_rhs_rows_padded * (i + k)]);
-		}
-		return ret;
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (m_data[i + k + _rows_padded * j] < rhs.m_data[i + k + _rhs_rows_padded * j]);
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (m_data[i + k + _rows_padded * j] < rhs.m_data[i + k + _rhs_rows_padded * j]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator(this->data(), 0);
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> template <std::size_t _rhs_rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::operator>(const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::end() noexcept
 {
-	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[i + k] > rhs.m_data[i + k]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[i + k] > rhs.m_data[i + k]);
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[_rows_padded * (i + k)] > rhs.m_data[_rhs_rows_padded * (i + k)]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[_rows_padded * (i + k)] > rhs.m_data[_rhs_rows_padded * (i + k)]);
-		}
-		return ret;
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (m_data[i + k + _rows_padded * j] > rhs.m_data[i + k + _rhs_rows_padded * j]);
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (m_data[i + k + _rows_padded * j] > rhs.m_data[i + k + _rhs_rows_padded * j]);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator(this->data(), _cols);
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::operator==(Ty rhs) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::begin() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator(this->data(), 0);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::end() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator(this->data(), _cols);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cbegin() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator(this->data(), 0);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cend() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator(this->data(), _cols);
+}
+
+// matrix_interface<...>::cm_iterator_proxy
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator_proxy::begin() const noexcept
+{
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator(m_data_ptr, 0);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator_proxy::end() const noexcept
+{
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator(m_data_ptr, _cols);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator_proxy::cbegin() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator(m_data_ptr, 0);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator_proxy::cend() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_const_iterator(m_data_ptr, _cols);
+}
+
+// matrix_interface<...>::rm_iterator_proxy
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator_proxy::begin() const noexcept
+{
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator(m_data_ptr, 0);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator_proxy::end() const noexcept
+{
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator(m_data_ptr, _rows);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator_proxy::cbegin() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator(m_data_ptr, 0);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator_proxy::cend() const noexcept
+{
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_const_iterator(m_data_ptr, _rows);
+}
+
+// matrix_interface<...>::cm_iterator
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator::cm_iterator(Ty* ptr, std::size_t j) noexcept
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
+
+	m_data_ptr = ptr;
 
 	if (_contiguous)
 	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[i + k] == rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[i + k] == rhs);
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[_rows_padded * (i + k)] == rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[_rows_padded * (i + k)] == rhs);
-		}
-		return ret;
+		m_i = _rows * j;
+		m_j = 0;
 	}
 	else
 	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (m_data[i + k + _rows_padded * j] == rhs);
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (m_data[i + k + _rows_padded * j] == rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
+		m_i = 0;
+		m_j = j;
 	}
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::operator!=(Ty rhs) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator::cm_iterator::operator*() const noexcept
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
 
 	if (_contiguous)
 	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool not_ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				not_ret &= (m_data[i + k] == rhs);
-			}
-			if (!not_ret)
-			{
-				return true;
-			}
-		}
-
-		bool not_ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			not_ret &= (m_data[i + k] == rhs);
-		}
-		return !not_ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool not_ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				not_ret &= (m_data[_rows_padded * (i + k)] == rhs);
-			}
-			if (!not_ret)
-			{
-				return true;
-			}
-		}
-
-		bool not_ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			not_ret &= (m_data[_rows_padded * (i + k)] == rhs);
-		}
-		return !not_ret;
+		return *(m_data_ptr + m_i);
 	}
 	else
 	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool not_ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					not_ret &= (m_data[i + k + _rows_padded * j] == rhs);
-				}
-				if (!not_ret)
-				{
-					return true;
-				}
-			}
-
-			bool not_ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				not_ret &= (m_data[i + k + _rows_padded * j] == rhs);
-			}
-			if (!not_ret)
-			{
-				return true;
-			}
-		}
-
-		return false;
+		return *(m_data_ptr + m_i + _rows_padded * m_j);
 	}
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::operator<=(Ty rhs) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator::operator->() const noexcept
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
 
 	if (_contiguous)
 	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[i + k] <= rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[i + k] <= rhs);
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[_rows_padded * (i + k)] <= rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[_rows_padded * (i + k)] <= rhs);
-		}
-		return ret;
+		return m_data_ptr + m_i;
 	}
 	else
 	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (m_data[i + k + _rows_padded * j] <= rhs);
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (m_data[i + k + _rows_padded * j] <= rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
+		return m_data_ptr + m_i + _rows_padded * m_j;
 	}
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::operator>=(Ty rhs) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator::operator--() noexcept
+{
+	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
+
+	if (_not_contiguous)
+	{
+		if (m_i == 0)
+		{
+			m_i = _rows;
+			m_j--;
+		}
+	}
+	m_i--;
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator::operator++() noexcept
+{
+	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
+
+	m_i++;
+	if (_not_contiguous)
+	{
+		if (m_i == _rows)
+		{
+			m_i = 0;
+			m_j++;
+		}
+	}
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator::operator--(int) noexcept
+{
+	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
+
+	typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator temp = *this;
+	if (_not_contiguous)
+	{
+		if (m_i == 0)
+		{
+			m_i = _rows;
+			m_j--;
+		}
+	}
+	m_i--;
+	return temp;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator::operator++(int) noexcept
+{
+	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
+
+	typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator temp = *this;
+	m_i++;
+	if (_not_contiguous)
+	{
+		if (m_i == _rows)
+		{
+			m_i = 0;
+			m_j++;
+		}
+	}
+	return temp;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator::operator==(
+	const cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator& rhs) const noexcept
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
 
 	if (_contiguous)
 	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[i + k] >= rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[i + k] >= rhs);
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[_rows_padded * (i + k)] >= rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[_rows_padded * (i + k)] >= rhs);
-		}
-		return ret;
+		return m_i == rhs.m_i;
 	}
 	else
 	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (m_data[i + k + _rows_padded * j] >= rhs);
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (m_data[i + k + _rows_padded * j] >= rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
+		return m_i == rhs.m_i && m_j == rhs.m_j;
 	}
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::operator<(Ty rhs) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator::operator!=(
+	const cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator& rhs) const noexcept
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
 
 	if (_contiguous)
 	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[i + k] < rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[i + k] < rhs);
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[_rows_padded * (i + k)] < rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[_rows_padded * (i + k)] < rhs);
-		}
-		return ret;
+		return m_i != rhs.m_i;
 	}
 	else
 	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (m_data[i + k + _rows_padded * j] < rhs);
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (m_data[i + k + _rows_padded * j] < rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
+		return !(m_i == rhs.m_i && m_j == rhs.m_j);
 	}
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::operator>(Ty rhs) const noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator::operator<=(
+	const cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator& rhs) const noexcept
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
 
 	if (_contiguous)
 	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[i + k] > rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[i + k] > rhs);
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (m_data[_rows_padded * (i + k)] > rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (m_data[_rows_padded * (i + k)] > rhs);
-		}
-		return ret;
+		return m_i <= rhs.m_i;
 	}
 	else
 	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (m_data[i + k + _rows_padded * j] > rhs);
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (m_data[i + k + _rows_padded * j] > rhs);
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
+		return m_i + _rows * m_j <= rhs.m_i + _rows * rhs.m_j;
 	}
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols> cool::operator-(const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator::operator>=(
+	const cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator& rhs) const noexcept
 {
-	cool::matrix<Ty, _rows, _cols> ret;
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	if (_contiguous)
+	{
+		return m_i >= rhs.m_i;
+	}
+	else
+	{
+		return m_i + _rows * m_j >= rhs.m_i + _rows * rhs.m_j;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator::operator<(
+	const cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator& rhs) const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	if (_contiguous)
+	{
+		return m_i < rhs.m_i;
+	}
+	else
+	{
+		return m_i + _rows * m_j < rhs.m_i + _rows * rhs.m_j;
+	}
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator::operator>(
+	const cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::cm_iterator& rhs) const noexcept
+{
+	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+
+	if (_contiguous)
+	{
+		return m_i > rhs.m_i;
+	}
+	else
+	{
+		return m_i + _rows * m_j > rhs.m_i + _rows * rhs.m_j;
+	}
+}
+
+// matrix_interface<...>::rm_iterator
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator::operator*() const noexcept
+{
+	return *(m_data_ptr + m_i + _rows_padded * m_j);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator::operator->() const noexcept
+{
+	return m_data_ptr + m_i + _rows_padded * m_j;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator::operator--() noexcept
+{
+	if (m_j == 0)
+	{
+		m_j = _cols;
+		m_i--;
+	}
+	m_j--;
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator&
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator::operator++() noexcept
+{
+	m_j++;
+	if (m_j == _cols)
+	{
+		m_j = 0;
+		m_i++;
+	}
+	return *this;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator::operator--(int) noexcept
+{
+	typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator temp = *this;
+	if (m_j == 0)
+	{
+		m_j = _cols;
+		m_i--;
+	}
+	m_j--;
+	return temp;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator
+cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator::operator++(int) noexcept
+{
+	typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator temp = *this;
+	m_j++;
+	if (m_j == _cols)
+	{
+		m_j = 0;
+		m_i++;
+	}
+	return temp;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator::operator==(
+	const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator& rhs) const noexcept
+{
+	return m_i == rhs.m_i && m_j == rhs.m_j;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator::operator!=(
+	const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator& rhs) const noexcept
+{
+	return !(m_i == rhs.m_i && m_j == rhs.m_j);
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator::operator<=(
+	const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator& rhs) const noexcept
+{
+	return _cols * m_i + m_j <= _cols * rhs.m_i + rhs.m_j;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator::operator>=(
+	const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator& rhs) const noexcept
+{
+	return _cols * m_i + m_j >= _cols * rhs.m_i + rhs.m_j;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator::operator<(
+	const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator& rhs) const noexcept
+{
+	return _cols * m_i + m_j < _cols * rhs.m_i + rhs.m_j;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator::operator>(
+	const typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::rm_iterator& rhs) const noexcept
+{
+	return _cols * m_i + m_j > _cols * rhs.m_i + rhs.m_j;
+}
+
+// free operators
+
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::operator-(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept
+{
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
+	constexpr bool _contiguous = ((_rows == _res_rows_padded) && (_rows == _rows_padded)) || (_cols == 1);
+
+	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
 	const Ty* rhs_ptr = rhs.data();
-	Ty* ret_ptr = ret.data();
-	for (std::size_t j = 0; j < _cols; j++)
+
+	if (_contiguous)
 	{
-		for (std::size_t i = 0; i < _rows; i++)
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
 		{
-			*ret_ptr++ = -(*(rhs_ptr + i + _rows_padded * j));
+			*(res_ptr + n) = lhs - *(rhs_ptr + n);
 		}
 	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _res_rows_padded * j) = lhs - *(rhs_ptr + i + _rows_padded * j);
+			}
+		}
+	}
+
 	return ret;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols> cool::operator-(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::operator+(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept
 {
-	cool::matrix<Ty, _rows, _cols> ret;
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
+	constexpr bool _contiguous = ((_rows == _res_rows_padded) && (_rows == _rows_padded)) || (_cols == 1);
+
+	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
 	const Ty* rhs_ptr = rhs.data();
-	Ty* ret_ptr = ret.data();
-	for (std::size_t j = 0; j < _cols; j++)
+
+	if (_contiguous)
 	{
-		for (std::size_t i = 0; i < _rows; i++)
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
 		{
-			*ret_ptr++ = lhs - (*(rhs_ptr + i + _rows_padded * j));
+			*(res_ptr + n) = lhs + *(rhs_ptr + n);
 		}
 	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _res_rows_padded * j) = lhs + *(rhs_ptr + i + _rows_padded * j);
+			}
+		}
+	}
+
 	return ret;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols> cool::operator+(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::operator*(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept
 {
-	cool::matrix<Ty, _rows, _cols> ret;
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
+	constexpr bool _contiguous = ((_rows == _res_rows_padded) && (_rows == _rows_padded)) || (_cols == 1);
+
+	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
 	const Ty* rhs_ptr = rhs.data();
-	Ty* ret_ptr = ret.data();
-	for (std::size_t j = 0; j < _cols; j++)
+
+	if (_contiguous)
 	{
-		for (std::size_t i = 0; i < _rows; i++)
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
 		{
-			*ret_ptr++ = lhs + (*(rhs_ptr + i + _rows_padded * j));
+			*(res_ptr + n) = lhs * *(rhs_ptr + n);
 		}
 	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _res_rows_padded * j) = lhs * *(rhs_ptr + i + _rows_padded * j);
+			}
+		}
+	}
+
 	return ret;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols> cool::operator*(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::operator==(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept
 {
-	cool::matrix<Ty, _rows, _cols> ret;
-	const Ty* rhs_ptr = rhs.data();
-	Ty* ret_ptr = ret.data();
-	for (std::size_t j = 0; j < _cols; j++)
-	{
-		for (std::size_t i = 0; i < _rows; i++)
-		{
-			*ret_ptr++ = lhs * *(rhs_ptr + i + _rows_padded * j);
-		}
-	}
-	return ret;
+	return rhs == lhs;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::operator==(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::operator!=(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept
 {
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		const Ty* rhs_ptr = rhs.data();
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (lhs == *(rhs_ptr + i + k));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (lhs == *(rhs_ptr + i + k));
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		const Ty* rhs_ptr = rhs.data();
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (lhs == *(rhs_ptr + _rows_padded * (i + k)));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (lhs == *(rhs_ptr + _rows_padded * (i + k)));
-		}
-		return ret;
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			const Ty* rhs_ptr = rhs.data();
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (lhs == *(rhs_ptr + i + k + _rows_padded * j));
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (lhs == *(rhs_ptr + i + k + _rows_padded * j));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::operator!=(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		const Ty* rhs_ptr = rhs.data();
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool not_ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				not_ret &= (lhs == *(rhs_ptr + i + k));
-			}
-			if (!not_ret)
-			{
-				return true;
-			}
-		}
-
-		bool not_ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			not_ret &= (lhs == *(rhs_ptr + i + k));
-		}
-		return !not_ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		const Ty* rhs_ptr = rhs.data();
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool not_ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				not_ret &= (lhs == *(rhs_ptr + _rows_padded * (i + k)));
-			}
-			if (!not_ret)
-			{
-				return true;
-			}
-		}
-
-		bool not_ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			not_ret &= (lhs == *(rhs_ptr + _rows_padded * (i + k)));
-		}
-		return !not_ret;
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			const Ty* rhs_ptr = rhs.data();
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool not_ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					not_ret &= (lhs == *(rhs_ptr + i + k + _rows_padded * j));
-				}
-				if (!not_ret)
-				{
-					return true;
-				}
-			}
-
-			bool not_ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				not_ret &= (lhs == *(rhs_ptr + i + k + _rows_padded * j));
-			}
-			if (!not_ret)
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::operator<=(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		const Ty* rhs_ptr = rhs.data();
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (lhs <= *(rhs_ptr + i + k));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (lhs <= *(rhs_ptr + i + k));
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		const Ty* rhs_ptr = rhs.data();
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (lhs <= *(rhs_ptr + _rows_padded * (i + k)));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (lhs <= *(rhs_ptr + _rows_padded * (i + k)));
-		}
-		return ret;
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			const Ty* rhs_ptr = rhs.data();
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (lhs <= *(rhs_ptr + i + k + _rows_padded * j));
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (lhs <= *(rhs_ptr + i + k + _rows_padded * j));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::operator>=(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		const Ty* rhs_ptr = rhs.data();
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (lhs >= *(rhs_ptr + i + k));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (lhs >= *(rhs_ptr + i + k));
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		const Ty* rhs_ptr = rhs.data();
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (lhs >= *(rhs_ptr + _rows_padded * (i + k)));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (lhs >= *(rhs_ptr + _rows_padded * (i + k)));
-		}
-		return ret;
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			const Ty* rhs_ptr = rhs.data();
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (lhs >= *(rhs_ptr + i + k + _rows_padded * j));
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (lhs >= *(rhs_ptr + i + k + _rows_padded * j));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::operator<(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		const Ty* rhs_ptr = rhs.data();
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (lhs < *(rhs_ptr + i + k));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (lhs < *(rhs_ptr + i + k));
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		const Ty* rhs_ptr = rhs.data();
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (lhs < *(rhs_ptr + _rows_padded * (i + k)));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (lhs < *(rhs_ptr + _rows_padded * (i + k)));
-		}
-		return ret;
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			const Ty* rhs_ptr = rhs.data();
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (lhs < *(rhs_ptr + i + k + _rows_padded * j));
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (lhs < *(rhs_ptr + i + k + _rows_padded * j));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::operator>(Ty lhs, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-	constexpr bool _line_matrix = _rows == 1;
-
-	if (_contiguous)
-	{
-		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		const Ty* rhs_ptr = rhs.data();
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (lhs > *(rhs_ptr + i + k));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (lhs > *(rhs_ptr + i + k));
-		}
-		return ret;
-	}
-	else if (_line_matrix)
-	{
-		constexpr std::size_t _size = _cols;
-		constexpr std::size_t size_mult8 = _size - _size % 8;
-		constexpr std::size_t size_mod8 = _size % 8;
-
-		const Ty* rhs_ptr = rhs.data();
-		std::size_t i;
-
-		for (i = 0; i < size_mult8; i += 8)
-		{
-			bool ret = true;
-			for (std::size_t k = 0; k < 8; k++)
-			{
-				ret &= (lhs > *(rhs_ptr + _rows_padded * (i + k)));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		bool ret = true;
-		for (std::size_t k = 0; k < size_mod8; k++)
-		{
-			ret &= (lhs > *(rhs_ptr + _rows_padded * (i + k)));
-		}
-		return ret;
-	}
-	else
-	{
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			constexpr std::size_t _size = _rows;
-			constexpr std::size_t size_mult8 = _size - _size % 8;
-			constexpr std::size_t size_mod8 = _size % 8;
-
-			const Ty* rhs_ptr = rhs.data();
-			std::size_t i;
-
-			for (i = 0; i < size_mult8; i += 8)
-			{
-				bool ret = true;
-				for (std::size_t k = 0; k < 8; k++)
-				{
-					ret &= (lhs > *(rhs_ptr + i + k + _rows_padded * j));
-				}
-				if (!ret)
-				{
-					return false;
-				}
-			}
-
-			bool ret = true;
-			for (std::size_t k = 0; k < size_mod8; k++)
-			{
-				ret &= (lhs > *(rhs_ptr + i + k + _rows_padded * j));
-			}
-			if (!ret)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
+	return rhs != lhs;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _lhs_rows_padded, std::size_t _rhs_rows_padded>
-inline Ty cool::dot(const cool::matrix<Ty, _rows, _cols, _lhs_rows_padded>& lhs, const cool::matrix<Ty, _rows, _cols, _rhs_rows_padded>& rhs) noexcept
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::operator<=(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept
+{
+	return rhs >= lhs;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::operator>=(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept
+{
+	return rhs <= lhs;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::operator<(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept
+{
+	return rhs > lhs;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline bool cool::operator>(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept
+{
+	return rhs < lhs;
+}
+
+// free functions
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _lhs_rows_padded, std::size_t _rhs_rows_padded,
+	std::size_t _lhs_align, std::size_t _rhs_align, class _lhs_matrix_data_Ty, class _rhs_matrix_data_Ty>
+inline Ty cool::dot(const cool::const_matrix_interface<Ty, _rows, _cols, _lhs_rows_padded, _lhs_align, _lhs_matrix_data_Ty>& lhs,
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) noexcept
 {
 	constexpr bool no_conj_modif = std::is_integral<Ty>::value || std::is_floating_point<Ty>::value;
 
@@ -4805,23 +5778,29 @@ inline Ty cool::dot(const cool::matrix<Ty, _rows, _cols, _lhs_rows_padded>& lhs,
 	}
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _cols, _rows> cool::transp(const cool::matrix<Ty, _rows, _cols, _rows_padded>& A) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _rows, std::size_t _cols,
+	std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty
+>
+inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_align> cool::transp(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& A) noexcept
 {
-	cool::matrix<Ty, _cols, _rows> C;
-	constexpr bool _line_matrix = (_rows == 1) && (_rows_padded == 1);
-
 	constexpr std::size_t cols_mult4 = _cols - _cols % 4;
 	constexpr std::size_t cols_mod4 = _cols % 4;
 
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _cols>::value;
+
+	constexpr bool _line_matrix = ((_rows == 1) && (_rows_padded == 1)) || ((_cols == 1) && (_res_rows_padded == 1));
+
+	cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_align> ret;
+
 	if (_line_matrix)
 	{
-		Ty* ptr = C.data();
+		Ty* res_ptr = ret.data();
 		const Ty* ptrA = A.data();
 
-		for (std::size_t j = 0; j < _cols; j++)
+		for (std::size_t n = 0; n < _cols; n++)
 		{
-			*ptr++ = *ptrA++;
+			*(res_ptr + n) = *(ptrA + n);
 		}
 	}
 	else
@@ -4832,7 +5811,7 @@ inline cool::matrix<Ty, _cols, _rows> cool::transp(const cool::matrix<Ty, _rows,
 			const Ty* ptrA1 = ptrA0 + _rows_padded;
 			const Ty* ptrA2 = ptrA0 + _rows_padded * 2;
 			const Ty* ptrA3 = ptrA0 + _rows_padded * 3;
-			Ty* ptr = C.data() + j;
+			Ty* res_ptr = ret.data() + j;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -4845,11 +5824,11 @@ inline cool::matrix<Ty, _cols, _rows> cool::transp(const cool::matrix<Ty, _rows,
 				Ty temp1 = *ptrA1++;
 				Ty temp2 = *ptrA2++;
 				Ty temp3 = *ptrA3++;
-				*ptr = temp0;
-				*(ptr + 1) = temp1;
-				*(ptr + 2) = temp2;
-				*(ptr + 3) = temp3;
-				ptr += _cols;
+				*res_ptr = temp0;
+				*(res_ptr + 1) = temp1;
+				*(res_ptr + 2) = temp2;
+				*(res_ptr + 3) = temp3;
+				res_ptr += _res_rows_padded;
 			}
 		}
 
@@ -4859,11 +5838,11 @@ inline cool::matrix<Ty, _cols, _rows> cool::transp(const cool::matrix<Ty, _rows,
 		case 1:
 		{
 			const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
-			Ty* ptr = C.data() + cols_mult4;
+			Ty* res_ptr = ret.data() + cols_mult4;
 			for (std::size_t i = 0; i < _rows; i++)
 			{
-				*ptr = *ptrA0++;
-				ptr += _cols;
+				*res_ptr = *ptrA0++;
+				res_ptr += _res_rows_padded;
 			}
 			break;
 		}
@@ -4872,7 +5851,7 @@ inline cool::matrix<Ty, _cols, _rows> cool::transp(const cool::matrix<Ty, _rows,
 		{
 			const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
 			const Ty* ptrA1 = ptrA0 + _rows_padded;
-			Ty* ptr = C.data() + cols_mult4;
+			Ty* res_ptr = ret.data() + cols_mult4;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -4883,9 +5862,9 @@ inline cool::matrix<Ty, _cols, _rows> cool::transp(const cool::matrix<Ty, _rows,
 			{
 				Ty temp0 = *ptrA0++;
 				Ty temp1 = *ptrA1++;
-				*ptr = temp0;
-				*(ptr + 1) = temp1;
-				ptr += _cols;
+				*res_ptr = temp0;
+				*(res_ptr + 1) = temp1;
+				res_ptr += _res_rows_padded;
 			}
 			break;
 		}
@@ -4895,7 +5874,7 @@ inline cool::matrix<Ty, _cols, _rows> cool::transp(const cool::matrix<Ty, _rows,
 			const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
 			const Ty* ptrA1 = ptrA0 + _rows_padded;
 			const Ty* ptrA2 = ptrA0 + _rows_padded * 2;
-			Ty* ptr = C.data() + cols_mult4;
+			Ty* res_ptr = ret.data() + cols_mult4;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -4907,10 +5886,10 @@ inline cool::matrix<Ty, _cols, _rows> cool::transp(const cool::matrix<Ty, _rows,
 				Ty temp0 = *ptrA0++;
 				Ty temp1 = *ptrA1++;
 				Ty temp2 = *ptrA2++;
-				*ptr = temp0;
-				*(ptr + 1) = temp1;
-				*(ptr + 2) = temp2;
-				ptr += _cols;
+				*res_ptr = temp0;
+				*(res_ptr + 1) = temp1;
+				*(res_ptr + 2) = temp2;
+				res_ptr += _res_rows_padded;
 			}
 			break;
 		}
@@ -4920,30 +5899,36 @@ inline cool::matrix<Ty, _cols, _rows> cool::transp(const cool::matrix<Ty, _rows,
 		}
 	}
 
-	return C;
+	return ret;
 }
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _cols, _rows_padded>& A) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _rows, std::size_t _cols,
+	std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty
+>
+inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_align> cool::adj(
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& A) noexcept
 {
-	constexpr bool no_conj_modif = std::is_integral<Ty>::value || std::is_floating_point<Ty>::value;
-	constexpr bool _line_matrix = (_rows == 1) && (_rows_padded == 1);
-
 	constexpr std::size_t cols_mult4 = _cols - _cols % 4;
 	constexpr std::size_t cols_mod4 = _cols % 4;
 
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _cols>::value;
+
+	constexpr bool _line_matrix = ((_rows == 1) && (_rows_padded == 1)) || ((_cols == 1) && (_res_rows_padded == 1));
+
+	constexpr bool no_conj_modif = std::is_integral<Ty>::value || std::is_floating_point<Ty>::value;
+
+	cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_align> ret;
+
 	if (no_conj_modif)
 	{
-		cool::matrix<Ty, _cols, _rows> C;
-
 		if (_line_matrix)
 		{
-			Ty* ptr = C.data();
+			Ty* res_ptr = ret.data();
 			const Ty* ptrA = A.data();
 
-			for (std::size_t j = 0; j < _cols; j++)
+			for (std::size_t n = 0; n < _cols; n++)
 			{
-				*ptr++ = *ptrA++;
+				*(res_ptr + n) = *(ptrA + n);
 			}
 		}
 		else
@@ -4954,7 +5939,7 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 				const Ty* ptrA1 = ptrA0 + _rows_padded;
 				const Ty* ptrA2 = ptrA0 + _rows_padded * 2;
 				const Ty* ptrA3 = ptrA0 + _rows_padded * 3;
-				Ty* ptr = C.data() + j;
+				Ty* res_ptr = ret.data() + j;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -4967,11 +5952,11 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 					Ty temp1 = *ptrA1++;
 					Ty temp2 = *ptrA2++;
 					Ty temp3 = *ptrA3++;
-					*ptr = temp0;
-					*(ptr + 1) = temp1;
-					*(ptr + 2) = temp2;
-					*(ptr + 3) = temp3;
-					ptr += _cols;
+					*res_ptr = temp0;
+					*(res_ptr + 1) = temp1;
+					*(res_ptr + 2) = temp2;
+					*(res_ptr + 3) = temp3;
+					res_ptr += _res_rows_padded;
 				}
 			}
 
@@ -4981,11 +5966,11 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 			case 1:
 			{
 				const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
-				Ty* ptr = C.data() + cols_mult4;
+				Ty* res_ptr = ret.data() + cols_mult4;
 				for (std::size_t i = 0; i < _rows; i++)
 				{
-					*ptr = *ptrA0++;
-					ptr += _cols;
+					*res_ptr = *ptrA0++;
+					res_ptr += _res_rows_padded;
 				}
 				break;
 			}
@@ -4994,7 +5979,7 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 			{
 				const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
 				const Ty* ptrA1 = ptrA0 + _rows_padded;
-				Ty* ptr = C.data() + cols_mult4;
+				Ty* res_ptr = ret.data() + cols_mult4;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -5005,9 +5990,9 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 				{
 					Ty temp0 = *ptrA0++;
 					Ty temp1 = *ptrA1++;
-					*ptr = temp0;
-					*(ptr + 1) = temp1;
-					ptr += _cols;
+					*res_ptr = temp0;
+					*(res_ptr + 1) = temp1;
+					res_ptr += _res_rows_padded;
 				}
 				break;
 			}
@@ -5017,7 +6002,7 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 				const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
 				const Ty* ptrA1 = ptrA0 + _rows_padded;
 				const Ty* ptrA2 = ptrA0 + _rows_padded * 2;
-				Ty* ptr = C.data() + cols_mult4;
+				Ty* res_ptr = ret.data() + cols_mult4;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -5029,10 +6014,10 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 					Ty temp0 = *ptrA0++;
 					Ty temp1 = *ptrA1++;
 					Ty temp2 = *ptrA2++;
-					*ptr = temp0;
-					*(ptr + 1) = temp1;
-					*(ptr + 2) = temp2;
-					ptr += _cols;
+					*res_ptr = temp0;
+					*(res_ptr + 1) = temp1;
+					*(res_ptr + 2) = temp2;
+					res_ptr += _res_rows_padded;
 				}
 				break;
 			}
@@ -5041,21 +6026,17 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 				break;
 			}
 		}
-
-		return C;
 	}
 	else
 	{
-		cool::matrix<Ty, _cols, _rows> C;
-
 		if (_line_matrix)
 		{
-			Ty* ptr = C.data();
+			Ty* res_ptr = ret.data();
 			const Ty* ptrA = A.data();
 
-			for (std::size_t j = 0; j < _cols; j++)
+			for (std::size_t n = 0; n < _cols; n++)
 			{
-				*ptr++ = cool::matrix_scalar_subroutine::conj(*ptrA++);
+				*(res_ptr + n) = cool::matrix_scalar_subroutine::conj(*(ptrA + n));
 			}
 		}
 		else
@@ -5066,7 +6047,7 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 				const Ty* ptrA1 = ptrA0 + _rows_padded;
 				const Ty* ptrA2 = ptrA0 + _rows_padded * 2;
 				const Ty* ptrA3 = ptrA0 + _rows_padded * 3;
-				Ty* ptr = C.data() + j;
+				Ty* res_ptr = ret.data() + j;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -5079,11 +6060,11 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 					Ty temp1 = cool::matrix_scalar_subroutine::conj(*ptrA1++);
 					Ty temp2 = cool::matrix_scalar_subroutine::conj(*ptrA2++);
 					Ty temp3 = cool::matrix_scalar_subroutine::conj(*ptrA3++);
-					*ptr = temp0;
-					*(ptr + 1) = temp1;
-					*(ptr + 2) = temp2;
-					*(ptr + 3) = temp3;
-					ptr += _cols;
+					*res_ptr = temp0;
+					*(res_ptr + 1) = temp1;
+					*(res_ptr + 2) = temp2;
+					*(res_ptr + 3) = temp3;
+					res_ptr += _res_rows_padded;
 				}
 			}
 
@@ -5093,11 +6074,11 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 			case 1:
 			{
 				const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
-				Ty* ptr = C.data() + cols_mult4;
+				Ty* res_ptr = ret.data() + cols_mult4;
 				for (std::size_t i = 0; i < _rows; i++)
 				{
-					*ptr = cool::matrix_scalar_subroutine::conj(*ptrA0++);
-					ptr += _cols;
+					*res_ptr = cool::matrix_scalar_subroutine::conj(*ptrA0++);
+					res_ptr += _res_rows_padded;
 				}
 				break;
 			}
@@ -5106,7 +6087,7 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 			{
 				const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
 				const Ty* ptrA1 = ptrA0 + _rows_padded;
-				Ty* ptr = C.data() + cols_mult4;
+				Ty* res_ptr = ret.data() + cols_mult4;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -5117,9 +6098,9 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 				{
 					Ty temp0 = cool::matrix_scalar_subroutine::conj(*ptrA0++);
 					Ty temp1 = cool::matrix_scalar_subroutine::conj(*ptrA1++);
-					*ptr = temp0;
-					*(ptr + 1) = temp1;
-					ptr += _cols;
+					*res_ptr = temp0;
+					*(res_ptr + 1) = temp1;
+					res_ptr += _res_rows_padded;
 				}
 				break;
 			}
@@ -5129,7 +6110,7 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 				const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
 				const Ty* ptrA1 = ptrA0 + _rows_padded;
 				const Ty* ptrA2 = ptrA0 + _rows_padded * 2;
-				Ty* ptr = C.data() + cols_mult4;
+				Ty* res_ptr = ret.data() + cols_mult4;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -5141,10 +6122,10 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 					Ty temp0 = cool::matrix_scalar_subroutine::conj(*ptrA0++);
 					Ty temp1 = cool::matrix_scalar_subroutine::conj(*ptrA1++);
 					Ty temp2 = cool::matrix_scalar_subroutine::conj(*ptrA2++);
-					*ptr = temp0;
-					*(ptr + 1) = temp1;
-					*(ptr + 2) = temp2;
-					ptr += _cols;
+					*res_ptr = temp0;
+					*(res_ptr + 1) = temp1;
+					*(res_ptr + 2) = temp2;
+					res_ptr += _res_rows_padded;
 				}
 				break;
 			}
@@ -5153,167 +6134,200 @@ inline cool::matrix<Ty, _cols, _rows> cool::adj(const cool::matrix<Ty, _rows, _c
 				break;
 			}
 		}
-
-		return C;
 	}
-}
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols> cool::conj(const cool::matrix<Ty, _rows, _cols, _rows_padded>& A) noexcept
-{
-	constexpr bool no_conj_modif = std::is_integral<Ty>::value || std::is_floating_point<Ty>::value;
-
-	if (no_conj_modif)
-	{
-		cool::matrix<Ty, _cols, _rows> C;
-		const Ty* Aptr = A.data();
-		Ty* ptr = C.data();
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				*ptr++ = *(Aptr + i + _rows_padded * j);
-			}
-		}
-		return C;
-	}
-	else
-	{
-		cool::matrix<Ty, _cols, _rows> C;
-		const Ty* Aptr = A.data();
-		Ty* ptr = C.data();
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				*ptr++ = cool::matrix_scalar_subroutine::conj(*(Aptr + i + _rows_padded * j));
-			}
-		}
-		return C;
-	}
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols> cool::real(const cool::matrix<Ty, _rows, _cols, _rows_padded>& A) noexcept
-{
-	constexpr bool no_conj_modif = std::is_integral<Ty>::value || std::is_floating_point<Ty>::value;
-
-	if (no_conj_modif)
-	{
-		cool::matrix<Ty, _cols, _rows> C;
-		const Ty* Aptr = A.data();
-		Ty* ptr = C.data();
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				*ptr++ = *(Aptr + i + _rows_padded * j);
-			}
-		}
-		return C;
-	}
-	else
-	{
-		cool::matrix<Ty, _cols, _rows> C;
-		const Ty* Aptr = A.data();
-		Ty* ptr = C.data();
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				*ptr++ = cool::matrix_scalar_subroutine::real(*(Aptr + i + _rows_padded * j));
-			}
-		}
-		return C;
-	}
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols> cool::imag(const cool::matrix<Ty, _rows, _cols, _rows_padded>& A) noexcept
-{
-	constexpr bool no_conj_modif = std::is_integral<Ty>::value || std::is_floating_point<Ty>::value;
-
-	if (no_conj_modif)
-	{
-		return cool::matrix<Ty, _cols, _rows>(static_cast<Ty>(0));
-	}
-	else
-	{
-		cool::matrix<Ty, _cols, _rows> C;
-		const Ty* Aptr = A.data();
-		Ty* ptr = C.data();
-		for (std::size_t j = 0; j < _cols; j++)
-		{
-			for (std::size_t i = 0; i < _rows; i++)
-			{
-				*ptr++ = cool::matrix_scalar_subroutine::imag(*(Aptr + i + _rows_padded * j));
-			}
-		}
-		return C;
-	}
-}
-
-template <class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-inline cool::matrix<Ty, 3, 1> cool::vxv(const cool::matrix<Ty, 3, 1, _x_rows_padded>& x, const cool::matrix<Ty, 3, 1, _y_rows_padded>& y) noexcept
-{
-	cool::matrix<Ty, 3, 1> ret;
-	const Ty* xptr = x.data();
-	const Ty* yptr = y.data();
-	Ty* ptr = ret.data();
-
-	*(ptr + 0) = *(xptr + 1) * *(yptr + 2) - *(xptr + 2) * *(yptr + 1);
-	*(ptr + 1) = *(xptr + 2) * *(yptr + 0) - *(xptr + 0) * *(yptr + 2);
-	*(ptr + 2) = *(xptr + 0) * *(yptr + 1) - *(xptr + 1) * *(yptr + 0);
 	return ret;
 }
 
-template <class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-inline cool::matrix<Ty, 4, 1> cool::vxv(const cool::matrix<Ty, 4, 1, _x_rows_padded>& x, const cool::matrix<Ty, 4, 1, _y_rows_padded>& y) noexcept
+template <class Ty, std::size_t _rows, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline Ty cool::trace(const cool::const_matrix_interface<Ty, _rows, _rows, _rows_padded, _align, _matrix_data_Ty>& A) noexcept
 {
-	cool::matrix<Ty, 4, 1> ret;
+	constexpr bool _size_lt_2 = _rows < 2;
+	constexpr bool _size_lt_8 = _rows < 8;
+
+	constexpr std::size_t _rows_padded_p1 = _rows_padded + 1;
+
+	if (_size_lt_2)
+	{
+		return A[0];
+	}
+	else if (_size_lt_8)
+	{
+		constexpr std::size_t _rows_mult2 = _rows - _rows % 2;
+		constexpr bool _rows_odd = _rows % 2 != 0;
+
+		const Ty* ptr = A.data();
+
+		Ty acc0 = *ptr;
+		Ty acc1 = *(ptr + _rows_padded_p1);
+
+		for (std::size_t k = 2; k < _rows_mult2; k += 2)
+		{
+			acc0 += *(ptr + _rows_padded_p1 * k);
+			acc1 += *(ptr + _rows_padded_p1 * (k + 1));
+		}
+		if (_rows_odd)
+		{
+			acc0 += *(ptr + _rows_padded_p1 * _rows_mult2);
+		}
+
+		return acc0 + acc1;
+	}
+	else
+	{
+		constexpr std::size_t _rows_mult4 = _rows - _rows % 4;
+		constexpr std::size_t remainder = _rows % 4;
+
+		const Ty* ptr = A.data();
+
+		Ty acc[4] = { *ptr,
+			*(ptr + _rows_padded_p1),
+			*(ptr + _rows_padded_p1 * 2),
+			*(ptr + _rows_padded_p1 * 3)
+		};
+
+		for (std::size_t n = 4; n < _rows_mult4; n += 4)
+		{
+			for (std::size_t m = 0; m < 4; m++)
+			{
+				acc[m] += *(ptr + _rows_padded_p1 * (n + m));
+			}
+		}
+		for (std::size_t m = 0; m < remainder; m++)
+		{
+			acc[m] += *(ptr + _rows_padded_p1 * (_rows_mult4 + m));
+		}
+
+		return (acc[0] + acc[1]) + (acc[2] + acc[3]);
+	}
+}
+
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded,
+	std::size_t _x_align, std::size_t _y_align, class _x_matrix_data_Ty, class _y_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> cool::vxv(
+	const cool::const_matrix_interface<Ty, 3, 1, _x_rows_padded, _x_align, _x_matrix_data_Ty>& x,
+	const cool::const_matrix_interface<Ty, 3, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept
+{
+	cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
 	const Ty* xptr = x.data();
 	const Ty* yptr = y.data();
-	Ty* ptr = ret.data();
 
-	*(ptr + 0) = *(xptr + 1) * *(yptr + 2) - *(xptr + 2) * *(yptr + 1);
-	*(ptr + 1) = *(xptr + 2) * *(yptr + 0) - *(xptr + 0) * *(yptr + 2);
-	*(ptr + 2) = *(xptr + 0) * *(yptr + 1) - *(xptr + 1) * *(yptr + 0);
-	*(ptr + 3) = static_cast<Ty>(1);
+	*(res_ptr + 0) = *(xptr + 1) * *(yptr + 2) - *(xptr + 2) * *(yptr + 1);
+	*(res_ptr + 1) = *(xptr + 2) * *(yptr + 0) - *(xptr + 0) * *(yptr + 2);
+	*(res_ptr + 2) = *(xptr + 0) * *(yptr + 1) - *(xptr + 1) * *(yptr + 0);
+
 	return ret;
 }
 
-template <class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-inline cool::matrix<Ty, 4, 1> cool::qxq(const cool::matrix<Ty, 4, 1, _x_rows_padded>& x, const cool::matrix<Ty, 4, 1, _y_rows_padded>& y) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded,
+	std::size_t _x_align, std::size_t _y_align, class _x_matrix_data_Ty, class _y_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> cool::vxv(
+	const cool::const_matrix_interface<Ty, 4, 1, _x_rows_padded, _x_align, _x_matrix_data_Ty>& x,
+	const cool::const_matrix_interface<Ty, 4, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept
 {
-	cool::matrix<Ty, 4, 1> ret;
+	cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
 	const Ty* xptr = x.data();
 	const Ty* yptr = y.data();
-	Ty* ptr = ret.data();
 
-	const Ty x0 = *(xptr + 0);
-	const Ty x1 = *(xptr + 1);
-	const Ty x2 = *(xptr + 2);
-	const Ty x3 = *(xptr + 3);
+	*(res_ptr + 0) = *(xptr + 1) * *(yptr + 2) - *(xptr + 2) * *(yptr + 1);
+	*(res_ptr + 1) = *(xptr + 2) * *(yptr + 0) - *(xptr + 0) * *(yptr + 2);
+	*(res_ptr + 2) = *(xptr + 0) * *(yptr + 1) - *(xptr + 1) * *(yptr + 0);
+	*(res_ptr + 3) = static_cast<Ty>(1);
 
-	*(ptr + 0) = x0 * *(yptr + 0) - x1 * *(yptr + 1) - x2 * *(yptr + 2) - x3 * *(yptr + 3);
-	*(ptr + 1) = x0 * *(yptr + 1) + x1 * *(yptr + 0) - x2 * *(yptr + 3) + x3 * *(yptr + 2);
-	*(ptr + 2) = x0 * *(yptr + 2) + x1 * *(yptr + 3) + x2 * *(yptr + 0) - x3 * *(yptr + 1);
-	*(ptr + 3) = x0 * *(yptr + 3) - x1 * *(yptr + 2) + x2 * *(yptr + 1) + x3 * *(yptr + 0);
 	return ret;
 }
 
-template <class Ty, std::size_t Ar, std::size_t _A_rows_padded>
-inline Ty cool::det(const cool::matrix<Ty, Ar, Ar, _A_rows_padded>& A) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded,
+	std::size_t _x_align, std::size_t _y_align, class _x_matrix_data_Ty, class _y_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> cool::qxq(
+	const cool::const_matrix_interface<Ty, 4, 1, _x_rows_padded, _x_align, _x_matrix_data_Ty>& x,
+	const cool::const_matrix_interface<Ty, 4, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept
+{
+	cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
+	const Ty* xptr = x.data();
+	const Ty* yptr = y.data();
+
+	Ty x0 = *(xptr + 0);
+	Ty x1 = *(xptr + 1);
+	Ty x2 = *(xptr + 2);
+	Ty x3 = *(xptr + 3);
+
+	*(res_ptr + 0) = x0 * *(yptr + 0) - x1 * *(yptr + 1) - x2 * *(yptr + 2) - x3 * *(yptr + 3);
+	*(res_ptr + 1) = x0 * *(yptr + 1) + x1 * *(yptr + 0) - x2 * *(yptr + 3) + x3 * *(yptr + 2);
+	*(res_ptr + 2) = x0 * *(yptr + 2) + x1 * *(yptr + 3) + x2 * *(yptr + 0) - x3 * *(yptr + 1);
+	*(res_ptr + 3) = x0 * *(yptr + 3) - x1 * *(yptr + 2) + x2 * *(yptr + 1) + x3 * *(yptr + 0);
+
+	return ret;
+}
+
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty,
+	std::size_t _x_rows_padded, std::size_t _x_align, class _x_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> cool::qconj(
+	const cool::const_matrix_interface<Ty, 4, 1, _x_rows_padded, _x_align, _x_matrix_data_Ty>& x) noexcept
+{
+	cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
+	const Ty* xptr = x.data();
+
+	*(res_ptr + 0) = *(xptr + 0);
+	*(res_ptr + 1) = -*(xptr + 1);
+	*(res_ptr + 2) = -*(xptr + 2);
+	*(res_ptr + 3) = -*(xptr + 3);
+
+	return ret;
+}
+
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty,
+	std::size_t _x_rows_padded, std::size_t _x_align, class _x_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> cool::qinv(
+	const cool::const_matrix_interface<Ty, 4, 1, _x_rows_padded, _x_align, _x_matrix_data_Ty>& x) noexcept
+{
+	cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
+	const Ty* xptr = x.data();
+
+	Ty x0 = *(xptr + 0);
+	Ty x1 = *(xptr + 1);
+	Ty x2 = *(xptr + 2);
+	Ty x3 = *(xptr + 3);
+
+	Ty d = static_cast<Ty>(1) / ((x0 * x0 + x2 * x2) + (x1 * x1 + x3 * x3));
+
+	*(res_ptr + 0) = d * x0;
+	*(res_ptr + 1) = -d * x1;
+	*(res_ptr + 2) = -d * x2;
+	*(res_ptr + 3) = -d * x3;
+
+	return ret;
+}
+
+template <class Ty, std::size_t _dim, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline Ty cool::det(const cool::const_matrix_interface<Ty, _dim, _dim, _rows_padded, _align, _matrix_data_Ty>& A) noexcept
 {
 	return cool::lu(A).det();
 }
 
-template <class Ty, std::size_t _rows_padded> inline Ty cool::det(const cool::matrix<Ty, 1, 1, _rows_padded>& A) noexcept
+template <class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline Ty cool::det(const cool::const_matrix_interface<Ty, 1, 1, _rows_padded, _align, _matrix_data_Ty>& A) noexcept
 {
 	return A[0];
 }
 
-template <class Ty, std::size_t _rows_padded> inline Ty cool::det(const cool::matrix<Ty, 2, 2, _rows_padded>& A) noexcept
+template <class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline Ty cool::det(const cool::const_matrix_interface<Ty, 2, 2, _rows_padded, _align, _matrix_data_Ty>& A) noexcept
 {
 	constexpr std::size_t i00 = 0 + _rows_padded * 0;
 	constexpr std::size_t i10 = 1 + _rows_padded * 0;
@@ -5324,7 +6338,8 @@ template <class Ty, std::size_t _rows_padded> inline Ty cool::det(const cool::ma
 	return *(ptr + i00) * *(ptr + i11) - *(ptr + i10) * *(ptr + i01);
 }
 
-template <class Ty, std::size_t _rows_padded> inline Ty cool::det(const cool::matrix<Ty, 3, 3, _rows_padded>& A) noexcept
+template <class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline Ty cool::det(const cool::const_matrix_interface<Ty, 3, 3, _rows_padded, _align, _matrix_data_Ty>& A) noexcept
 {
 	constexpr std::size_t i00 = 0 + _rows_padded * 0;
 	constexpr std::size_t i10 = 1 + _rows_padded * 0;
@@ -5342,7 +6357,8 @@ template <class Ty, std::size_t _rows_padded> inline Ty cool::det(const cool::ma
 		+ *(ptr + i20) * (*(ptr + i01) * *(ptr + i12) - *(ptr + i11) * *(ptr + i02));
 }
 
-template <class Ty, std::size_t _rows_padded> inline Ty cool::det(const cool::matrix<Ty, 4, 4, _rows_padded>& A) noexcept
+template <class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline Ty cool::det(const cool::const_matrix_interface<Ty, 4, 4, _rows_padded, _align, _matrix_data_Ty>& A) noexcept
 {
 	constexpr std::size_t i00 = 0 + _rows_padded * 0;
 	constexpr std::size_t i10 = 1 + _rows_padded * 0;
@@ -5370,80 +6386,456 @@ template <class Ty, std::size_t _rows_padded> inline Ty cool::det(const cool::ma
 		+ (*(ptr + i20) * *(ptr + i31) - *(ptr + i30) * *(ptr + i21)) * (*(ptr + i02) * *(ptr + i13) - *(ptr + i12) * *(ptr + i03));
 }
 
-template <class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-inline Ty cool::det2v(const cool::matrix<Ty, 2, 1, _x_rows_padded>& x, const cool::matrix<Ty, 2, 1, _y_rows_padded>& y) noexcept
+template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded,
+	std::size_t _a0_align, std::size_t _a1_align,
+	class _a0_matrix_data_Ty, class _a1_matrix_data_Ty
+>
+inline Ty cool::det2v(
+	const cool::const_matrix_interface<Ty, 2, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+	const cool::const_matrix_interface<Ty, 2, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1) noexcept
 {
-	const Ty* xptr = x.data();
-	const Ty* yptr = y.data();
+	const Ty* a0ptr = a0.data();
+	const Ty* a1ptr = a1.data();
 
-	return *(xptr + 0) * *(yptr + 1) - *(xptr + 1) * *(yptr + 0);
+	return *(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0);
 }
 
-template <class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded, std::size_t _z_rows_padded>
-inline Ty cool::det3v(const cool::matrix<Ty, 3, 1, _x_rows_padded>& x, const cool::matrix<Ty, 3, 1, _y_rows_padded>& y,
-	const cool::matrix<Ty, 3, 1, _z_rows_padded>& z) noexcept
+template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded,
+	std::size_t _a0_align, std::size_t _a1_align, std::size_t _a2_align,
+	class _a0_matrix_data_Ty, class _a1_matrix_data_Ty, class _a2_matrix_data_Ty
+>
+inline Ty cool::det3v(
+	const cool::const_matrix_interface<Ty, 3, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+	const cool::const_matrix_interface<Ty, 3, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1,
+	const cool::const_matrix_interface<Ty, 3, 1, _a2_rows_padded, _a2_align, _a2_matrix_data_Ty>& a2) noexcept
 {
-	const Ty* xptr = x.data();
-	const Ty* yptr = y.data();
-	const Ty* zptr = z.data();
+	const Ty* a0ptr = a0.data();
+	const Ty* a1ptr = a1.data();
+	const Ty* a2ptr = a2.data();
 
-	return *(xptr + 0) * (*(yptr + 1) * *(zptr + 2) - *(yptr + 2) * *(zptr + 1))
-		+ *(xptr + 1) * (*(yptr + 2) * *(zptr + 0) - *(yptr + 0) * *(zptr + 2))
-		+ *(xptr + 2) * (*(yptr + 0) * *(zptr + 1) - *(yptr + 1) * *(zptr + 0));
+	return *(a0ptr + 0) * (*(a1ptr + 1) * *(a2ptr + 2) - *(a1ptr + 2) * *(a2ptr + 1))
+		+ *(a0ptr + 1) * (*(a1ptr + 2) * *(a2ptr + 0) - *(a1ptr + 0) * *(a2ptr + 2))
+		+ *(a0ptr + 2) * (*(a1ptr + 0) * *(a2ptr + 1) - *(a1ptr + 1) * *(a2ptr + 0));
 }
 
-template <class Ty, std::size_t _x_rows_padded, std::size_t _y_rows_padded, std::size_t _z_rows_padded, std::size_t _w_rows_padded>
-inline Ty cool::det4v(const cool::matrix<Ty, 4, 1, _x_rows_padded>& x, const cool::matrix<Ty, 4, 1, _y_rows_padded>& y,
-	const cool::matrix<Ty, 4, 1, _z_rows_padded>& z, const cool::matrix<Ty, 4, 1, _w_rows_padded>& w) noexcept
+template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded, std::size_t _a3_rows_padded,
+	std::size_t _a0_align, std::size_t _a1_align, std::size_t _a2_align, std::size_t _a3_align,
+	class _a0_matrix_data_Ty, class _a1_matrix_data_Ty, class _a2_matrix_data_Ty, class _a3_matrix_data_Ty
+>
+inline Ty cool::det4v(
+	const cool::const_matrix_interface<Ty, 4, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+	const cool::const_matrix_interface<Ty, 4, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1,
+	const cool::const_matrix_interface<Ty, 4, 1, _a2_rows_padded, _a2_align, _a2_matrix_data_Ty>& a2,
+	const cool::const_matrix_interface<Ty, 4, 1, _a3_rows_padded, _a3_align, _a3_matrix_data_Ty>& a3) noexcept
 {
-	const Ty* xptr = x.data();
-	const Ty* yptr = y.data();
-	const Ty* zptr = z.data();
-	const Ty* wptr = w.data();
+	const Ty* a0ptr = a0.data();
+	const Ty* a1ptr = a1.data();
+	const Ty* a2ptr = a2.data();
+	const Ty* a3ptr = a3.data();
 
-	return (*(xptr + 0) * *(yptr + 1) - *(xptr + 1) * *(yptr + 0)) * (*(zptr + 2) * *(wptr + 3) - *(zptr + 3) * *(wptr + 2))
-		- (*(xptr + 0) * *(yptr + 2) - *(xptr + 2) * *(yptr + 0)) * (*(zptr + 1) * *(wptr + 3) - *(zptr + 3) * *(wptr + 1))
-		+ (*(xptr + 0) * *(yptr + 3) - *(xptr + 3) * *(yptr + 0)) * (*(zptr + 1) * *(wptr + 2) - *(zptr + 2) * *(wptr + 1))
-		+ (*(xptr + 1) * *(yptr + 2) - *(xptr + 2) * *(yptr + 1)) * (*(zptr + 0) * *(wptr + 3) - *(zptr + 3) * *(wptr + 0))
-		- (*(xptr + 1) * *(yptr + 3) - *(xptr + 3) * *(yptr + 1)) * (*(zptr + 0) * *(wptr + 2) - *(zptr + 2) * *(wptr + 0))
-		+ (*(xptr + 2) * *(yptr + 3) - *(xptr + 3) * *(yptr + 2)) * (*(zptr + 0) * *(wptr + 1) - *(zptr + 1) * *(wptr + 0));
+	return (*(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0)) * (*(a2ptr + 2) * *(a3ptr + 3) - *(a2ptr + 3) * *(a3ptr + 2))
+		- (*(a0ptr + 0) * *(a1ptr + 2) - *(a0ptr + 2) * *(a1ptr + 0)) * (*(a2ptr + 1) * *(a3ptr + 3) - *(a2ptr + 3) * *(a3ptr + 1))
+		+ (*(a0ptr + 0) * *(a1ptr + 3) - *(a0ptr + 3) * *(a1ptr + 0)) * (*(a2ptr + 1) * *(a3ptr + 2) - *(a2ptr + 2) * *(a3ptr + 1))
+		+ (*(a0ptr + 1) * *(a1ptr + 2) - *(a0ptr + 2) * *(a1ptr + 1)) * (*(a2ptr + 0) * *(a3ptr + 3) - *(a2ptr + 3) * *(a3ptr + 0))
+		- (*(a0ptr + 1) * *(a1ptr + 3) - *(a0ptr + 3) * *(a1ptr + 1)) * (*(a2ptr + 0) * *(a3ptr + 2) - *(a2ptr + 2) * *(a3ptr + 0))
+		+ (*(a0ptr + 2) * *(a1ptr + 3) - *(a0ptr + 3) * *(a1ptr + 2)) * (*(a2ptr + 0) * *(a3ptr + 1) - *(a2ptr + 1) * *(a3ptr + 0));
 }
 
-template <class Ty, std::size_t Ar, std::size_t Yc, std::size_t _A_rows_padded, std::size_t _Y_rows_padded>
-inline cool::matrix<Ty, Ar, Yc> cool::solve(const cool::matrix<Ty, Ar, Ar, _A_rows_padded>& A, const cool::matrix<Ty, Ar, Yc, _Y_rows_padded>& Y) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _dim, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::matrix_result<Ty, _dim, _dim, _opt_res_rows_padded, _opt_res_align> cool::inv(const cool::const_matrix_interface<Ty, _dim, _dim, _rows_padded, _align, _matrix_data_Ty>& A) noexcept
 {
-	return cool::lu(A).solve(Y);
+	return cool::lu<_opt_res_rows_padded, _opt_res_align>(A).inv();
 }
 
-template <class Ty, std::size_t _A_rows_padded, std::size_t _y_rows_padded>
-inline cool::matrix<Ty, 1, 1> cool::solve(const cool::matrix<Ty, 1, 1, _A_rows_padded>& A, const cool::matrix<Ty, 1, 1, _y_rows_padded>& y) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::matrix_result<Ty, 1, 1, _opt_res_rows_padded, _opt_res_align> cool::inv(const cool::const_matrix_interface<Ty, 1, 1, _rows_padded, _align, _matrix_data_Ty>& A) noexcept
 {
-	return cool::matrix<Ty, 1, 1>(y[0] / A[0]);
+	return cool::matrix_result<Ty, 1, 1, _opt_res_rows_padded, _opt_res_align>(static_cast<Ty>(1) / A[0]);
 }
 
-template <class Ty, std::size_t _A_rows_padded, std::size_t _y_rows_padded>
-inline cool::matrix<Ty, 2, 1> cool::solve(const cool::matrix<Ty, 2, 2, _A_rows_padded>& A, const cool::matrix<Ty, 2, 1, _y_rows_padded>& y) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::matrix_result<Ty, 2, 2, _opt_res_rows_padded, _opt_res_align> cool::inv(const cool::const_matrix_interface<Ty, 2, 2, _rows_padded, _align, _matrix_data_Ty>& A) noexcept
+{
+	constexpr std::size_t i00 = 0 + _rows_padded * 0;
+	constexpr std::size_t i10 = 1 + _rows_padded * 0;
+	constexpr std::size_t i01 = 0 + _rows_padded * 1;
+	constexpr std::size_t i11 = 1 + _rows_padded * 1;
+
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, 2>::value;
+
+	constexpr std::size_t j00 = 0 + _res_rows_padded * 0;
+	constexpr std::size_t j10 = 1 + _res_rows_padded * 0;
+	constexpr std::size_t j01 = 0 + _res_rows_padded * 1;
+	constexpr std::size_t j11 = 1 + _res_rows_padded * 1;
+
+	cool::matrix_result<Ty, 2, 2, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
+	const Ty* ptr = A.data();
+
+	Ty d = static_cast<Ty>(1) / (*(ptr + i00) * *(ptr + i11) - *(ptr + i10) * *(ptr + i01));
+
+	*(res_ptr + j00) = d * *(ptr + i11);
+	*(res_ptr + j10) = -d * *(ptr + i10);
+	*(res_ptr + j01) = -d * *(ptr + i01);
+	*(res_ptr + j11) = d * *(ptr + i00);
+
+	return ret;
+}
+
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::matrix_result<Ty, 3, 3, _opt_res_rows_padded, _opt_res_align> cool::inv(const cool::const_matrix_interface<Ty, 3, 3, _rows_padded, _align, _matrix_data_Ty>& A) noexcept
+{
+	constexpr std::size_t i00 = 0 + _rows_padded * 0;
+	constexpr std::size_t i10 = 1 + _rows_padded * 0;
+	constexpr std::size_t i20 = 2 + _rows_padded * 0;
+	constexpr std::size_t i01 = 0 + _rows_padded * 1;
+	constexpr std::size_t i11 = 1 + _rows_padded * 1;
+	constexpr std::size_t i21 = 2 + _rows_padded * 1;
+	constexpr std::size_t i02 = 0 + _rows_padded * 2;
+	constexpr std::size_t i12 = 1 + _rows_padded * 2;
+	constexpr std::size_t i22 = 2 + _rows_padded * 2;
+
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, 3>::value;
+
+	constexpr std::size_t j00 = 0 + _res_rows_padded * 0;
+	constexpr std::size_t j10 = 1 + _res_rows_padded * 0;
+	constexpr std::size_t j20 = 2 + _res_rows_padded * 0;
+	constexpr std::size_t j01 = 0 + _res_rows_padded * 1;
+	constexpr std::size_t j11 = 1 + _res_rows_padded * 1;
+	constexpr std::size_t j21 = 2 + _res_rows_padded * 1;
+	constexpr std::size_t j02 = 0 + _res_rows_padded * 2;
+	constexpr std::size_t j12 = 1 + _res_rows_padded * 2;
+	constexpr std::size_t j22 = 2 + _res_rows_padded * 2;
+
+	cool::matrix_result<Ty, 3, 3, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
+	const Ty* ptr = A.data();
+
+	Ty cof0 = *(ptr + i11) * *(ptr + i22) - *(ptr + i21) * *(ptr + i12);
+	Ty cof1 = *(ptr + i21) * *(ptr + i02) - *(ptr + i01) * *(ptr + i22);
+	Ty cof2 = *(ptr + i01) * *(ptr + i12) - *(ptr + i11) * *(ptr + i02);
+
+	Ty d = static_cast<Ty>(1) / (*(ptr + i00) * cof0 + *(ptr + i10) * cof1 + *(ptr + i20) * cof2);
+
+	*(res_ptr + j00) = d * cof0;
+	*(res_ptr + j01) = d * cof1;
+	*(res_ptr + j02) = d * cof2;
+
+	*(res_ptr + j10) = d * (*(ptr + i20) * *(ptr + i12) - *(ptr + i10) * *(ptr + i22));
+	*(res_ptr + j11) = d * (*(ptr + i00) * *(ptr + i22) - *(ptr + i20) * *(ptr + i02));
+	*(res_ptr + j12) = d * (*(ptr + i10) * *(ptr + i02) - *(ptr + i00) * *(ptr + i12));
+
+	*(res_ptr + j20) = d * (*(ptr + i10) * *(ptr + i21) - *(ptr + i20) * *(ptr + i11));
+	*(res_ptr + j21) = d * (*(ptr + i20) * *(ptr + i01) - *(ptr + i00) * *(ptr + i21));
+	*(res_ptr + j22) = d * (*(ptr + i00) * *(ptr + i11) - *(ptr + i10) * *(ptr + i01));
+
+	return ret;
+}
+
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::matrix_result<Ty, 4, 4, _opt_res_rows_padded, _opt_res_align> cool::inv(const cool::const_matrix_interface<Ty, 4, 4, _rows_padded, _align, _matrix_data_Ty>& A) noexcept
+{
+	constexpr std::size_t i00 = 0 + _rows_padded * 0;
+	constexpr std::size_t i10 = 1 + _rows_padded * 0;
+	constexpr std::size_t i20 = 2 + _rows_padded * 0;
+	constexpr std::size_t i30 = 3 + _rows_padded * 0;
+	constexpr std::size_t i01 = 0 + _rows_padded * 1;
+	constexpr std::size_t i11 = 1 + _rows_padded * 1;
+	constexpr std::size_t i21 = 2 + _rows_padded * 1;
+	constexpr std::size_t i31 = 3 + _rows_padded * 1;
+	constexpr std::size_t i02 = 0 + _rows_padded * 2;
+	constexpr std::size_t i12 = 1 + _rows_padded * 2;
+	constexpr std::size_t i22 = 2 + _rows_padded * 2;
+	constexpr std::size_t i32 = 3 + _rows_padded * 2;
+	constexpr std::size_t i03 = 0 + _rows_padded * 3;
+	constexpr std::size_t i13 = 1 + _rows_padded * 3;
+	constexpr std::size_t i23 = 2 + _rows_padded * 3;
+	constexpr std::size_t i33 = 3 + _rows_padded * 3;
+
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, 4>::value;
+
+	constexpr std::size_t j00 = 0 + _res_rows_padded * 0;
+	constexpr std::size_t j10 = 1 + _res_rows_padded * 0;
+	constexpr std::size_t j20 = 2 + _res_rows_padded * 0;
+	constexpr std::size_t j30 = 3 + _res_rows_padded * 0;
+	constexpr std::size_t j01 = 0 + _res_rows_padded * 1;
+	constexpr std::size_t j11 = 1 + _res_rows_padded * 1;
+	constexpr std::size_t j21 = 2 + _res_rows_padded * 1;
+	constexpr std::size_t j31 = 3 + _res_rows_padded * 1;
+	constexpr std::size_t j02 = 0 + _res_rows_padded * 2;
+	constexpr std::size_t j12 = 1 + _res_rows_padded * 2;
+	constexpr std::size_t j22 = 2 + _res_rows_padded * 2;
+	constexpr std::size_t j32 = 3 + _res_rows_padded * 2;
+	constexpr std::size_t j03 = 0 + _res_rows_padded * 3;
+	constexpr std::size_t j13 = 1 + _res_rows_padded * 3;
+	constexpr std::size_t j23 = 2 + _res_rows_padded * 3;
+	constexpr std::size_t j33 = 3 + _res_rows_padded * 3;
+
+	cool::matrix_result<Ty, 4, 4, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
+	const Ty* ptr = A.data();
+
+	Ty temp_01_01 = *(ptr + i00) * *(ptr + i11) - *(ptr + i10) * *(ptr + i01);
+	Ty temp_01_02 = *(ptr + i00) * *(ptr + i12) - *(ptr + i10) * *(ptr + i02);
+	Ty temp_01_03 = *(ptr + i00) * *(ptr + i13) - *(ptr + i10) * *(ptr + i03);
+
+	Ty temp_01_12 = *(ptr + i01) * *(ptr + i12) - *(ptr + i11) * *(ptr + i02);
+	Ty temp_01_13 = *(ptr + i01) * *(ptr + i13) - *(ptr + i11) * *(ptr + i03);
+	Ty temp_01_23 = *(ptr + i02) * *(ptr + i13) - *(ptr + i12) * *(ptr + i03);
+
+	Ty temp_23_01 = *(ptr + i20) * *(ptr + i31) - *(ptr + i30) * *(ptr + i21);
+	Ty temp_23_02 = *(ptr + i20) * *(ptr + i32) - *(ptr + i30) * *(ptr + i22);
+	Ty temp_23_03 = *(ptr + i20) * *(ptr + i33) - *(ptr + i30) * *(ptr + i23);
+
+	Ty temp_23_12 = *(ptr + i21) * *(ptr + i32) - *(ptr + i31) * *(ptr + i22);
+	Ty temp_23_13 = *(ptr + i21) * *(ptr + i33) - *(ptr + i31) * *(ptr + i23);
+	Ty temp_23_23 = *(ptr + i22) * *(ptr + i33) - *(ptr + i32) * *(ptr + i23);
+
+	Ty d = static_cast<Ty>(1) / (temp_01_01 * temp_23_23 - temp_01_02 * temp_23_13
+		+ temp_01_03 * temp_23_12 + temp_01_12 * temp_23_03
+		- temp_01_13 * temp_23_02 + temp_01_23 * temp_23_01);
+
+	*(res_ptr + j00) = d * (*(ptr + i11) * temp_23_23 - *(ptr + i12) * temp_23_13 + *(ptr + i13) * temp_23_12);
+	*(res_ptr + j01) = -d * (*(ptr + i01) * temp_23_23 - *(ptr + i02) * temp_23_13 + *(ptr + i03) * temp_23_12);
+	*(res_ptr + j02) = d * (*(ptr + i31) * temp_01_23 - *(ptr + i32) * temp_01_13 + *(ptr + i33) * temp_01_12);
+	*(res_ptr + j03) = -d * (*(ptr + i21) * temp_01_23 - *(ptr + i22) * temp_01_13 + *(ptr + i23) * temp_01_12);
+
+	*(res_ptr + j10) = -d * (*(ptr + i10) * temp_23_23 - *(ptr + i12) * temp_23_03 + *(ptr + i13) * temp_23_02);
+	*(res_ptr + j11) = d * (*(ptr + i00) * temp_23_23 - *(ptr + i02) * temp_23_03 + *(ptr + i03) * temp_23_02);
+	*(res_ptr + j12) = -d * (*(ptr + i30) * temp_01_23 - *(ptr + i32) * temp_01_03 + *(ptr + i33) * temp_01_02);
+	*(res_ptr + j13) = d * (*(ptr + i20) * temp_01_23 - *(ptr + i22) * temp_01_03 + *(ptr + i23) * temp_01_02);
+
+	*(res_ptr + j20) = d * (*(ptr + i10) * temp_23_13 - *(ptr + i11) * temp_23_03 + *(ptr + i13) * temp_23_01);
+	*(res_ptr + j21) = -d * (*(ptr + i00) * temp_23_13 - *(ptr + i01) * temp_23_03 + *(ptr + i03) * temp_23_01);
+	*(res_ptr + j22) = d * (*(ptr + i30) * temp_01_13 - *(ptr + i31) * temp_01_03 + *(ptr + i33) * temp_01_01);
+	*(res_ptr + j23) = -d * (*(ptr + i20) * temp_01_13 - *(ptr + i21) * temp_01_03 + *(ptr + i23) * temp_01_01);
+
+	*(res_ptr + j30) = -d * (*(ptr + i10) * temp_23_12 - *(ptr + i11) * temp_23_02 + *(ptr + i12) * temp_23_01);
+	*(res_ptr + j31) = d * (*(ptr + i00) * temp_23_12 - *(ptr + i01) * temp_23_02 + *(ptr + i02) * temp_23_01);
+	*(res_ptr + j32) = -d * (*(ptr + i30) * temp_01_12 - *(ptr + i31) * temp_01_02 + *(ptr + i32) * temp_01_01);
+	*(res_ptr + j33) = d * (*(ptr + i20) * temp_01_12 - *(ptr + i21) * temp_01_02 + *(ptr + i22) * temp_01_01);
+
+	return ret;
+}
+
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty,
+	std::size_t _a0_rows_padded, std::size_t _a1_rows_padded,
+	std::size_t _a0_align, std::size_t _a1_align,
+	class _a0_matrix_data_Ty, class _a1_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 2, 2, _opt_res_rows_padded, _opt_res_align> cool::inv2v(
+	const cool::const_matrix_interface<Ty, 2, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+	const cool::const_matrix_interface<Ty, 2, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1) noexcept
+{
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, 2>::value;
+
+	constexpr std::size_t j00 = 0 + _res_rows_padded * 0;
+	constexpr std::size_t j10 = 1 + _res_rows_padded * 0;
+	constexpr std::size_t j01 = 0 + _res_rows_padded * 1;
+	constexpr std::size_t j11 = 1 + _res_rows_padded * 1;
+
+	cool::matrix_result<Ty, 2, 2, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
+	const Ty* a0ptr = a0.data();
+	const Ty* a1ptr = a1.data();
+
+	Ty d = static_cast<Ty>(1) / (*(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0));
+
+	*(res_ptr + j00) = d * *(a1ptr + 1);
+	*(res_ptr + j10) = -d * *(a0ptr + 1);
+	*(res_ptr + j01) = -d * *(a1ptr + 0);
+	*(res_ptr + j11) = d * *(a0ptr + 0);
+
+	return ret;
+}
+
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty,
+	std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded,
+	std::size_t _a0_align, std::size_t _a1_align, std::size_t _a2_align,
+	class _a0_matrix_data_Ty, class _a1_matrix_data_Ty, class _a2_matrix_data_Ty, class _y_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 3, 3, _opt_res_rows_padded, _opt_res_align> cool::inv3v(
+	const cool::const_matrix_interface<Ty, 3, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+	const cool::const_matrix_interface<Ty, 3, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1,
+	const cool::const_matrix_interface<Ty, 3, 1, _a2_rows_padded, _a2_align, _a2_matrix_data_Ty>& a2) noexcept
+{
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, 3>::value;
+
+	constexpr std::size_t j00 = 0 + _res_rows_padded * 0;
+	constexpr std::size_t j10 = 1 + _res_rows_padded * 0;
+	constexpr std::size_t j20 = 2 + _res_rows_padded * 0;
+	constexpr std::size_t j01 = 0 + _res_rows_padded * 1;
+	constexpr std::size_t j11 = 1 + _res_rows_padded * 1;
+	constexpr std::size_t j21 = 2 + _res_rows_padded * 1;
+	constexpr std::size_t j02 = 0 + _res_rows_padded * 2;
+	constexpr std::size_t j12 = 1 + _res_rows_padded * 2;
+	constexpr std::size_t j22 = 2 + _res_rows_padded * 2;
+
+	cool::matrix_result<Ty, 3, 3, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
+	const Ty* a0ptr = a0.data();
+	const Ty* a1ptr = a1.data();
+	const Ty* a2ptr = a2.data();
+
+	Ty cof0 = *(a1ptr + 1) * *(a2ptr + 2) - *(a1ptr + 2) * *(a2ptr + 1);
+	Ty cof1 = *(a1ptr + 2) * *(a2ptr + 0) - *(a1ptr + 0) * *(a2ptr + 2);
+	Ty cof2 = *(a1ptr + 0) * *(a2ptr + 1) - *(a1ptr + 1) * *(a2ptr + 0);
+
+	Ty d = static_cast<Ty>(1) / (*(a0ptr + 0) * cof0 + *(a0ptr + 1) * cof1 + *(a0ptr + 2) * cof2);
+
+	*(res_ptr + j00) = d * cof0;
+	*(res_ptr + j01) = d * cof1;
+	*(res_ptr + j02) = d * cof2;
+
+	*(res_ptr + j10) = d * (*(a0ptr + 2) * *(a2ptr + 1) - *(a0ptr + 1) * *(a2ptr + 2));
+	*(res_ptr + j11) = d * (*(a0ptr + 0) * *(a2ptr + 2) - *(a0ptr + 2) * *(a2ptr + 0));
+	*(res_ptr + j12) = d * (*(a0ptr + 1) * *(a2ptr + 0) - *(a0ptr + 0) * *(a2ptr + 1));
+
+	*(res_ptr + j20) = d * (*(a0ptr + 1) * *(a1ptr + 2) - *(a0ptr + 2) * *(a1ptr + 1));
+	*(res_ptr + j21) = d * (*(a0ptr + 2) * *(a1ptr + 0) - *(a0ptr + 0) * *(a1ptr + 2));
+	*(res_ptr + j22) = d * (*(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0));
+
+	return ret;
+}
+
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty,
+	std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded, std::size_t _a3_rows_padded,
+	std::size_t _a0_align, std::size_t _a1_align, std::size_t _a2_align, std::size_t _a3_align,
+	class _a0_matrix_data_Ty, class _a1_matrix_data_Ty, class _a2_matrix_data_Ty, class _a3_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 4, 4, _opt_res_rows_padded, _opt_res_align> cool::inv4v(
+	const cool::const_matrix_interface<Ty, 4, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+	const cool::const_matrix_interface<Ty, 4, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1,
+	const cool::const_matrix_interface<Ty, 4, 1, _a2_rows_padded, _a2_align, _a2_matrix_data_Ty>& a2,
+	const cool::const_matrix_interface<Ty, 4, 1, _a3_rows_padded, _a3_align, _a3_matrix_data_Ty>& a3) noexcept
+{
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, 4>::value;
+
+	constexpr std::size_t j00 = 0 + _res_rows_padded * 0;
+	constexpr std::size_t j10 = 1 + _res_rows_padded * 0;
+	constexpr std::size_t j20 = 2 + _res_rows_padded * 0;
+	constexpr std::size_t j30 = 3 + _res_rows_padded * 0;
+	constexpr std::size_t j01 = 0 + _res_rows_padded * 1;
+	constexpr std::size_t j11 = 1 + _res_rows_padded * 1;
+	constexpr std::size_t j21 = 2 + _res_rows_padded * 1;
+	constexpr std::size_t j31 = 3 + _res_rows_padded * 1;
+	constexpr std::size_t j02 = 0 + _res_rows_padded * 2;
+	constexpr std::size_t j12 = 1 + _res_rows_padded * 2;
+	constexpr std::size_t j22 = 2 + _res_rows_padded * 2;
+	constexpr std::size_t j32 = 3 + _res_rows_padded * 2;
+	constexpr std::size_t j03 = 0 + _res_rows_padded * 3;
+	constexpr std::size_t j13 = 1 + _res_rows_padded * 3;
+	constexpr std::size_t j23 = 2 + _res_rows_padded * 3;
+	constexpr std::size_t j33 = 3 + _res_rows_padded * 3;
+
+	cool::matrix_result<Ty, 4, 4, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
+	const Ty* a0ptr = a0.data();
+	const Ty* a1ptr = a1.data();
+	const Ty* a2ptr = a2.data();
+	const Ty* a3ptr = a3.data();
+
+	Ty temp_01_01 = *(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0);
+	Ty temp_01_02 = *(a0ptr + 0) * *(a2ptr + 1) - *(a0ptr + 1) * *(a2ptr + 0);
+	Ty temp_01_03 = *(a0ptr + 0) * *(a3ptr + 1) - *(a0ptr + 1) * *(a3ptr + 0);
+
+	Ty temp_01_12 = *(a1ptr + 0) * *(a2ptr + 1) - *(a1ptr + 1) * *(a2ptr + 0);
+	Ty temp_01_13 = *(a1ptr + 0) * *(a3ptr + 1) - *(a1ptr + 1) * *(a3ptr + 0);
+	Ty temp_01_23 = *(a2ptr + 0) * *(a3ptr + 1) - *(a2ptr + 1) * *(a3ptr + 0);
+
+	Ty temp_23_01 = *(a0ptr + 2) * *(a1ptr + 3) - *(a0ptr + 3) * *(a1ptr + 2);
+	Ty temp_23_02 = *(a0ptr + 2) * *(a2ptr + 3) - *(a0ptr + 3) * *(a2ptr + 2);
+	Ty temp_23_03 = *(a0ptr + 2) * *(a3ptr + 3) - *(a0ptr + 3) * *(a3ptr + 2);
+
+	Ty temp_23_12 = *(a1ptr + 2) * *(a2ptr + 3) - *(a1ptr + 3) * *(a2ptr + 2);
+	Ty temp_23_13 = *(a1ptr + 2) * *(a3ptr + 3) - *(a1ptr + 3) * *(a3ptr + 2);
+	Ty temp_23_23 = *(a2ptr + 2) * *(a3ptr + 3) - *(a2ptr + 3) * *(a3ptr + 2);
+
+	Ty d = static_cast<Ty>(1) / (temp_01_01 * temp_23_23 - temp_01_02 * temp_23_13
+		+ temp_01_03 * temp_23_12 + temp_01_12 * temp_23_03
+		- temp_01_13 * temp_23_02 + temp_01_23 * temp_23_01);
+
+	*(res_ptr + j00) = d * (*(a1ptr + 1) * temp_23_23 - *(a2ptr + 1) * temp_23_13 + *(a3ptr + 1) * temp_23_12);
+	*(res_ptr + j01) = -d * (*(a1ptr + 0) * temp_23_23 - *(a2ptr + 0) * temp_23_13 + *(a3ptr + 0) * temp_23_12);
+	*(res_ptr + j02) = d * (*(a1ptr + 3) * temp_01_23 - *(a2ptr + 3) * temp_01_13 + *(a3ptr + 3) * temp_01_12);
+	*(res_ptr + j03) = -d * (*(a1ptr + 2) * temp_01_23 - *(a2ptr + 2) * temp_01_13 + *(a3ptr + 2) * temp_01_12);
+
+	*(res_ptr + j10) = -d * (*(a0ptr + 1) * temp_23_23 - *(a2ptr + 1) * temp_23_03 + *(a3ptr + 1) * temp_23_02);
+	*(res_ptr + j11) = d * (*(a0ptr + 0) * temp_23_23 - *(a2ptr + 0) * temp_23_03 + *(a3ptr + 0) * temp_23_02);
+	*(res_ptr + j12) = -d * (*(a0ptr + 3) * temp_01_23 - *(a2ptr + 3) * temp_01_03 + *(a3ptr + 3) * temp_01_02);
+	*(res_ptr + j13) = d * (*(a0ptr + 2) * temp_01_23 - *(a2ptr + 2) * temp_01_03 + *(a3ptr + 2) * temp_01_02);
+
+	*(res_ptr + j20) = d * (*(a0ptr + 1) * temp_23_13 - *(a1ptr + 1) * temp_23_03 + *(a3ptr + 1) * temp_23_01);
+	*(res_ptr + j21) = -d * (*(a0ptr + 0) * temp_23_13 - *(a1ptr + 0) * temp_23_03 + *(a3ptr + 0) * temp_23_01);
+	*(res_ptr + j22) = d * (*(a0ptr + 3) * temp_01_13 - *(a1ptr + 3) * temp_01_03 + *(a3ptr + 3) * temp_01_01);
+	*(res_ptr + j23) = -d * (*(a0ptr + 2) * temp_01_13 - *(a1ptr + 2) * temp_01_03 + *(a3ptr + 2) * temp_01_01);
+
+	*(res_ptr + j30) = -d * (*(a0ptr + 1) * temp_23_12 - *(a1ptr + 1) * temp_23_02 + *(a2ptr + 1) * temp_23_01);
+	*(res_ptr + j31) = d * (*(a0ptr + 0) * temp_23_12 - *(a1ptr + 0) * temp_23_02 + *(a2ptr + 0) * temp_23_01);
+	*(res_ptr + j32) = -d * (*(a0ptr + 3) * temp_01_12 - *(a1ptr + 3) * temp_01_02 + *(a2ptr + 3) * temp_01_01);
+	*(res_ptr + j33) = d * (*(a0ptr + 2) * temp_01_12 - *(a1ptr + 2) * temp_01_02 + *(a2ptr + 2) * temp_01_01);
+
+	return ret;
+}
+
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _dim, std::size_t _Y_cols, std::size_t _A_rows_padded, std::size_t _Y_rows_padded,
+	std::size_t _A_align, std::size_t _Y_align, class _A_matrix_data_Ty, class _Y_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, _dim, _Y_cols, _opt_res_rows_padded, _opt_res_align> cool::solve(
+	const cool::const_matrix_interface<Ty, _dim, _dim, _A_rows_padded, _A_align, _A_matrix_data_Ty>& A,
+	const cool::const_matrix_interface<Ty, _dim, _Y_cols, _Y_rows_padded, _Y_align, _Y_matrix_data_Ty>& Y) noexcept
+{
+	return cool::lu<_opt_res_rows_padded, _opt_res_align>(A).solve(Y);
+}
+
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _A_rows_padded, std::size_t _y_rows_padded,
+	std::size_t _A_align, std::size_t _y_align, class _A_matrix_data_Ty, class _y_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 1, 1, _opt_res_rows_padded, _opt_res_align> cool::solve(
+	const cool::const_matrix_interface<Ty, 1, 1, _A_rows_padded, _A_align, _A_matrix_data_Ty>& A,
+	const cool::const_matrix_interface<Ty, 1, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept
+{
+	return cool::matrix_result<Ty, 1, 1, _opt_res_rows_padded, _opt_res_align>(y[0] / A[0]);
+}
+
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _A_rows_padded, std::size_t _y_rows_padded,
+	std::size_t _A_align, std::size_t _y_align, class _A_matrix_data_Ty, class _y_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 2, 1, _opt_res_rows_padded, _opt_res_align> cool::solve(
+	const cool::const_matrix_interface<Ty, 2, 2, _A_rows_padded, _A_align, _A_matrix_data_Ty>& A,
+	const cool::const_matrix_interface<Ty, 2, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept
 {
 	constexpr std::size_t i00 = 0 + _A_rows_padded * 0;
 	constexpr std::size_t i10 = 1 + _A_rows_padded * 0;
 	constexpr std::size_t i01 = 0 + _A_rows_padded * 1;
 	constexpr std::size_t i11 = 1 + _A_rows_padded * 1;
 
-	cool::matrix<Ty, 2, 1> x;
+	cool::matrix_result<Ty, 2, 1, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
 	const Ty* Aptr = A.data();
 	const Ty* yptr = y.data();
-	Ty* xptr = x.data();
 
 	Ty d = static_cast<Ty>(1) / (*(Aptr + i00) * *(Aptr + i11) - *(Aptr + i10) * *(Aptr + i01));
 
-	*(xptr + 0) = d * (*(Aptr + i11) * *(yptr + 0) - *(Aptr + i01) * *(yptr + 1));
-	*(xptr + 1) = d * (*(Aptr + i00) * *(yptr + 1) - *(Aptr + i10) * *(yptr + 0));
+	*(res_ptr + 0) = d * (*(Aptr + i11) * *(yptr + 0) - *(Aptr + i01) * *(yptr + 1));
+	*(res_ptr + 1) = d * (*(Aptr + i00) * *(yptr + 1) - *(Aptr + i10) * *(yptr + 0));
 
-	return x;
+	return ret;
 }
 
-template <class Ty, std::size_t _A_rows_padded, std::size_t _y_rows_padded>
-inline cool::matrix<Ty, 3, 1> cool::solve(const cool::matrix<Ty, 3, 3, _A_rows_padded>& A, const cool::matrix<Ty, 3, 1, _y_rows_padded>& y) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _A_rows_padded, std::size_t _y_rows_padded,
+	std::size_t _A_align, std::size_t _y_align, class _A_matrix_data_Ty, class _y_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> cool::solve(
+	const cool::const_matrix_interface<Ty, 3, 3, _A_rows_padded, _A_align, _A_matrix_data_Ty>& A,
+	const cool::const_matrix_interface<Ty, 3, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept
 {
 	constexpr std::size_t i00 = 0 + _A_rows_padded * 0;
 	constexpr std::size_t i10 = 1 + _A_rows_padded * 0;
@@ -5455,10 +6847,11 @@ inline cool::matrix<Ty, 3, 1> cool::solve(const cool::matrix<Ty, 3, 3, _A_rows_p
 	constexpr std::size_t i12 = 1 + _A_rows_padded * 2;
 	constexpr std::size_t i22 = 2 + _A_rows_padded * 2;
 
-	cool::matrix<Ty, 3, 1> x;
+	cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
 	const Ty* Aptr = A.data();
 	const Ty* yptr = y.data();
-	Ty* xptr = x.data();
 
 	Ty cof0 = *(Aptr + i11) * *(Aptr + i22) - *(Aptr + i21) * *(Aptr + i12);
 	Ty cof1 = *(Aptr + i21) * *(Aptr + i02) - *(Aptr + i01) * *(Aptr + i22);
@@ -5466,21 +6859,25 @@ inline cool::matrix<Ty, 3, 1> cool::solve(const cool::matrix<Ty, 3, 3, _A_rows_p
 
 	Ty d = static_cast<Ty>(1) / (*(Aptr + i00) * cof0 + *(Aptr + i10) * cof1 + *(Aptr + i20) * cof2);
 
-	*(xptr + 0) = d * (cof0 * *(yptr + 0) + cof1 * *(yptr + 1) + cof2 * *(yptr + 2));
+	*(res_ptr + 0) = d * (cof0 * *(yptr + 0) + cof1 * *(yptr + 1) + cof2 * *(yptr + 2));
 
-	*(xptr + 1) = d * ((*(Aptr + i20) * *(Aptr + i12) - *(Aptr + i10) * *(Aptr + i22)) * *(yptr + 0)
+	*(res_ptr + 1) = d * ((*(Aptr + i20) * *(Aptr + i12) - *(Aptr + i10) * *(Aptr + i22)) * *(yptr + 0)
 		+ (*(Aptr + i00) * *(Aptr + i22) - *(Aptr + i20) * *(Aptr + i02)) * *(yptr + 1)
 		+ (*(Aptr + i10) * *(Aptr + i02) - *(Aptr + i00) * *(Aptr + i12)) * *(yptr + 2));
 
-	*(xptr + 2) = d * ((*(Aptr + i10) * *(Aptr + i21) - *(Aptr + i20) * *(Aptr + i11)) * *(yptr + 0)
+	*(res_ptr + 2) = d * ((*(Aptr + i10) * *(Aptr + i21) - *(Aptr + i20) * *(Aptr + i11)) * *(yptr + 0)
 		+ (*(Aptr + i20) * *(Aptr + i01) - *(Aptr + i00) * *(Aptr + i21)) * *(yptr + 1)
 		+ (*(Aptr + i00) * *(Aptr + i11) - *(Aptr + i10) * *(Aptr + i01)) * *(yptr + 2));
 
-	return x;
+	return ret;
 }
 
-template <class Ty, std::size_t _A_rows_padded, std::size_t _y_rows_padded>
-inline cool::matrix<Ty, 4, 1> cool::solve(const cool::matrix<Ty, 4, 4, _A_rows_padded>& A, const cool::matrix<Ty, 4, 1, _y_rows_padded>& y) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _A_rows_padded, std::size_t _y_rows_padded,
+	std::size_t _A_align, std::size_t _y_align, class _A_matrix_data_Ty, class _y_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> cool::solve(
+	const cool::const_matrix_interface<Ty, 4, 4, _A_rows_padded, _A_align, _A_matrix_data_Ty>& A,
+	const cool::const_matrix_interface<Ty, 4, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept
 {
 	constexpr std::size_t i00 = 0 + _A_rows_padded * 0;
 	constexpr std::size_t i10 = 1 + _A_rows_padded * 0;
@@ -5499,10 +6896,11 @@ inline cool::matrix<Ty, 4, 1> cool::solve(const cool::matrix<Ty, 4, 4, _A_rows_p
 	constexpr std::size_t i23 = 2 + _A_rows_padded * 3;
 	constexpr std::size_t i33 = 3 + _A_rows_padded * 3;
 
-	cool::matrix<Ty, 4, 1> x;
+	cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> ret;
+
+	Ty* res_ptr = ret.data();
 	const Ty* Aptr = A.data();
 	const Ty* yptr = y.data();
-	Ty* xptr = x.data();
 
 	Ty temp_01_01 = *(Aptr + i00) * *(Aptr + i11) - *(Aptr + i10) * *(Aptr + i01);
 	Ty temp_01_02 = *(Aptr + i00) * *(Aptr + i12) - *(Aptr + i10) * *(Aptr + i02);
@@ -5524,38 +6922,45 @@ inline cool::matrix<Ty, 4, 1> cool::solve(const cool::matrix<Ty, 4, 4, _A_rows_p
 		+ temp_01_03 * temp_23_12 + temp_01_12 * temp_23_03
 		- temp_01_13 * temp_23_02 + temp_01_23 * temp_23_01);
 
-	*(xptr + 0) = d * ((*(Aptr + i11) * temp_23_23 - *(Aptr + i12) * temp_23_13 + *(Aptr + i13) * temp_23_12) * *(yptr + 0)
+	*(res_ptr + 0) = d * ((*(Aptr + i11) * temp_23_23 - *(Aptr + i12) * temp_23_13 + *(Aptr + i13) * temp_23_12) * *(yptr + 0)
 		- (*(Aptr + i01) * temp_23_23 - *(Aptr + i02) * temp_23_13 + *(Aptr + i03) * temp_23_12) * *(yptr + 1)
 		+ (*(Aptr + i31) * temp_01_23 - *(Aptr + i32) * temp_01_13 + *(Aptr + i33) * temp_01_12) * *(yptr + 2)
 		- (*(Aptr + i21) * temp_01_23 - *(Aptr + i22) * temp_01_13 + *(Aptr + i23) * temp_01_12) * *(yptr + 3));
 
-	*(xptr + 1) = d * (-(*(Aptr + i10) * temp_23_23 - *(Aptr + i12) * temp_23_03 + *(Aptr + i13) * temp_23_02) * *(yptr + 0)
+	*(res_ptr + 1) = d * (-(*(Aptr + i10) * temp_23_23 - *(Aptr + i12) * temp_23_03 + *(Aptr + i13) * temp_23_02) * *(yptr + 0)
 		+ (*(Aptr + i00) * temp_23_23 - *(Aptr + i02) * temp_23_03 + *(Aptr + i03) * temp_23_02) * *(yptr + 1)
 		- (*(Aptr + i30) * temp_01_23 - *(Aptr + i32) * temp_01_03 + *(Aptr + i33) * temp_01_02) * *(yptr + 2)
 		+ (*(Aptr + i20) * temp_01_23 - *(Aptr + i22) * temp_01_03 + *(Aptr + i23) * temp_01_02) * *(yptr + 3));
 
-	*(xptr + 2) = d * ((*(Aptr + i10) * temp_23_13 - *(Aptr + i11) * temp_23_03 + *(Aptr + i13) * temp_23_01) * *(yptr + 0)
+	*(res_ptr + 2) = d * ((*(Aptr + i10) * temp_23_13 - *(Aptr + i11) * temp_23_03 + *(Aptr + i13) * temp_23_01) * *(yptr + 0)
 		- (*(Aptr + i00) * temp_23_13 - *(Aptr + i01) * temp_23_03 + *(Aptr + i03) * temp_23_01) * *(yptr + 1)
 		+ (*(Aptr + i30) * temp_01_13 - *(Aptr + i31) * temp_01_03 + *(Aptr + i33) * temp_01_01) * *(yptr + 2)
 		- (*(Aptr + i20) * temp_01_13 - *(Aptr + i21) * temp_01_03 + *(Aptr + i23) * temp_01_01) * *(yptr + 3));
 
-	*(xptr + 3) = d * (-(*(Aptr + i10) * temp_23_12 - *(Aptr + i11) * temp_23_02 + *(Aptr + i12) * temp_23_01) * *(yptr + 0)
+	*(res_ptr + 3) = d * (-(*(Aptr + i10) * temp_23_12 - *(Aptr + i11) * temp_23_02 + *(Aptr + i12) * temp_23_01) * *(yptr + 0)
 		+ (*(Aptr + i00) * temp_23_12 - *(Aptr + i01) * temp_23_02 + *(Aptr + i02) * temp_23_01) * *(yptr + 1)
 		- (*(Aptr + i30) * temp_01_12 - *(Aptr + i31) * temp_01_02 + *(Aptr + i32) * temp_01_01) * *(yptr + 2)
 		+ (*(Aptr + i20) * temp_01_12 - *(Aptr + i21) * temp_01_02 + *(Aptr + i22) * temp_01_01) * *(yptr + 3));
 
-	return x;
+	return ret;
 }
 
-template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _y_rows_padded>
-inline cool::matrix<Ty, 2, 1> cool::solve2v(const cool::matrix<Ty, 2, 1, _a0_rows_padded>& a0, const cool::matrix<Ty, 2, 1, _a1_rows_padded>& a1,
-	const cool::matrix<Ty, 2, 1, _y_rows_padded>& y) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty,
+	std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _y_rows_padded,
+	std::size_t _a0_align, std::size_t _a1_align, std::size_t _y_align,
+	class _a0_matrix_data_Ty, class _a1_matrix_data_Ty, class _y_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 2, 1, _opt_res_rows_padded, _opt_res_align> cool::solve2v(
+	const cool::const_matrix_interface<Ty, 2, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+	const cool::const_matrix_interface<Ty, 2, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1,
+	const cool::const_matrix_interface<Ty, 2, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept
 {
-	cool::matrix<Ty, 2, 1> x;
+	cool::matrix_result<Ty, 2, 1, _opt_res_rows_padded, _opt_res_align> x;
+
+	Ty* xptr = x.data();
 	const Ty* a0ptr = a0.data();
 	const Ty* a1ptr = a1.data();
 	const Ty* yptr = y.data();
-	Ty* xptr = x.data();
 
 	Ty d = static_cast<Ty>(1) / (*(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0));
 
@@ -5565,16 +6970,24 @@ inline cool::matrix<Ty, 2, 1> cool::solve2v(const cool::matrix<Ty, 2, 1, _a0_row
 	return x;
 }
 
-template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded, std::size_t _y_rows_padded>
-inline cool::matrix<Ty, 3, 1> cool::solve3v(const cool::matrix<Ty, 3, 1, _a0_rows_padded>& a0, const cool::matrix<Ty, 3, 1, _a1_rows_padded>& a1,
-	const cool::matrix<Ty, 3, 1, _a2_rows_padded>& a2, const cool::matrix<Ty, 3, 1, _y_rows_padded>& y) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty,
+	std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded, std::size_t _y_rows_padded,
+	std::size_t _a0_align, std::size_t _a1_align, std::size_t _a2_align, std::size_t _y_align,
+	class _a0_matrix_data_Ty, class _a1_matrix_data_Ty, class _a2_matrix_data_Ty, class _y_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> cool::solve3v(
+	const cool::const_matrix_interface<Ty, 3, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+	const cool::const_matrix_interface<Ty, 3, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1,
+	const cool::const_matrix_interface<Ty, 3, 1, _a2_rows_padded, _a2_align, _a2_matrix_data_Ty>& a2,
+	const cool::const_matrix_interface<Ty, 3, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept
 {
-	cool::matrix<Ty, 3, 1> x;
+	cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> x;
+
+	Ty* xptr = x.data();
 	const Ty* a0ptr = a0.data();
 	const Ty* a1ptr = a1.data();
 	const Ty* a2ptr = a2.data();
 	const Ty* yptr = y.data();
-	Ty* xptr = x.data();
 
 	Ty cof0 = *(a1ptr + 1) * *(a2ptr + 2) - *(a1ptr + 2) * *(a2ptr + 1);
 	Ty cof1 = *(a1ptr + 2) * *(a2ptr + 0) - *(a1ptr + 0) * *(a2ptr + 2);
@@ -5595,17 +7008,26 @@ inline cool::matrix<Ty, 3, 1> cool::solve3v(const cool::matrix<Ty, 3, 1, _a0_row
 	return x;
 }
 
-template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded, std::size_t _a3_rows_padded, std::size_t _y_rows_padded>
-inline cool::matrix<Ty, 4, 1> cool::solve4v(const cool::matrix<Ty, 4, 1, _a0_rows_padded>& a0, const cool::matrix<Ty, 4, 1, _a1_rows_padded>& a1,
-	const cool::matrix<Ty, 4, 1, _a2_rows_padded>& a2, const cool::matrix<Ty, 4, 1, _a3_rows_padded>& a3, const cool::matrix<Ty, 4, 1, _y_rows_padded>& y) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty,
+	std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded, std::size_t _a3_rows_padded, std::size_t _y_rows_padded,
+	std::size_t _a0_align, std::size_t _a1_align, std::size_t _a2_align, std::size_t _a3_align, std::size_t _y_align,
+	class _a0_matrix_data_Ty, class _a1_matrix_data_Ty, class _a2_matrix_data_Ty, class _a3_matrix_data_Ty, class _y_matrix_data_Ty
+>
+inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> cool::solve4v(
+	const cool::const_matrix_interface<Ty, 4, 1, _a0_rows_padded, _a0_align, _a0_matrix_data_Ty>& a0,
+	const cool::const_matrix_interface<Ty, 4, 1, _a1_rows_padded, _a1_align, _a1_matrix_data_Ty>& a1,
+	const cool::const_matrix_interface<Ty, 4, 1, _a2_rows_padded, _a2_align, _a2_matrix_data_Ty>& a2,
+	const cool::const_matrix_interface<Ty, 4, 1, _a3_rows_padded, _a3_align, _a3_matrix_data_Ty>& a3,
+	const cool::const_matrix_interface<Ty, 4, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y) noexcept
 {
-	cool::matrix<Ty, 4, 1> x;
+	cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> x;
+
+	Ty* xptr = x.data();
 	const Ty* a0ptr = a0.data();
 	const Ty* a1ptr = a1.data();
 	const Ty* a2ptr = a2.data();
 	const Ty* a3ptr = a3.data();
 	const Ty* yptr = y.data();
-	Ty* xptr = x.data();
 
 	Ty temp_01_01 = *(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0);
 	Ty temp_01_02 = *(a0ptr + 0) * *(a2ptr + 1) - *(a0ptr + 1) * *(a2ptr + 0);
@@ -5650,322 +7072,21 @@ inline cool::matrix<Ty, 4, 1> cool::solve4v(const cool::matrix<Ty, 4, 1, _a0_row
 	return x;
 }
 
-template <class Ty, std::size_t _A_rows_padded>
-inline cool::matrix<Ty, 1, 1> cool::inv(const cool::matrix<Ty, 1, 1, _A_rows_padded>& A) noexcept
-{
-	return cool::matrix<Ty, 1, 1>(static_cast<Ty>(1) / A[0]);
-}
-
-template <class Ty, std::size_t _A_rows_padded>
-inline cool::matrix<Ty, 2, 2> cool::inv(const cool::matrix<Ty, 2, 2, _A_rows_padded>& A) noexcept
-{
-	constexpr std::size_t i00 = 0 + _A_rows_padded * 0;
-	constexpr std::size_t i10 = 1 + _A_rows_padded * 0;
-	constexpr std::size_t i01 = 0 + _A_rows_padded * 1;
-	constexpr std::size_t i11 = 1 + _A_rows_padded * 1;
-
-	constexpr std::size_t j00 = 0 + 2 * 0;
-	constexpr std::size_t j10 = 1 + 2 * 0;
-	constexpr std::size_t j01 = 0 + 2 * 1;
-	constexpr std::size_t j11 = 1 + 2 * 1;
-
-	cool::matrix<Ty, 2, 2> C;
-	const Ty* Aptr = A.data();
-	Ty* Cptr = C.data();
-
-	Ty d = static_cast<Ty>(1) / (*(Aptr + i00) * *(Aptr + i11) - *(Aptr + i10) * *(Aptr + i01));
-
-	*(Cptr + j00) = d * *(Aptr + i11);
-	*(Cptr + j10) = -d * *(Aptr + i10);
-	*(Cptr + j01) = -d * *(Aptr + i01);
-	*(Cptr + j11) = d * *(Aptr + i00);
-
-	return C;
-}
-
-template <class Ty, std::size_t Ar, std::size_t _A_rows_padded>
-inline cool::matrix<Ty, Ar, Ar> cool::inv(const cool::matrix<Ty, Ar, Ar, _A_rows_padded>& A) noexcept
-{
-	return cool::lu(A).inv();
-}
-
-template <class Ty, std::size_t _A_rows_padded>
-inline cool::matrix<Ty, 3, 3> cool::inv(const cool::matrix<Ty, 3, 3, _A_rows_padded>& A) noexcept
-{
-	constexpr std::size_t i00 = 0 + _A_rows_padded * 0;
-	constexpr std::size_t i10 = 1 + _A_rows_padded * 0;
-	constexpr std::size_t i20 = 2 + _A_rows_padded * 0;
-	constexpr std::size_t i01 = 0 + _A_rows_padded * 1;
-	constexpr std::size_t i11 = 1 + _A_rows_padded * 1;
-	constexpr std::size_t i21 = 2 + _A_rows_padded * 1;
-	constexpr std::size_t i02 = 0 + _A_rows_padded * 2;
-	constexpr std::size_t i12 = 1 + _A_rows_padded * 2;
-	constexpr std::size_t i22 = 2 + _A_rows_padded * 2;
-
-	constexpr std::size_t j00 = 0 + 3 * 0;
-	constexpr std::size_t j10 = 1 + 3 * 0;
-	constexpr std::size_t j20 = 2 + 3 * 0;
-	constexpr std::size_t j01 = 0 + 3 * 1;
-	constexpr std::size_t j11 = 1 + 3 * 1;
-	constexpr std::size_t j21 = 2 + 3 * 1;
-	constexpr std::size_t j02 = 0 + 3 * 2;
-	constexpr std::size_t j12 = 1 + 3 * 2;
-	constexpr std::size_t j22 = 2 + 3 * 2;
-
-	cool::matrix<Ty, 3, 3> C;
-	const Ty* Aptr = A.data();
-	Ty* Cptr = C.data();
-
-	Ty cof0 = *(Aptr + i11) * *(Aptr + i22) - *(Aptr + i21) * *(Aptr + i12);
-	Ty cof1 = *(Aptr + i21) * *(Aptr + i02) - *(Aptr + i01) * *(Aptr + i22);
-	Ty cof2 = *(Aptr + i01) * *(Aptr + i12) - *(Aptr + i11) * *(Aptr + i02);
-
-	Ty d = static_cast<Ty>(1) / (*(Aptr + i00) * cof0 + *(Aptr + i10) * cof1 + *(Aptr + i20) * cof2);
-
-	*(Cptr + j00) = d * cof0;
-	*(Cptr + j01) = d * cof1;
-	*(Cptr + j02) = d * cof2;
-
-	*(Cptr + j10) = d * (*(Aptr + i20) * *(Aptr + i12) - *(Aptr + i10) * *(Aptr + i22));
-	*(Cptr + j11) = d * (*(Aptr + i00) * *(Aptr + i22) - *(Aptr + i20) * *(Aptr + i02));
-	*(Cptr + j12) = d * (*(Aptr + i10) * *(Aptr + i02) - *(Aptr + i00) * *(Aptr + i12));
-
-	*(Cptr + j20) = d * (*(Aptr + i10) * *(Aptr + i21) - *(Aptr + i20) * *(Aptr + i11));
-	*(Cptr + j21) = d * (*(Aptr + i20) * *(Aptr + i01) - *(Aptr + i00) * *(Aptr + i21));
-	*(Cptr + j22) = d * (*(Aptr + i00) * *(Aptr + i11) - *(Aptr + i10) * *(Aptr + i01));
-
-	return C;
-}
-
-template <class Ty, std::size_t _A_rows_padded>
-inline cool::matrix<Ty, 4, 4> cool::inv(const cool::matrix<Ty, 4, 4, _A_rows_padded>& A) noexcept
-{
-	constexpr std::size_t i00 = 0 + _A_rows_padded * 0;
-	constexpr std::size_t i10 = 1 + _A_rows_padded * 0;
-	constexpr std::size_t i20 = 2 + _A_rows_padded * 0;
-	constexpr std::size_t i30 = 3 + _A_rows_padded * 0;
-	constexpr std::size_t i01 = 0 + _A_rows_padded * 1;
-	constexpr std::size_t i11 = 1 + _A_rows_padded * 1;
-	constexpr std::size_t i21 = 2 + _A_rows_padded * 1;
-	constexpr std::size_t i31 = 3 + _A_rows_padded * 1;
-	constexpr std::size_t i02 = 0 + _A_rows_padded * 2;
-	constexpr std::size_t i12 = 1 + _A_rows_padded * 2;
-	constexpr std::size_t i22 = 2 + _A_rows_padded * 2;
-	constexpr std::size_t i32 = 3 + _A_rows_padded * 2;
-	constexpr std::size_t i03 = 0 + _A_rows_padded * 3;
-	constexpr std::size_t i13 = 1 + _A_rows_padded * 3;
-	constexpr std::size_t i23 = 2 + _A_rows_padded * 3;
-	constexpr std::size_t i33 = 3 + _A_rows_padded * 3;
-
-	constexpr std::size_t j00 = 0 + 4 * 0;
-	constexpr std::size_t j10 = 1 + 4 * 0;
-	constexpr std::size_t j20 = 2 + 4 * 0;
-	constexpr std::size_t j30 = 3 + 4 * 0;
-	constexpr std::size_t j01 = 0 + 4 * 1;
-	constexpr std::size_t j11 = 1 + 4 * 1;
-	constexpr std::size_t j21 = 2 + 4 * 1;
-	constexpr std::size_t j31 = 3 + 4 * 1;
-	constexpr std::size_t j02 = 0 + 4 * 2;
-	constexpr std::size_t j12 = 1 + 4 * 2;
-	constexpr std::size_t j22 = 2 + 4 * 2;
-	constexpr std::size_t j32 = 3 + 4 * 2;
-	constexpr std::size_t j03 = 0 + 4 * 3;
-	constexpr std::size_t j13 = 1 + 4 * 3;
-	constexpr std::size_t j23 = 2 + 4 * 3;
-	constexpr std::size_t j33 = 3 + 4 * 3;
-
-	cool::matrix<Ty, 4, 4> C;
-	const Ty* Aptr = A.data();
-	Ty* Cptr = C.data();
-
-	Ty temp_01_01 = *(Aptr + i00) * *(Aptr + i11) - *(Aptr + i10) * *(Aptr + i01);
-	Ty temp_01_02 = *(Aptr + i00) * *(Aptr + i12) - *(Aptr + i10) * *(Aptr + i02);
-	Ty temp_01_03 = *(Aptr + i00) * *(Aptr + i13) - *(Aptr + i10) * *(Aptr + i03);
-
-	Ty temp_01_12 = *(Aptr + i01) * *(Aptr + i12) - *(Aptr + i11) * *(Aptr + i02);
-	Ty temp_01_13 = *(Aptr + i01) * *(Aptr + i13) - *(Aptr + i11) * *(Aptr + i03);
-	Ty temp_01_23 = *(Aptr + i02) * *(Aptr + i13) - *(Aptr + i12) * *(Aptr + i03);
-
-	Ty temp_23_01 = *(Aptr + i20) * *(Aptr + i31) - *(Aptr + i30) * *(Aptr + i21);
-	Ty temp_23_02 = *(Aptr + i20) * *(Aptr + i32) - *(Aptr + i30) * *(Aptr + i22);
-	Ty temp_23_03 = *(Aptr + i20) * *(Aptr + i33) - *(Aptr + i30) * *(Aptr + i23);
-
-	Ty temp_23_12 = *(Aptr + i21) * *(Aptr + i32) - *(Aptr + i31) * *(Aptr + i22);
-	Ty temp_23_13 = *(Aptr + i21) * *(Aptr + i33) - *(Aptr + i31) * *(Aptr + i23);
-	Ty temp_23_23 = *(Aptr + i22) * *(Aptr + i33) - *(Aptr + i32) * *(Aptr + i23);
-
-	Ty d = static_cast<Ty>(1) / (temp_01_01 * temp_23_23 - temp_01_02 * temp_23_13
-		+ temp_01_03 * temp_23_12 + temp_01_12 * temp_23_03
-		- temp_01_13 * temp_23_02 + temp_01_23 * temp_23_01);
-
-	*(Cptr + j00) = d * (*(Aptr + i11) * temp_23_23 - *(Aptr + i12) * temp_23_13 + *(Aptr + i13) * temp_23_12);
-	*(Cptr + j01) = -d * (*(Aptr + i01) * temp_23_23 - *(Aptr + i02) * temp_23_13 + *(Aptr + i03) * temp_23_12);
-	*(Cptr + j02) = d * (*(Aptr + i31) * temp_01_23 - *(Aptr + i32) * temp_01_13 + *(Aptr + i33) * temp_01_12);
-	*(Cptr + j03) = -d * (*(Aptr + i21) * temp_01_23 - *(Aptr + i22) * temp_01_13 + *(Aptr + i23) * temp_01_12);
-
-	*(Cptr + j10) = -d * (*(Aptr + i10) * temp_23_23 - *(Aptr + i12) * temp_23_03 + *(Aptr + i13) * temp_23_02);
-	*(Cptr + j11) = d * (*(Aptr + i00) * temp_23_23 - *(Aptr + i02) * temp_23_03 + *(Aptr + i03) * temp_23_02);
-	*(Cptr + j12) = -d * (*(Aptr + i30) * temp_01_23 - *(Aptr + i32) * temp_01_03 + *(Aptr + i33) * temp_01_02);
-	*(Cptr + j13) = d * (*(Aptr + i20) * temp_01_23 - *(Aptr + i22) * temp_01_03 + *(Aptr + i23) * temp_01_02);
-
-	*(Cptr + j20) = d * (*(Aptr + i10) * temp_23_13 - *(Aptr + i11) * temp_23_03 + *(Aptr + i13) * temp_23_01);
-	*(Cptr + j21) = -d * (*(Aptr + i00) * temp_23_13 - *(Aptr + i01) * temp_23_03 + *(Aptr + i03) * temp_23_01);
-	*(Cptr + j22) = d * (*(Aptr + i30) * temp_01_13 - *(Aptr + i31) * temp_01_03 + *(Aptr + i33) * temp_01_01);
-	*(Cptr + j23) = -d * (*(Aptr + i20) * temp_01_13 - *(Aptr + i21) * temp_01_03 + *(Aptr + i23) * temp_01_01);
-
-	*(Cptr + j30) = -d * (*(Aptr + i10) * temp_23_12 - *(Aptr + i11) * temp_23_02 + *(Aptr + i12) * temp_23_01);
-	*(Cptr + j31) = d * (*(Aptr + i00) * temp_23_12 - *(Aptr + i01) * temp_23_02 + *(Aptr + i02) * temp_23_01);
-	*(Cptr + j32) = -d * (*(Aptr + i30) * temp_01_12 - *(Aptr + i31) * temp_01_02 + *(Aptr + i32) * temp_01_01);
-	*(Cptr + j33) = d * (*(Aptr + i20) * temp_01_12 - *(Aptr + i21) * temp_01_02 + *(Aptr + i22) * temp_01_01);
-
-	return C;
-}
-
-template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded>
-inline cool::matrix<Ty, 2, 2> cool::inv2v(const cool::matrix<Ty, 2, 1, _a0_rows_padded>& a0, const cool::matrix<Ty, 2, 1, _a1_rows_padded>& a1) noexcept
-{
-	constexpr std::size_t j00 = 0 + 2 * 0;
-	constexpr std::size_t j10 = 1 + 2 * 0;
-	constexpr std::size_t j01 = 0 + 2 * 1;
-	constexpr std::size_t j11 = 1 + 2 * 1;
-
-	cool::matrix<Ty, 2, 2> C;
-	const Ty* a0ptr = a0.data();
-	const Ty* a1ptr = a1.data();
-	Ty* Cptr = C.data();
-
-	Ty d = static_cast<Ty>(1) / (*(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0));
-
-	*(Cptr + j00) = d * *(a1ptr + 1);
-	*(Cptr + j10) = -d * *(a0ptr + 1);
-	*(Cptr + j01) = -d * *(a1ptr + 0);
-	*(Cptr + j11) = d * *(a0ptr + 0);
-
-	return C;
-}
-
-template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded>
-inline cool::matrix<Ty, 3, 3> cool::inv3v(const cool::matrix<Ty, 3, 1, _a0_rows_padded>& a0, const cool::matrix<Ty, 3, 1, _a1_rows_padded>& a1,
-	const cool::matrix<Ty, 3, 1, _a2_rows_padded>& a2) noexcept
-{
-	constexpr std::size_t j00 = 0 + 3 * 0;
-	constexpr std::size_t j10 = 1 + 3 * 0;
-	constexpr std::size_t j20 = 2 + 3 * 0;
-	constexpr std::size_t j01 = 0 + 3 * 1;
-	constexpr std::size_t j11 = 1 + 3 * 1;
-	constexpr std::size_t j21 = 2 + 3 * 1;
-	constexpr std::size_t j02 = 0 + 3 * 2;
-	constexpr std::size_t j12 = 1 + 3 * 2;
-	constexpr std::size_t j22 = 2 + 3 * 2;
-
-	cool::matrix<Ty, 3, 3> C;
-	const Ty* a0ptr = a0.data();
-	const Ty* a1ptr = a1.data();
-	const Ty* a2ptr = a2.data();
-	Ty* Cptr = C.data();
-
-	Ty cof0 = *(a1ptr + 1) * *(a2ptr + 2) - *(a1ptr + 2) * *(a2ptr + 1);
-	Ty cof1 = *(a1ptr + 2) * *(a2ptr + 0) - *(a1ptr + 0) * *(a2ptr + 2);
-	Ty cof2 = *(a1ptr + 0) * *(a2ptr + 1) - *(a1ptr + 1) * *(a2ptr + 0);
-
-	Ty d = static_cast<Ty>(1) / (*(a0ptr + 0) * cof0 + *(a0ptr + 1) * cof1 + *(a0ptr + 2) * cof2);
-
-	*(Cptr + j00) = d * cof0;
-	*(Cptr + j01) = d * cof1;
-	*(Cptr + j02) = d * cof2;
-
-	*(Cptr + j10) = d * (*(a0ptr + 2) * *(a2ptr + 1) - *(a0ptr + 1) * *(a2ptr + 2));
-	*(Cptr + j11) = d * (*(a0ptr + 0) * *(a2ptr + 2) - *(a0ptr + 2) * *(a2ptr + 0));
-	*(Cptr + j12) = d * (*(a0ptr + 1) * *(a2ptr + 0) - *(a0ptr + 0) * *(a2ptr + 1));
-
-	*(Cptr + j20) = d * (*(a0ptr + 1) * *(a1ptr + 2) - *(a0ptr + 2) * *(a1ptr + 1));
-	*(Cptr + j21) = d * (*(a0ptr + 2) * *(a1ptr + 0) - *(a0ptr + 0) * *(a1ptr + 2));
-	*(Cptr + j22) = d * (*(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0));
-
-	return C;
-}
-
-template <class Ty, std::size_t _a0_rows_padded, std::size_t _a1_rows_padded, std::size_t _a2_rows_padded, std::size_t _a3_rows_padded>
-inline cool::matrix<Ty, 4, 4> cool::inv4v(const cool::matrix<Ty, 4, 1, _a0_rows_padded>& a0, const cool::matrix<Ty, 4, 1, _a1_rows_padded>& a1,
-	const cool::matrix<Ty, 4, 1, _a2_rows_padded>& a2, const cool::matrix<Ty, 4, 1, _a3_rows_padded>& a3) noexcept
-{
-	constexpr std::size_t j00 = 0 + 4 * 0;
-	constexpr std::size_t j10 = 1 + 4 * 0;
-	constexpr std::size_t j20 = 2 + 4 * 0;
-	constexpr std::size_t j30 = 3 + 4 * 0;
-	constexpr std::size_t j01 = 0 + 4 * 1;
-	constexpr std::size_t j11 = 1 + 4 * 1;
-	constexpr std::size_t j21 = 2 + 4 * 1;
-	constexpr std::size_t j31 = 3 + 4 * 1;
-	constexpr std::size_t j02 = 0 + 4 * 2;
-	constexpr std::size_t j12 = 1 + 4 * 2;
-	constexpr std::size_t j22 = 2 + 4 * 2;
-	constexpr std::size_t j32 = 3 + 4 * 2;
-	constexpr std::size_t j03 = 0 + 4 * 3;
-	constexpr std::size_t j13 = 1 + 4 * 3;
-	constexpr std::size_t j23 = 2 + 4 * 3;
-	constexpr std::size_t j33 = 3 + 4 * 3;
-
-	cool::matrix<Ty, 4, 4> C;
-	const Ty* a0ptr = a0.data();
-	const Ty* a1ptr = a1.data();
-	const Ty* a2ptr = a2.data();
-	const Ty* a3ptr = a3.data();
-	Ty* Cptr = C.data();
-
-	Ty temp_01_01 = *(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0);
-	Ty temp_01_02 = *(a0ptr + 0) * *(a2ptr + 1) - *(a0ptr + 1) * *(a2ptr + 0);
-	Ty temp_01_03 = *(a0ptr + 0) * *(a3ptr + 1) - *(a0ptr + 1) * *(a3ptr + 0);
-
-	Ty temp_01_12 = *(a1ptr + 0) * *(a2ptr + 1) - *(a1ptr + 1) * *(a2ptr + 0);
-	Ty temp_01_13 = *(a1ptr + 0) * *(a3ptr + 1) - *(a1ptr + 1) * *(a3ptr + 0);
-	Ty temp_01_23 = *(a2ptr + 0) * *(a3ptr + 1) - *(a2ptr + 1) * *(a3ptr + 0);
-
-	Ty temp_23_01 = *(a0ptr + 2) * *(a1ptr + 3) - *(a0ptr + 3) * *(a1ptr + 2);
-	Ty temp_23_02 = *(a0ptr + 2) * *(a2ptr + 3) - *(a0ptr + 3) * *(a2ptr + 2);
-	Ty temp_23_03 = *(a0ptr + 2) * *(a3ptr + 3) - *(a0ptr + 3) * *(a3ptr + 2);
-
-	Ty temp_23_12 = *(a1ptr + 2) * *(a2ptr + 3) - *(a1ptr + 3) * *(a2ptr + 2);
-	Ty temp_23_13 = *(a1ptr + 2) * *(a3ptr + 3) - *(a1ptr + 3) * *(a3ptr + 2);
-	Ty temp_23_23 = *(a2ptr + 2) * *(a3ptr + 3) - *(a2ptr + 3) * *(a3ptr + 2);
-
-	Ty d = static_cast<Ty>(1) / (temp_01_01 * temp_23_23 - temp_01_02 * temp_23_13
-		+ temp_01_03 * temp_23_12 + temp_01_12 * temp_23_03
-		- temp_01_13 * temp_23_02 + temp_01_23 * temp_23_01);
-
-	*(Cptr + j00) = d * (*(a1ptr + 1) * temp_23_23 - *(a2ptr + 1) * temp_23_13 + *(a3ptr + 1) * temp_23_12);
-	*(Cptr + j01) = -d * (*(a1ptr + 0) * temp_23_23 - *(a2ptr + 0) * temp_23_13 + *(a3ptr + 0) * temp_23_12);
-	*(Cptr + j02) = d * (*(a1ptr + 3) * temp_01_23 - *(a2ptr + 3) * temp_01_13 + *(a3ptr + 3) * temp_01_12);
-	*(Cptr + j03) = -d * (*(a1ptr + 2) * temp_01_23 - *(a2ptr + 2) * temp_01_13 + *(a3ptr + 2) * temp_01_12);
-
-	*(Cptr + j10) = -d * (*(a0ptr + 1) * temp_23_23 - *(a2ptr + 1) * temp_23_03 + *(a3ptr + 1) * temp_23_02);
-	*(Cptr + j11) = d * (*(a0ptr + 0) * temp_23_23 - *(a2ptr + 0) * temp_23_03 + *(a3ptr + 0) * temp_23_02);
-	*(Cptr + j12) = -d * (*(a0ptr + 3) * temp_01_23 - *(a2ptr + 3) * temp_01_03 + *(a3ptr + 3) * temp_01_02);
-	*(Cptr + j13) = d * (*(a0ptr + 2) * temp_01_23 - *(a2ptr + 2) * temp_01_03 + *(a3ptr + 2) * temp_01_02);
-
-	*(Cptr + j20) = d * (*(a0ptr + 1) * temp_23_13 - *(a1ptr + 1) * temp_23_03 + *(a3ptr + 1) * temp_23_01);
-	*(Cptr + j21) = -d * (*(a0ptr + 0) * temp_23_13 - *(a1ptr + 0) * temp_23_03 + *(a3ptr + 0) * temp_23_01);
-	*(Cptr + j22) = d * (*(a0ptr + 3) * temp_01_13 - *(a1ptr + 3) * temp_01_03 + *(a3ptr + 3) * temp_01_01);
-	*(Cptr + j23) = -d * (*(a0ptr + 2) * temp_01_13 - *(a1ptr + 2) * temp_01_03 + *(a3ptr + 2) * temp_01_01);
-
-	*(Cptr + j30) = -d * (*(a0ptr + 1) * temp_23_12 - *(a1ptr + 1) * temp_23_02 + *(a2ptr + 1) * temp_23_01);
-	*(Cptr + j31) = d * (*(a0ptr + 0) * temp_23_12 - *(a1ptr + 0) * temp_23_02 + *(a2ptr + 0) * temp_23_01);
-	*(Cptr + j32) = -d * (*(a0ptr + 3) * temp_01_12 - *(a1ptr + 3) * temp_01_02 + *(a2ptr + 3) * temp_01_01);
-	*(Cptr + j33) = d * (*(a0ptr + 2) * temp_01_12 - *(a1ptr + 2) * temp_01_02 + *(a2ptr + 2) * temp_01_01);
-
-	return C;
-}
-
-template <class Ty, std::size_t dim, std::size_t _fx_rows_padded,
-	std::size_t _J_rows_padded, std::size_t _x_rows_padded>
+template <class params_Ty, class Ty, std::size_t _dim,
+	std::size_t _fx_rows_padded, std::size_t _J_rows_padded, std::size_t _xref_rows_padded, std::size_t _xarg_rows_padded, std::size_t _y_rows_padded,
+	std::size_t _fx_align, std::size_t _J_align, std::size_t _xref_align, std::size_t _xarg_align, std::size_t _y_align,
+	class _x_matrix_data_Ty, class _y_matrix_data_Ty
+>
 inline int cool::nonlinear_solve(
-	cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&),
-	cool::matrix<Ty, dim, dim, _J_rows_padded>(*Jfn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&),
-	cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-	Ty tol, int iter)
+	cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty),
+	cool::matrix<Ty, _dim, _dim, _J_rows_padded, _J_align>(*Jfn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty),
+	cool::matrix_interface<Ty, _dim, 1, _xref_rows_padded, _xref_align, _x_matrix_data_Ty>& xref,
+	const cool::const_matrix_interface<Ty, _dim, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y,
+	Ty tol, int iter, params_Ty params) noexcept
 {
-	cool::matrix<Ty, dim, 1, _x_rows_padded> x = *xptr;
-	cool::matrix<Ty, dim, 1, _fx_rows_padded> fx = fn(x);
+	cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align> x = xref;
+	cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align> fx = fn(x, params);
+	fx -= y;
 	tol = tol * tol;
 
 	while (cool::dot(fx, fx) >= tol)
@@ -5977,122 +7098,33 @@ inline int cool::nonlinear_solve(
 		else
 		{
 			iter--;
-			x -= cool::solve(Jfn(x), fx);
-			fx = fn(x);
-		}
-	}
 
-	*xptr = x;
-
-	return iter;
-}
-
-template <class Ty, std::size_t dim, std::size_t _fx_rows_padded, std::size_t _J_rows_padded,
-	std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-inline int cool::nonlinear_solve(
-	cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&),
-	cool::matrix<Ty, dim, dim, _J_rows_padded>(*Jfn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&),
-	cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-	const cool::matrix<Ty, dim, 1, _y_rows_padded>& y,
-	Ty tol, int iter)
-{
-	cool::matrix<Ty, dim, 1, _x_rows_padded> x = *xptr;
-	cool::matrix<Ty, dim, 1, _fx_rows_padded> fx = fn(x) - y;
-	tol = tol * tol;
-
-	while (cool::dot(fx, fx) >= tol)
-	{
-		if (iter < 0)
-		{
-			break;
-		}
-		else
-		{
-			iter--;
-			x -= cool::solve(Jfn(x), fx);
-			fx = fn(x) - y;
-		}
-	}
-
-	*xptr = x;
-
-	return iter;
-}
-
-template <class params_Ty, class Ty, std::size_t dim, std::size_t _fx_rows_padded,
-	std::size_t _J_rows_padded, std::size_t _x_rows_padded>
-inline int cool::nonlinear_solve(
-	cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&, params_Ty),
-	cool::matrix<Ty, dim, dim, _J_rows_padded>(*Jfn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&, params_Ty),
-	cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-	Ty tol, int iter, params_Ty params)
-{
-	cool::matrix<Ty, dim, 1, _x_rows_padded> x = *xptr;
-	cool::matrix<Ty, dim, 1, _fx_rows_padded> fx = fn(x, params);
-	tol = tol * tol;
-
-	while (cool::dot(fx, fx) >= tol)
-	{
-		if (iter < 0)
-		{
-			break;
-		}
-		else
-		{
-			iter--;
-			x -= cool::solve(Jfn(x, params), fx);
+			x -= cool::solve<_xarg_rows_padded, _xarg_align>(Jfn(x, params), fx);
 			fx = fn(x, params);
+			fx -= y;
 		}
 	}
 
-	*xptr = x;
+	xref = x;
 
 	return iter;
 }
 
-template <class params_Ty, class Ty, std::size_t dim, std::size_t _fx_rows_padded,
-	std::size_t _J_rows_padded, std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-inline int cool::nonlinear_solve(
-	cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&, params_Ty),
-	cool::matrix<Ty, dim, dim, _J_rows_padded>(*Jfn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&, params_Ty),
-	cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-	const cool::matrix<Ty, dim, 1, _y_rows_padded>& y,
-	Ty tol, int iter, params_Ty params)
-{
-	cool::matrix<Ty, dim, 1, _x_rows_padded> x = *xptr;
-	cool::matrix<Ty, dim, 1, _fx_rows_padded> fx = fn(x, params) - y;
-	tol = tol * tol;
-
-	while (cool::dot(fx, fx) >= tol)
-	{
-		if (iter < 0)
-		{
-			break;
-		}
-		else
-		{
-			iter--;
-			x -= cool::solve(Jfn(x, params), fx);
-			fx = fn(x, params) - y;
-		}
-	}
-
-	*xptr = x;
-
-	return iter;
-}
-
-template <class Ty, std::size_t dim, std::size_t _fx_rows_padded,
-	std::size_t _Jinv_rows_padded, std::size_t _x_rows_padded>
+template <class params_Ty, class Ty, std::size_t dim,
+	std::size_t _fx_rows_padded, std::size_t _Jinv_rows_padded, std::size_t _xref_rows_padded, std::size_t _xarg_rows_padded, std::size_t _y_rows_padded,
+	std::size_t _fx_align, std::size_t _Jinv_align, std::size_t _xref_align, std::size_t _xarg_align, std::size_t _y_align,
+	class _Jinv_matrix_data_Ty, class _x_matrix_data_Ty, class _y_matrix_data_Ty
+>
 inline int cool::nonlinear_qn_solve(
-	cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&),
-	cool::matrix<Ty, dim, dim, _Jinv_rows_padded>* Jinvptr,
-	cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-	Ty tol, int iter)
+	cool::matrix<Ty, dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty),
+	cool::matrix_interface<Ty, dim, dim, _Jinv_rows_padded, _Jinv_align, _Jinv_matrix_data_Ty>& Jinvref,
+	cool::matrix_interface<Ty, dim, 1, _xref_rows_padded, _xref_align, _x_matrix_data_Ty>& xref,
+	const cool::const_matrix_interface<Ty, dim, 1, _y_rows_padded, _y_align, _y_matrix_data_Ty>& y,
+	Ty tol, int iter, params_Ty params) noexcept
 {
-	cool::matrix<Ty, dim, dim, _Jinv_rows_padded> Jinv = *Jinvptr;
-	cool::matrix<Ty, dim, 1, _x_rows_padded> x = *xptr;
-	cool::matrix<Ty, dim, 1, _fx_rows_padded> fx = fn(x);
+	cool::matrix<Ty, dim, dim, dim> Jinv = Jinvref;
+	cool::matrix<Ty, dim, 1, _xarg_rows_padded, _xarg_align> x = xref;
+	cool::matrix<Ty, dim, 1, _fx_rows_padded, _fx_align> fx = fn(x, params);
 	tol = tol * tol;
 
 	while (cool::dot(fx, fx) >= tol)
@@ -6106,169 +7138,55 @@ inline int cool::nonlinear_qn_solve(
 			iter--;
 
 			cool::matrix<Ty, dim, 1, dim> s = Jinv * fx;
-			fx -= fn(x -= s);
+			x -= s;
+			fx -= fn(x, params);
+			fx += y;
 			cool::matrix<Ty, dim, 1, dim> Jinvfx = Jinv * fx;
-			cool::matrix<Ty, dim, 1, dim> stemp = (static_cast<Ty>(1)
-				/ cool::dot(Jinvfx, s)) * (s - Jinvfx);
-			Jinv.fmadd(stemp, (reinterpret_cast<cool::matrix<Ty, 1, dim, 1>&>(s) * Jinv));
-			fx = fn(x);
-		}
-	}
-
-	*xptr = x;
-	*Jinvptr = Jinv;
-
-	return iter;
-}
-
-template <class Ty, std::size_t dim, std::size_t _fx_rows_padded, std::size_t _Jinv_rows_padded,
-	std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-inline int cool::nonlinear_qn_solve(
-	cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&),
-	cool::matrix<Ty, dim, dim, _Jinv_rows_padded>* Jinvptr,
-	cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-	const cool::matrix<Ty, dim, 1, _y_rows_padded>& y,
-	Ty tol, int iter)
-{
-	cool::matrix<Ty, dim, dim, _Jinv_rows_padded> Jinv = *Jinvptr;
-	cool::matrix<Ty, dim, 1, _x_rows_padded> x = *xptr;
-	cool::matrix<Ty, dim, 1, _fx_rows_padded> fx = fn(x);
-	tol = tol * tol;
-
-	while (cool::dot(fx, fx) >= tol)
-	{
-		if (iter < 0)
-		{
-			break;
-		}
-		else
-		{
-			iter--;
-
-			cool::matrix<Ty, dim, 1, dim> s = Jinv * fx;
-			fx -= fn(x -= s) - y;
-			cool::matrix<Ty, dim, 1, dim> Jinvfx = Jinv * fx;
-			cool::matrix<Ty, dim, 1, dim> stemp = (static_cast<Ty>(1)
-				/ cool::dot(Jinvfx, s)) * (s - Jinvfx);
-			Jinv.fmadd(stemp, (reinterpret_cast<cool::matrix<Ty, 1, dim, 1>&>(s) * Jinv));
-			fx = fn(x) - y;
-		}
-	}
-
-	*xptr = x;
-	*Jinvptr = Jinv;
-
-	return iter;
-}
-
-template <class params_Ty, class Ty, std::size_t dim, std::size_t _fx_rows_padded,
-	std::size_t _Jinv_rows_padded, std::size_t _x_rows_padded>
-inline int cool::nonlinear_qn_solve(
-	cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&, params_Ty),
-	cool::matrix<Ty, dim, dim, _Jinv_rows_padded>* Jinvptr,
-	cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-	Ty tol, int iter, params_Ty params)
-{
-	cool::matrix<Ty, dim, dim, _Jinv_rows_padded> Jinv = *Jinvptr;
-	cool::matrix<Ty, dim, 1, _x_rows_padded> x = *xptr;
-	cool::matrix<Ty, dim, 1, _fx_rows_padded> fx = fn(x, params);
-	tol = tol * tol;
-
-	while (cool::dot(fx, fx) >= tol)
-	{
-		if (iter < 0)
-		{
-			break;
-		}
-		else
-		{
-			iter--;
-
-			cool::matrix<Ty, dim, 1, dim> s = Jinv * fx;
-			fx -= fn(x -= s, params);
-			cool::matrix<Ty, dim, 1, dim> Jinvfx = Jinv * fx;
-			cool::matrix<Ty, dim, 1, dim> stemp = (static_cast<Ty>(1)
-				/ cool::dot(Jinvfx, s)) * (s - Jinvfx);
-			Jinv.fmadd(stemp, (reinterpret_cast<cool::matrix<Ty, 1, dim, 1>&>(s) * Jinv));
+			cool::matrix<Ty, dim, 1, dim> stemp = (static_cast<Ty>(1) / cool::dot(Jinvfx, s)) * (s - Jinvfx);
+			cool::const_matrix_span<Ty, 1, dim, 1> st(s.data());
+			Jinv.fmadd(stemp, st * Jinv);
 			fx = fn(x, params);
+			fx -= y;
 		}
 	}
 
-	*xptr = x;
-	*Jinvptr = Jinv;
+	xref = x;
+	Jinvref = Jinv;
 
 	return iter;
 }
 
-template <class params_Ty, class Ty, std::size_t dim, std::size_t _fx_rows_padded,
-	std::size_t _Jinv_rows_padded, std::size_t _x_rows_padded, std::size_t _y_rows_padded>
-inline int cool::nonlinear_qn_solve(
-	cool::matrix<Ty, dim, 1, _fx_rows_padded>(*fn)(const cool::matrix<Ty, dim, 1, _x_rows_padded>&, params_Ty),
-	cool::matrix<Ty, dim, dim, _Jinv_rows_padded>* Jinvptr,
-	cool::matrix<Ty, dim, 1, _x_rows_padded>* xptr,
-	const cool::matrix<Ty, dim, 1, _y_rows_padded>& y,
-	Ty tol, int iter, params_Ty params)
+// lu_matrix
+
+template <class Ty, std::size_t _dim, std::size_t _rows_padded, std::size_t _align>
+inline Ty cool::lu_matrix<Ty, _dim, _rows_padded, _align>::det() const noexcept
 {
-	cool::matrix<Ty, dim, dim, _Jinv_rows_padded> Jinv = *Jinvptr;
-	cool::matrix<Ty, dim, 1, _x_rows_padded> x = *xptr;
-	cool::matrix<Ty, dim, 1, _fx_rows_padded> fx = fn(x, params);
-	tol = tol * tol;
+	constexpr bool _dim_lt_2 = _dim < 2;
+	constexpr bool _dim_lt_8 = _dim < 8;
 
-	while (cool::dot(fx, fx) >= tol)
-	{
-		if (iter < 0)
-		{
-			break;
-		}
-		else
-		{
-			iter--;
-
-			cool::matrix<Ty, dim, 1, dim> s = Jinv * fx;
-			fx -= fn(x -= s, params) - y;
-			cool::matrix<Ty, dim, 1, dim> Jinvfx = Jinv * fx;
-			cool::matrix<Ty, dim, 1, dim> stemp = (static_cast<Ty>(1)
-				/ cool::dot(Jinvfx, s)) * (s - Jinvfx);
-			Jinv.fmadd(stemp, (reinterpret_cast<cool::matrix<Ty, 1, dim, 1>&>(s) * Jinv));
-			fx = fn(x, params) - y;
-		}
-	}
-
-	*xptr = x;
-	*Jinvptr = Jinv;
-
-	return iter;
-}
-
-template <class Ty, std::size_t Ar>
-inline Ty cool::lu_matrix<Ty, Ar>::det() const noexcept
-{
-	constexpr bool _size_lt_2 = Ar < 2;
-	constexpr bool _size_lt_8 = Ar < 8;
-
-	if (_size_lt_2)
+	if (_dim_lt_2)
 	{
 		Ty ret = *(this->data());
 		return flipped ? -ret : ret;
 	}
-	else if (_size_lt_8)
+	else if (_dim_lt_8)
 	{
-		constexpr std::size_t Ar_mult2 = Ar - Ar % 2;
-		constexpr bool Ar_odd = Ar % 2 != 0;
+		constexpr std::size_t _dim_mult2 = _dim - _dim % 2;
+		constexpr bool _dim_odd = _dim % 2 != 0;
 
 		const Ty* ptr = this->data();
 
 		Ty acc0 = *ptr;
-		Ty acc1 = *(ptr + (Ar + 1));
+		Ty acc1 = *(ptr + (_rows_padded + 1));
 
-		for (std::size_t k = 2; k < Ar_mult2; k += 2)
+		for (std::size_t k = 2; k < _dim_mult2; k += 2)
 		{
-			acc0 *= *(ptr + (Ar + 1) * k);
-			acc1 *= *(ptr + (Ar + 1) * (k + 1));
+			acc0 *= *(ptr + (_rows_padded + 1) * k);
+			acc1 *= *(ptr + (_rows_padded + 1) * (k + 1));
 		}
-		if (Ar_odd)
+		if (_dim_odd)
 		{
-			acc0 *= *(ptr + (Ar + 1) * Ar_mult2);
+			acc0 *= *(ptr + (_rows_padded + 1) * _dim_mult2);
 		}
 
 		Ty ret = acc0 * acc1;
@@ -6276,27 +7194,27 @@ inline Ty cool::lu_matrix<Ty, Ar>::det() const noexcept
 	}
 	else
 	{
-		constexpr std::size_t Ar_mult4 = Ar - Ar % 4;
-		constexpr std::size_t remainder = Ar % 4;
+		constexpr std::size_t _dim_mult4 = _dim - _dim % 4;
+		constexpr std::size_t remainder = _dim % 4;
 
 		const Ty* ptr = this->data();
 
 		Ty acc[4] = { *ptr,
-			*(ptr + (Ar + 1)),
-			*(ptr + (Ar + 1) * 2),
-			*(ptr + (Ar + 1) * 3)
+			*(ptr + (_rows_padded + 1)),
+			*(ptr + (_rows_padded + 1) * 2),
+			*(ptr + (_rows_padded + 1) * 3)
 		};
 
-		for (std::size_t n = 4; n < Ar_mult4; n += 4)
+		for (std::size_t n = 4; n < _dim_mult4; n += 4)
 		{
 			for (std::size_t m = 0; m < 4; m++)
 			{
-				acc[m] *= *(ptr + (Ar + 1) * (n + m));
+				acc[m] *= *(ptr + (_rows_padded + 1) * (n + m));
 			}
 		}
 		for (std::size_t m = 0; m < remainder; m++)
 		{
-			acc[m] *= *(ptr + (Ar + 1) * (Ar_mult4 + m));
+			acc[m] *= *(ptr + (_rows_padded + 1) * (_dim_mult4 + m));
 		}
 
 		Ty ret = (acc[0] * acc[1]) * (acc[2] * acc[3]);
@@ -6304,18 +7222,18 @@ inline Ty cool::lu_matrix<Ty, Ar>::det() const noexcept
 	}
 }
 
-template <class Ty, std::size_t Ar>
-inline Ty cool::lu_matrix<Ty, Ar>::diag_ratio() const noexcept
+template <class Ty, std::size_t _dim, std::size_t _rows_padded, std::size_t _align>
+inline Ty cool::lu_matrix<Ty, _dim, _rows_padded, _align>::diag_ratio() const noexcept
 {
-	constexpr bool _size_lt_2 = Ar < 2;
+	constexpr bool _dim_lt_2 = _dim < 2;
 
-	if (_size_lt_2)
+	if (_dim_lt_2)
 	{
 		return (*(this->data()) != static_cast<Ty>(0)) ? static_cast<Ty>(1) : static_cast<Ty>(0);
 	}
 	else
 	{
-		std::size_t Ar_m1 = Ar - 1;
+		std::size_t _dim_m1 = _dim - 1;
 
 		const Ty* ptr = this->data();
 
@@ -6331,9 +7249,9 @@ inline Ty cool::lu_matrix<Ty, Ar>::diag_ratio() const noexcept
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC unroll 4
 #endif // defined(__GNUC__) && !defined(__clang__)
-		for (std::size_t k = 1; k < Ar_m1; k++)
+		for (std::size_t k = 1; k < _dim_m1; k++)
 		{
-			Ty temp = *(ptr + (Ar + 1) * k);
+			Ty temp = *(ptr + (_rows_padded + 1) * k);
 			auto temp_sq = cool::matrix_scalar_subroutine::abs_sq<Ty>(temp);
 
 			bool new_min = temp_sq < min_value_sq;
@@ -6345,7 +7263,7 @@ inline Ty cool::lu_matrix<Ty, Ar>::diag_ratio() const noexcept
 			max_value_sq = new_max ? temp_sq : max_value_sq;
 		}
 
-		Ty temp = *(ptr + (Ar + 1) * Ar_m1);
+		Ty temp = *(ptr + (_rows_padded + 1) * _dim_m1);
 		auto temp_sq = cool::matrix_scalar_subroutine::abs_sq<Ty>(temp);
 
 		min_value = (temp_sq < min_value_sq) ? temp : min_value;
@@ -6355,40 +7273,42 @@ inline Ty cool::lu_matrix<Ty, Ar>::diag_ratio() const noexcept
 	}
 }
 
-template <class Ty, std::size_t Ar> template <std::size_t Yc, std::size_t _Y_rows_padded>
-inline cool::matrix<Ty, Ar, Yc> cool::lu_matrix<Ty, Ar>::solve(const cool::matrix<Ty, Ar, Yc, _Y_rows_padded>& Y) const noexcept
+template <class Ty, std::size_t _dim, std::size_t _rows_padded, std::size_t _align>
+template <std::size_t _rhs_cols, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+inline cool::matrix<Ty, _dim, _rhs_cols, _rows_padded, _align> cool::lu_matrix<Ty, _dim, _rows_padded, _align>::solve(
+	const cool::const_matrix_interface<Ty, _dim, _rhs_cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& Y) const noexcept
 {
-	cool::matrix<Ty, Ar, Yc> X;
+	cool::matrix<Ty, _dim, _rhs_cols, _rows_padded, _align> X;
 
-	for (std::size_t k = 0; k < Yc; k++)
+	for (std::size_t k = 0; k < _rhs_cols; k++)
 	{
-		Ty* ptrX = X.data() + k * Ar;
-		const Ty* ptrY = Y.data() + k * Ar;
-		for (std::size_t j = 0; j < Ar; j++)
+		Ty* ptrX = X.data() + k * _rows_padded;
+		const Ty* ptrY = Y.data() + k * _rhs_rows_padded;
+		for (std::size_t j = 0; j < _dim; j++)
 		{
 			*ptrX++ = *(ptrY + perm[j]);
 		}
 	}
 
-	constexpr std::size_t Yc_mmod4 = Yc - Yc % 4;
-	constexpr std::size_t remainder = Yc % 4;
+	constexpr std::size_t _rhs_cols_mmod4 = _rhs_cols - _rhs_cols % 4;
+	constexpr std::size_t remainder = _rhs_cols % 4;
 
-	for (std::size_t k = 0; k < Yc_mmod4; k += 4)
+	for (std::size_t k = 0; k < _rhs_cols_mmod4; k += 4)
 	{
-		for (std::size_t j = 0; j < Ar; j++)
+		for (std::size_t j = 0; j < _dim; j++)
 		{
-			Ty* ptrX = X.data() + j + Ar * k;
+			Ty* ptrX = X.data() + j + _rows_padded * k;
 			Ty temp0 = *ptrX;
-			Ty temp1 = *(ptrX + Ar);
-			Ty temp2 = *(ptrX + Ar * 2);
-			Ty temp3 = *(ptrX + Ar * 3);
+			Ty temp1 = *(ptrX + _rows_padded);
+			Ty temp2 = *(ptrX + _rows_padded * 2);
+			Ty temp3 = *(ptrX + _rows_padded * 3);
 			Ty* ptrX0 = ptrX + 1;
-			Ty* ptrX1 = ptrX + 1 + Ar;
-			Ty* ptrX2 = ptrX + 1 + Ar * 2;
-			Ty* ptrX3 = ptrX + 1 + Ar * 3;
+			Ty* ptrX1 = ptrX + 1 + _rows_padded;
+			Ty* ptrX2 = ptrX + 1 + _rows_padded * 2;
+			Ty* ptrX3 = ptrX + 1 + _rows_padded * 3;
 			std::size_t i = j + 1;
-			const Ty* ptrLU = this->data() + i + Ar * j;
-			for (; i < Ar; i++)
+			const Ty* ptrLU = this->data() + i + _rows_padded * j;
+			for (; i < _dim; i++)
 			{
 				Ty temp = *ptrLU++;
 				*ptrX0++ -= temp0 * temp;
@@ -6398,20 +7318,20 @@ inline cool::matrix<Ty, Ar, Yc> cool::lu_matrix<Ty, Ar>::solve(const cool::matri
 			}
 		}
 
-		for (std::size_t j = Ar; j > 0; )
+		for (std::size_t j = _dim; j > 0; )
 		{
 			j--;
-			Ty* ptrX0 = X.data() + Ar * k;
-			Ty* ptrX1 = ptrX0 + Ar;
-			Ty* ptrX2 = ptrX0 + Ar * 2;
-			Ty* ptrX3 = ptrX0 + Ar * 3;
+			Ty* ptrX0 = X.data() + _rows_padded * k;
+			Ty* ptrX1 = ptrX0 + _rows_padded;
+			Ty* ptrX2 = ptrX0 + _rows_padded * 2;
+			Ty* ptrX3 = ptrX0 + _rows_padded * 3;
 			Ty* ptrX = ptrX0 + j;
-			Ty temp_inv = (static_cast<Ty>(1) / *(this->data() + (Ar + 1) * j));
+			Ty temp_inv = (static_cast<Ty>(1) / *(this->data() + (_rows_padded + 1) * j));
 			Ty temp0 = (*ptrX *= temp_inv);
-			Ty temp1 = (*(ptrX + Ar) *= temp_inv);
-			Ty temp2 = (*(ptrX + Ar * 2) *= temp_inv);
-			Ty temp3 = (*(ptrX + Ar * 3) *= temp_inv);
-			const Ty* ptrLU = this->data() + Ar * j;
+			Ty temp1 = (*(ptrX + _rows_padded) *= temp_inv);
+			Ty temp2 = (*(ptrX + _rows_padded * 2) *= temp_inv);
+			Ty temp3 = (*(ptrX + _rows_padded * 3) *= temp_inv);
+			const Ty* ptrLU = this->data() + _rows_padded * j;
 			for (std::size_t i = 0; i < j; i++)
 			{
 				Ty temp = *ptrLU++;
@@ -6428,24 +7348,24 @@ inline cool::matrix<Ty, Ar, Yc> cool::lu_matrix<Ty, Ar>::solve(const cool::matri
 
 	case 1:
 	{
-		for (std::size_t j = 0; j < Ar; j++)
+		for (std::size_t j = 0; j < _dim; j++)
 		{
-			Ty* ptrX0 = X.data() + j + Ar * Yc_mmod4;
+			Ty* ptrX0 = X.data() + j + _rows_padded * _rhs_cols_mmod4;
 			Ty temp0 = *ptrX0++;
 			std::size_t i = j + 1;
-			const Ty* ptrLU = this->data() + i + Ar * j;
-			for (; i < Ar; i++)
+			const Ty* ptrLU = this->data() + i + _rows_padded * j;
+			for (; i < _dim; i++)
 			{
 				*ptrX0++ -= temp0 * *ptrLU++;
 			}
 		}
 
-		for (std::size_t j = Ar; j > 0; )
+		for (std::size_t j = _dim; j > 0; )
 		{
 			j--;
-			Ty* ptrX0 = X.data() + Ar * Yc_mmod4;
-			Ty temp0 = (*(ptrX0 + j) /= *(this->data() + (Ar + 1) * j));
-			const Ty* ptrLU = this->data() + Ar * j;
+			Ty* ptrX0 = X.data() + _rows_padded * _rhs_cols_mmod4;
+			Ty temp0 = (*(ptrX0 + j) /= *(this->data() + (_rows_padded + 1) * j));
+			const Ty* ptrLU = this->data() + _rows_padded * j;
 			for (std::size_t i = 0; i < j; i++)
 			{
 				*ptrX0++ -= temp0 * *ptrLU++;
@@ -6456,16 +7376,16 @@ inline cool::matrix<Ty, Ar, Yc> cool::lu_matrix<Ty, Ar>::solve(const cool::matri
 
 	case 2:
 	{
-		for (std::size_t j = 0; j < Ar; j++)
+		for (std::size_t j = 0; j < _dim; j++)
 		{
-			Ty* ptrX = X.data() + j + Ar * Yc_mmod4;
+			Ty* ptrX = X.data() + j + _rows_padded * _rhs_cols_mmod4;
 			Ty temp0 = *ptrX;
-			Ty temp1 = *(ptrX + Ar);
+			Ty temp1 = *(ptrX + _rows_padded);
 			Ty* ptrX0 = ptrX + 1;
-			Ty* ptrX1 = ptrX + 1 + Ar;
+			Ty* ptrX1 = ptrX + 1 + _rows_padded;
 			std::size_t i = j + 1;
-			const Ty* ptrLU = this->data() + i + Ar * j;
-			for (; i < Ar; i++)
+			const Ty* ptrLU = this->data() + i + _rows_padded * j;
+			for (; i < _dim; i++)
 			{
 				Ty temp = *ptrLU++;
 				*ptrX0++ -= temp0 * temp;
@@ -6473,16 +7393,16 @@ inline cool::matrix<Ty, Ar, Yc> cool::lu_matrix<Ty, Ar>::solve(const cool::matri
 			}
 		}
 
-		for (std::size_t j = Ar; j > 0; )
+		for (std::size_t j = _dim; j > 0; )
 		{
 			j--;
-			Ty* ptrX0 = X.data() + Ar * Yc_mmod4;
-			Ty* ptrX1 = ptrX0 + Ar;
+			Ty* ptrX0 = X.data() + _rows_padded * _rhs_cols_mmod4;
+			Ty* ptrX1 = ptrX0 + _rows_padded;
 			Ty* ptrX = ptrX0 + j;
-			Ty temp_inv = (static_cast<Ty>(1) / *(this->data() + (Ar + 1) * j));
+			Ty temp_inv = (static_cast<Ty>(1) / *(this->data() + (_rows_padded + 1) * j));
 			Ty temp0 = (*ptrX *= temp_inv);
-			Ty temp1 = (*(ptrX + Ar) *= temp_inv);
-			const Ty* ptrLU = this->data() + Ar * j;
+			Ty temp1 = (*(ptrX + _rows_padded) *= temp_inv);
+			const Ty* ptrLU = this->data() + _rows_padded * j;
 			for (std::size_t i = 0; i < j; i++)
 			{
 				Ty temp = *ptrLU++;
@@ -6495,19 +7415,19 @@ inline cool::matrix<Ty, Ar, Yc> cool::lu_matrix<Ty, Ar>::solve(const cool::matri
 
 	case 3:
 	{
-		for (std::size_t j = 0; j < Ar; j++)
+		for (std::size_t j = 0; j < _dim; j++)
 		{
 
-			Ty* ptrX = X.data() + j + Ar * Yc_mmod4;
+			Ty* ptrX = X.data() + j + _rows_padded * _rhs_cols_mmod4;
 			Ty temp0 = *ptrX;
-			Ty temp1 = *(ptrX + Ar);
-			Ty temp2 = *(ptrX + Ar * 2);
+			Ty temp1 = *(ptrX + _rows_padded);
+			Ty temp2 = *(ptrX + _rows_padded * 2);
 			Ty* ptrX0 = ptrX + 1;
-			Ty* ptrX1 = ptrX + 1 + Ar;
-			Ty* ptrX2 = ptrX + 1 + Ar * 2;
+			Ty* ptrX1 = ptrX + 1 + _rows_padded;
+			Ty* ptrX2 = ptrX + 1 + _rows_padded * 2;
 			std::size_t i = j + 1;
-			const Ty* ptrLU = this->data() + i + Ar * j;
-			for (; i < Ar; i++)
+			const Ty* ptrLU = this->data() + i + _rows_padded * j;
+			for (; i < _dim; i++)
 			{
 				Ty temp = *ptrLU++;
 				*ptrX0++ -= temp0 * temp;
@@ -6516,18 +7436,18 @@ inline cool::matrix<Ty, Ar, Yc> cool::lu_matrix<Ty, Ar>::solve(const cool::matri
 			}
 		}
 
-		for (std::size_t j = Ar; j > 0; )
+		for (std::size_t j = _dim; j > 0; )
 		{
 			j--;
-			Ty* ptrX0 = X.data() + Ar * Yc_mmod4;
-			Ty* ptrX1 = ptrX0 + Ar;
-			Ty* ptrX2 = ptrX0 + Ar * 2;
+			Ty* ptrX0 = X.data() + _rows_padded * _rhs_cols_mmod4;
+			Ty* ptrX1 = ptrX0 + _rows_padded;
+			Ty* ptrX2 = ptrX0 + _rows_padded * 2;
 			Ty* ptrX = ptrX0 + j;
-			Ty temp_inv = (static_cast<Ty>(1) / *(this->data() + (Ar + 1) * j));
+			Ty temp_inv = (static_cast<Ty>(1) / *(this->data() + (_rows_padded + 1) * j));
 			Ty temp0 = (*ptrX *= temp_inv);
-			Ty temp1 = (*(ptrX + Ar) *= temp_inv);
-			Ty temp2 = (*(ptrX + Ar * 2) *= temp_inv);
-			const Ty* ptrLU = this->data() + Ar * j;
+			Ty temp1 = (*(ptrX + _rows_padded) *= temp_inv);
+			Ty temp2 = (*(ptrX + _rows_padded * 2) *= temp_inv);
+			const Ty* ptrLU = this->data() + _rows_padded * j;
 			for (std::size_t i = 0; i < j; i++)
 			{
 				Ty temp = *ptrLU++;
@@ -6546,80 +7466,83 @@ inline cool::matrix<Ty, Ar, Yc> cool::lu_matrix<Ty, Ar>::solve(const cool::matri
 	return X;
 }
 
-template <class Ty, std::size_t Ar>
-inline cool::matrix<Ty, Ar, Ar> cool::lu_matrix<Ty, Ar>::inv() const noexcept
+template <class Ty, std::size_t _dim, std::size_t _rows_padded, std::size_t _align>
+inline cool::matrix<Ty, _dim, _dim, _rows_padded, _align> cool::lu_matrix<Ty, _dim, _rows_padded, _align>::inv() const noexcept
 {
-	cool::matrix<Ty, Ar, Ar> Id = static_cast<Ty>(0);
+	cool::matrix<Ty, _dim, _dim, _rows_padded, _align> Id = static_cast<Ty>(0);
 
 	Ty* ptrId = Id.data();
-	for (std::size_t k = 0; k < Ar; k++)
+	for (std::size_t k = 0; k < _dim; k++)
 	{
-		*(ptrId + (Ar + 1) * k) = static_cast<Ty>(1);
+		*(ptrId + (_rows_padded + 1) * k) = static_cast<Ty>(1);
 	}
 
 	return this->solve(Id);
 }
 
-template <class Ty, std::size_t Ar>
-inline cool::matrix<Ty, Ar, Ar> cool::lu_matrix<Ty, Ar>::lower() const noexcept
+template <class Ty, std::size_t _dim, std::size_t _rows_padded, std::size_t _align>
+inline cool::matrix<Ty, _dim, _dim, _rows_padded, _align> cool::lu_matrix<Ty, _dim, _rows_padded, _align>::lower() const noexcept
 {
-	cool::matrix<Ty, Ar, Ar> X = static_cast<Ty>(0);
+	cool::matrix<Ty, _dim, _dim, _rows_padded, _align> ret = static_cast<Ty>(0);
 
-	for (std::size_t j = 0; j < Ar; j++)
+	for (std::size_t j = 0; j < _dim; j++)
 	{
-		Ty* ptrX = X.data() + (Ar + 1) * j;
-		const Ty* ptrL = this->data() + 1 + (Ar + 1) * j;
-		*ptrX++ = static_cast<Ty>(1);
-		for (std::size_t i = j + 1; i < Ar; i++)
+		Ty* res_ptr = ret.data() + (_rows_padded + 1) * j;
+		const Ty* ptrL = this->data() + 1 + (_rows_padded + 1) * j;
+		*res_ptr++ = static_cast<Ty>(1);
+		for (std::size_t i = j + 1; i < _dim; i++)
 		{
-			*ptrX++ = *ptrL++;
+			*res_ptr++ = *ptrL++;
 		}
 	}
 
-	return X;
+	return ret;
 }
 
-template <class Ty, std::size_t Ar>
-inline cool::matrix<Ty, Ar, Ar> cool::lu_matrix<Ty, Ar>::upper() const noexcept
+template <class Ty, std::size_t _dim, std::size_t _rows_padded, std::size_t _align>
+inline cool::matrix<Ty, _dim, _dim, _rows_padded, _align> cool::lu_matrix<Ty, _dim, _rows_padded, _align>::upper() const noexcept
 {
-	cool::matrix<Ty, Ar, Ar> X = static_cast<Ty>(0);
+	cool::matrix<Ty, _dim, _dim, _rows_padded, _align> ret = static_cast<Ty>(0);
 
-	for (std::size_t j = 0; j < Ar; j++)
+	for (std::size_t j = 0; j < _dim; j++)
 	{
-		Ty* ptrX = X.data() + Ar * j;
-		const Ty* ptrL = this->data() + Ar * j;
+		Ty* res_ptr = ret.data() + _rows_padded * j;
+		const Ty* ptrL = this->data() + _rows_padded * j;
 		for (std::size_t i = 0; i <= j; i++)
 		{
-			*ptrX++ = *ptrL++;
+			*res_ptr++ = *ptrL++;
 		}
 	}
 
-	return X;
+	return ret;
 }
 
-template <class Ty, std::size_t Ar, std::size_t _A_rows_padded>
-inline cool::lu_matrix<Ty, Ar> cool::lu(const cool::matrix<Ty, Ar, Ar, _A_rows_padded>& A) noexcept
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _dim, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _matrix_data_Ty>
+inline cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::value, cool::_opt_dim<_opt_res_align, cool::matrix_align_spec<Ty, _dim, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::value>::value>::value> cool::lu(
+	const cool::const_matrix_interface<Ty, _dim, _dim, _rhs_rows_padded, _rhs_align, _matrix_data_Ty>& rhs) noexcept
 {
-	constexpr std::size_t Ar_m1 = (Ar == 0) ? 0 : Ar - 1;
+	constexpr std::size_t _dim_m1 = (_dim == 0) ? 0 : _dim - 1;
+	constexpr std::size_t _rows_padded = cool::_opt_dim<_opt_res_rows_padded, _dim>::value;
+	constexpr std::size_t _align = cool::_opt_dim<_opt_res_align, cool::matrix_align_spec<Ty, _dim, _dim, _rows_padded>::value>::value;
 
-	cool::lu_matrix<Ty, Ar> LU = A;
+	cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::value, cool::_opt_dim<_opt_res_align, cool::matrix_align_spec<Ty, _dim, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::value>::value>::value> LU = rhs;
 
-	for (std::size_t n = 0; n < Ar; n++)
+	for (std::size_t n = 0; n < _dim; n++)
 	{
 		LU.perm[n] = n;
 	}
 
 	LU.flipped = false;
 
-	for (std::size_t k = 0; k < Ar_m1; k++)
+	for (std::size_t k = 0; k < _dim_m1; k++)
 	{
 		{
-			Ty* ptrLU = LU.data() + k + Ar * k;
+			Ty* ptrLU = LU.data() + k + _rows_padded * k;
 			auto piv_abs_sq = cool::matrix_scalar_subroutine::abs_sq<Ty>(*ptrLU++);
 			std::size_t grt = k;
 			bool permute = false;
 
-			for (std::size_t j = k + 1; j < Ar; j++)
+			for (std::size_t j = k + 1; j < _dim; j++)
 			{
 				auto piv_abs_sq_temp = cool::matrix_scalar_subroutine::abs_sq<Ty>(*ptrLU++);
 				if (piv_abs_sq < piv_abs_sq_temp)
@@ -6634,13 +7557,13 @@ inline cool::lu_matrix<Ty, Ar> cool::lu(const cool::matrix<Ty, Ar, Ar, _A_rows_p
 			{
 				Ty* ptrLU1 = LU.data() + k;
 				Ty* ptrLU2 = LU.data() + grt;
-				for (std::size_t j = 0; j < Ar; j++)
+				for (std::size_t j = 0; j < _dim; j++)
 				{
 					Ty temp = *ptrLU1;
 					*ptrLU1 = *ptrLU2;
 					*ptrLU2 = temp;
-					ptrLU1 += Ar;
-					ptrLU2 += Ar;
+					ptrLU1 += _rows_padded;
+					ptrLU2 += _rows_padded;
 				}
 
 				{
@@ -6653,32 +7576,32 @@ inline cool::lu_matrix<Ty, Ar> cool::lu(const cool::matrix<Ty, Ar, Ar, _A_rows_p
 			}
 		}
 
-		Ty* ptrLU = LU.data() + k + Ar * k;
+		Ty* ptrLU = LU.data() + k + _rows_padded * k;
 
 		if (*ptrLU != static_cast<Ty>(0))
 		{
 			{
 				Ty temp = static_cast<Ty>(1) / *ptrLU++;
 				Ty* ptrL = ptrLU;
-				for (std::size_t i = k + 1; i < Ar; i++)
+				for (std::size_t i = k + 1; i < _dim; i++)
 				{
 					*ptrL++ *= temp;
 				}
 			}
 
 			std::size_t j = k + 1;
-			for (; j + 3 < Ar; j += 4)
+			for (; j + 3 < _dim; j += 4)
 			{
-				Ty* ptr0 = LU.data() + k + Ar * j;
-				Ty* ptr1 = ptr0 + Ar;
-				Ty* ptr2 = ptr0 + Ar * 2;
-				Ty* ptr3 = ptr0 + Ar * 3;
+				Ty* ptr0 = LU.data() + k + _rows_padded * j;
+				Ty* ptr1 = ptr0 + _rows_padded;
+				Ty* ptr2 = ptr0 + _rows_padded * 2;
+				Ty* ptr3 = ptr0 + _rows_padded * 3;
 				Ty temp0 = *ptr0++;
 				Ty temp1 = *ptr1++;
 				Ty temp2 = *ptr2++;
 				Ty temp3 = *ptr3++;
 				Ty* ptrL = ptrLU;
-				for (std::size_t i = k + 1; i < Ar; i++)
+				for (std::size_t i = k + 1; i < _dim; i++)
 				{
 					Ty temp = *ptrL++;
 					*ptr0++ -= temp * temp0;
@@ -6687,12 +7610,12 @@ inline cool::lu_matrix<Ty, Ar> cool::lu(const cool::matrix<Ty, Ar, Ar, _A_rows_p
 					*ptr3++ -= temp * temp3;
 				}
 			}
-			for (; j < Ar; j++)
+			for (; j < _dim; j++)
 			{
-				Ty* ptr0 = LU.data() + k + Ar * j;
+				Ty* ptr0 = LU.data() + k + _rows_padded * j;
 				Ty temp0 = *ptr0++;
 				Ty* ptrL = ptrLU;
-				for (std::size_t i = k + 1; i < Ar; i++)
+				for (std::size_t i = k + 1; i < _dim; i++)
 				{
 					*ptr0++ -= *ptrL++ * temp0;
 				}
@@ -6701,715 +7624,6 @@ inline cool::lu_matrix<Ty, Ar> cool::lu(const cool::matrix<Ty, Ar, Ar, _A_rows_p
 	}
 
 	return LU;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator_proxy cool::matrix<Ty, _rows, _cols, _rows_padded>::cm() noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator_proxy(static_cast<Ty*>(m_data));
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator_proxy cool::matrix<Ty, _rows, _cols, _rows_padded>::cm() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator_proxy(static_cast<const Ty*>(m_data));
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator_proxy cool::matrix<Ty, _rows, _cols, _rows_padded>::rm() noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator_proxy(static_cast<Ty*>(m_data));
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator_proxy cool::matrix<Ty, _rows, _cols, _rows_padded>::rm() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator_proxy(static_cast<const Ty*>(m_data));
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::begin() noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator(static_cast<Ty*>(m_data), 0);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::end() noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator(static_cast<Ty*>(m_data), _cols);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::begin() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator(static_cast<const Ty*>(m_data), 0);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::end() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator(static_cast<const Ty*>(m_data), _cols);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::cbegin() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator(static_cast<const Ty*>(m_data), 0);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::cend() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator(static_cast<const Ty*>(m_data), _cols);
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator_proxy::begin() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator(m_data_ptr, 0);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator_proxy::end() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator(m_data_ptr, _cols);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator_proxy::cbegin() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator(m_data_ptr, 0);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator_proxy::cend() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator(m_data_ptr, _cols);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator_proxy::begin() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator(m_data_ptr, 0);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator_proxy::end() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator(m_data_ptr, _cols);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator_proxy::cbegin() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator(m_data_ptr, 0);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator_proxy::cend() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator(m_data_ptr, _cols);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator_proxy::begin() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator(m_data_ptr, 0);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator_proxy::end() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator(m_data_ptr, _rows);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator_proxy::cbegin() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator(m_data_ptr, 0);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator_proxy::cend() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator(m_data_ptr, _rows);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator_proxy::begin() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator(m_data_ptr, 0);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator_proxy::end() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator(m_data_ptr, _rows);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator_proxy::cbegin() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator(m_data_ptr, 0);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator_proxy::cend() const noexcept
-{
-	return cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator(m_data_ptr, _rows);
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator::cm_iterator(Ty* ptr, std::size_t j) noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	m_data_ptr = ptr;
-
-	if (_contiguous)
-	{
-		m_i = _rows * j;
-		m_j = 0;
-	}
-	else
-	{
-		m_i = 0;
-		m_j = j;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline Ty& cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator::operator*() const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return *(m_data_ptr + m_i);
-	}
-	else
-	{
-		return *(m_data_ptr + m_i + _rows_padded * m_j);
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline Ty& cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator::operator->() const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return m_data_ptr + m_i;
-	}
-	else
-	{
-		return m_data_ptr + m_i + _rows_padded * m_j;
-	}
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator::operator--() noexcept
-{
-	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
-
-	if (_not_contiguous)
-	{
-		if (m_i == 0)
-		{
-			m_i = _rows;
-			m_j--;
-		}
-	}
-	m_i--;
-	return *this;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator::operator++() noexcept
-{
-	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
-
-	m_i++;
-	if (_not_contiguous)
-	{
-		if (m_i == _rows)
-		{
-			m_i = 0;
-			m_j++;
-		}
-	}
-	return *this;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator::operator--(int) noexcept
-{
-	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
-
-	cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator temp = *this;
-	if (_not_contiguous)
-	{
-		if (m_i == 0)
-		{
-			m_i = _rows;
-			m_j--;
-		}
-	}
-	m_i--;
-	return temp;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator::operator++(int) noexcept
-{
-	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
-
-	cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator temp = *this;
-	m_i++;
-	if (_not_contiguous)
-	{
-		if (m_i == _rows)
-		{
-			m_i = 0;
-			m_j++;
-		}
-	}
-	return temp;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator::operator==(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& rhs) const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return m_i == rhs.m_i;
-	}
-	else
-	{
-		return m_i == rhs.m_i && m_j == rhs.m_j;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator::operator!=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& rhs) const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return m_i != rhs.m_i;
-	}
-	else
-	{
-		return !(m_i == rhs.m_i && m_j == rhs.m_j);
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator::operator<=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& rhs) const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return m_i <= rhs.m_i;
-	}
-	else
-	{
-		return m_i + _rows * m_j <= rhs.m_i + _rows * rhs.m_j;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator::operator>=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& rhs) const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return m_i >= rhs.m_i;
-	}
-	else
-	{
-		return m_i + _rows * m_j >= rhs.m_i + _rows * rhs.m_j;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator::operator<(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& rhs) const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return m_i < rhs.m_i;
-	}
-	else
-	{
-		return m_i + _rows * m_j < rhs.m_i + _rows * rhs.m_j;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator::operator>(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_iterator& rhs) const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return m_i > rhs.m_i;
-	}
-	else
-	{
-		return m_i + _rows * m_j > rhs.m_i + _rows * rhs.m_j;
-	}
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator::cm_const_iterator(const Ty* ptr, std::size_t j) noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	m_data_ptr = ptr;
-
-	if (_contiguous)
-	{
-		m_i = _rows * j;
-		m_j = 0;
-	}
-	else
-	{
-		m_i = 0;
-		m_j = j;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline const Ty& cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator::operator*() const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return *(m_data_ptr + m_i);
-	}
-	else
-	{
-		return *(m_data_ptr + m_i + _rows_padded * m_j);
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline const Ty& cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator::operator->() const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return m_data_ptr + m_i;
-	}
-	else
-	{
-		return m_data_ptr + m_i + _rows_padded * m_j;
-	}
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator::operator--() noexcept
-{
-	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
-
-	if (_not_contiguous)
-	{
-		if (m_i == 0)
-		{
-			m_i = _rows;
-			m_j--;
-		}
-	}
-	m_i--;
-	return *this;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator::operator++() noexcept
-{
-	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
-
-	m_i++;
-	if (_not_contiguous)
-	{
-		if (m_i == _rows)
-		{
-			m_i = 0;
-			m_j++;
-		}
-	}
-	return *this;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator::operator--(int) noexcept
-{
-	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
-
-	cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator temp = *this;
-	if (_not_contiguous)
-	{
-		if (m_i == 0)
-		{
-			m_i = _rows;
-			m_j--;
-		}
-	}
-	m_i--;
-	return temp;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator::operator++(int) noexcept
-{
-	constexpr bool _not_contiguous = (_rows != _rows_padded) && (_cols != 1);
-
-	cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator temp = *this;
-	m_i++;
-	if (_not_contiguous)
-	{
-		if (m_i == _rows)
-		{
-			m_i = 0;
-			m_j++;
-		}
-	}
-	return temp;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator::operator==(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& rhs) const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return m_i == rhs.m_i;
-	}
-	else
-	{
-		return m_i == rhs.m_i && m_j == rhs.m_j;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator::operator!=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& rhs) const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return m_i != rhs.m_i;
-	}
-	else
-	{
-		return !(m_i == rhs.m_i && m_j == rhs.m_j);
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator::operator<=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& rhs) const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return m_i <= rhs.m_i;
-	}
-	else
-	{
-		return m_i + _rows * m_j <= rhs.m_i + _rows * rhs.m_j;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator::operator>=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& rhs) const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return m_i >= rhs.m_i;
-	}
-	else
-	{
-		return m_i + _rows * m_j >= rhs.m_i + _rows * rhs.m_j;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator::operator<(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& rhs) const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return m_i < rhs.m_i;
-	}
-	else
-	{
-		return m_i + _rows * m_j < rhs.m_i + _rows * rhs.m_j;
-	}
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator::operator>(const cool::matrix<Ty, _rows, _cols, _rows_padded>::cm_const_iterator& rhs) const noexcept
-{
-	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
-
-	if (_contiguous)
-	{
-		return m_i > rhs.m_i;
-	}
-	else
-	{
-		return m_i + _rows * m_j > rhs.m_i + _rows * rhs.m_j;
-	}
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline Ty& cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator::operator*() const noexcept
-{
-	return *(m_data_ptr + m_i + _rows_padded * m_j);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline Ty& cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator::operator->() const noexcept
-{
-	return m_data_ptr + m_i + _rows_padded * m_j;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator::operator--() noexcept
-{
-	if (m_j == 0)
-	{
-		m_j = _cols;
-		m_i--;
-	}
-	m_j--;
-	return *this;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator::operator++() noexcept
-{
-	m_j++;
-	if (m_j == _cols)
-	{
-		m_j = 0;
-		m_i++;
-	}
-	return *this;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator::operator--(int) noexcept
-{
-	cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator temp = *this;
-	if (m_j == 0)
-	{
-		m_j = _cols;
-		m_i--;
-	}
-	m_j--;
-	return temp;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator::operator++(int) noexcept
-{
-	cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator temp = *this;
-	m_j++;
-	if (m_j == _cols)
-	{
-		m_j = 0;
-		m_i++;
-	}
-	return temp;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator::operator==(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& rhs) const noexcept
-{
-	return m_i == rhs.m_i && m_j == rhs.m_j;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator::operator!=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& rhs) const noexcept
-{
-	return !(m_i == rhs.m_i && m_j == rhs.m_j);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator::operator<=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& rhs) const noexcept
-{
-	return _cols * m_i + m_j <= _cols * rhs.m_i + rhs.m_j;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator::operator>=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& rhs) const noexcept
-{
-	return _cols * m_i + m_j >= _cols * rhs.m_i + rhs.m_j;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator::operator<(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& rhs) const noexcept
-{
-	return _cols * m_i + m_j < _cols* rhs.m_i + rhs.m_j;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator::operator>(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_iterator& rhs) const noexcept
-{
-	return _cols * m_i + m_j > _cols * rhs.m_i + rhs.m_j;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline const Ty& cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator::operator*() const noexcept
-{
-	return *(m_data_ptr + m_i + _rows_padded * m_j);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline const Ty& cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator::operator->() const noexcept
-{
-	return m_data_ptr + m_i + _rows_padded * m_j;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator::operator--() noexcept
-{
-	if (m_j == 0)
-	{
-		m_j = _cols;
-		m_i--;
-	}
-	m_j--;
-	return *this;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator::operator++() noexcept
-{
-	m_j++;
-	if (m_j == _cols)
-	{
-		m_j = 0;
-		m_i++;
-	}
-	return *this;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator::operator--(int) noexcept
-{
-	cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator temp = *this;
-	if (m_j == 0)
-	{
-		m_j = _cols;
-		m_i--;
-	}
-	m_j--;
-	return temp;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline typename cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator::operator++(int) noexcept
-{
-	cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator temp = *this;
-	m_j++;
-	if (m_j == _cols)
-	{
-		m_j = 0;
-		m_i++;
-	}
-	return temp;
-}
-
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator::operator==(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& rhs) const noexcept
-{
-	return m_i == rhs.m_i && m_j == rhs.m_j;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator::operator!=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& rhs) const noexcept
-{
-	return !(m_i == rhs.m_i && m_j == rhs.m_j);
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator::operator<=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& rhs) const noexcept
-{
-	return _cols * m_i + m_j <= _cols * rhs.m_i + rhs.m_j;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator::operator>=(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& rhs) const noexcept
-{
-	return _cols * m_i + m_j >= _cols * rhs.m_i + rhs.m_j;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator::operator<(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& rhs) const noexcept
-{
-	return _cols * m_i + m_j < _cols* rhs.m_i + rhs.m_j;
-}
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline bool cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator::operator>(const cool::matrix<Ty, _rows, _cols, _rows_padded>::rm_const_iterator& rhs) const noexcept
-{
-	return _cols * m_i + m_j > _cols * rhs.m_i + rhs.m_j;
 }
 
 #endif // _COOL_MATRIX_HPP
@@ -7470,28 +7684,34 @@ namespace cool
 namespace cool
 {
 	template <class Ty> class _print_matrix_cols_blk {
-	public: static constexpr std::streamsize value = 8;
+	public:
+		static constexpr std::streamsize value = 8;
 	};
+
 	template <class Ty> class _print_matrix_cols_blk<std::complex<Ty>> {
-	public: static constexpr std::streamsize value = 4;
+	public:
+		static constexpr std::streamsize value = 4;
 	};
 
 	template <class Ty> class _print_matrix_cell_width {
-	public: static constexpr std::streamsize value = 12;
+	public:
+		static constexpr std::streamsize value = 12;
 	};
-	template <class Ty> class _print_matrix_cell_width<std::complex<Ty>> {
-	public: static constexpr std::streamsize value = 24;
-	};
-}
 
-template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded>
-inline std::ostream& operator<<(std::ostream& out, const cool::matrix<Ty, _rows, _cols, _rows_padded>& rhs) noexcept
-{
-	cool::print_matrix(rhs.data(), _rows, _cols, _rows_padded, 16,
-		cool::_print_matrix_cols_blk<Ty>::value,
-		cool::_print_matrix_cell_width<Ty>::value
-	);
-	return out;
+	template <class Ty> class _print_matrix_cell_width<std::complex<Ty>> {
+	public:
+		static constexpr std::streamsize value = 24;
+	};
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline std::ostream& operator<<(std::ostream& out, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept
+	{
+		cool::print_matrix(rhs.data(), _rows, _cols, _rows_padded, 16,
+			cool::_print_matrix_cols_blk<Ty>::value,
+			cool::_print_matrix_cell_width<Ty>::value
+		);
+		return out;
+	}
 }
 #endif // _COOL_MATRIX_HPP_IOSTREAM
 #endif // defined(_COOL_MATRIX_HPP) && (defined(_LIBCPP_IOSTREAM) || defined(_GLIBCXX_IOSTREAM) || defined(_IOSTREAM_))
