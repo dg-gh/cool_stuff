@@ -1267,7 +1267,7 @@ inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& cool::_matrix_
 		{
 			for (std::size_t i = 0; i < _rows; i++)
 			{
-				*(res_ptr + i + _rows_padded * j) = *(rhs_ptr + i + _rows_padded * j);
+				*(res_ptr + i + _rows_padded * j) = *(rhs_ptr + i + _rhs_rows_padded * j);
 			}
 		}
 	}
@@ -1468,7 +1468,7 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 	{
 		for (std::size_t j = 0; j < _cols; j++)
 		{
-			m_data[i + _rows_padded * j] = *rhs_ptr++;
+			m_data[i + _rows_padded * j] = *(rhs_ptr + _cols * i + j);
 		}
 	}
 }
@@ -3732,7 +3732,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>:
 
 		for (std::size_t n = 0; n < _size; n++)
 		{
-			*(res_ptr + n) = *rhs_ptr++;
+			*(res_ptr + n) = *(rhs_ptr + n);
 		}
 	}
 	else
@@ -3741,7 +3741,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>:
 		{
 			for (std::size_t i = 0; i < _rows; i++)
 			{
-				*(res_ptr + i + _rows_padded * j) = *rhs_ptr++;
+				*(res_ptr + i + _rows_padded * j) = *(rhs_ptr + i + _rows * j);
 			}
 		}
 	}
@@ -3773,7 +3773,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>:
 		{
 			for (std::size_t i = 0; i < _rows; i++)
 			{
-				*(res_ptr + i + _rows_padded * j) = *rhs_ptr++;
+				*(res_ptr + i + _rows_padded * j) = *(rhs_ptr + i + _rows * j);
 			}
 		}
 	}
@@ -3788,11 +3788,11 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>:
 	Ty* res_ptr = this->data();
 	const Ty* rhs_ptr = rhs.begin();
 
-	for (std::size_t i = 0; i < _rows; i++)
+	for (std::size_t j = 0; j < _cols; j++)
 	{
-		for (std::size_t j = 0; j < _cols; j++)
+		for (std::size_t i = 0; i < _rows; i++)
 		{
-			*(res_ptr + i + _rows_padded * j) = *rhs_ptr++;
+			*(res_ptr + i + _rows_padded * j) = *(rhs_ptr + _cols * i + j);
 		}
 	}
 
