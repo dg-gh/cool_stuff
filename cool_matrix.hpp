@@ -5629,7 +5629,7 @@ template <class res_Ty, std::size_t _opt_res_rows_padded, std::size_t _opt_res_a
 inline cool::matrix_result<res_Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::matrix_cast(
 	const cool::const_matrix_interface < Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& A)
 {
-	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _cols>::value;
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _res_rows_padded)) || (_cols == 1);
 
 	cool::matrix_result<res_Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
@@ -7724,6 +7724,7 @@ namespace cool
 	template <class stream_Ty, class Ty> inline void print_matrix(stream_Ty& stream, const Ty* const ptr, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded,
 		std::size_t _rows_blk, std::size_t _cols_blk, std::streamsize _cell_width);
 
+
 	// print csv
 
 	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> class _print_matrix_csv_proxy;
@@ -7738,6 +7739,32 @@ namespace cool
 
 	// ATTN : does not flush the buffer
 	template <class stream_Ty, class Ty> inline void print_matrix_csv(stream_Ty& stream, const Ty* const ptr, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, char delim);
+
+
+	// print csv line
+
+#ifndef _COOL_MATRIX_LAYOUT_ENUM
+#define _COOL_MATRIX_LAYOUT_ENUM
+	enum class matrix_layout
+	{
+		col = 0, // indicates column-major write
+		row = 1 // indicates row-major write
+	};
+#endif // _COOL_MATRIX_LAYOUT_ENUM
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> class _print_matrix_csvline_proxy;
+
+	// ATTN : does not flush the buffer and does not end line and does not terminate with delimiter
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, class char_Ty>
+	inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out,
+		const cool::_print_matrix_csvline_proxy<Ty, _rows, _cols, _rows_padded>& rhs);
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+	inline cool::_print_matrix_csvline_proxy<Ty, _rows, _cols, _rows_padded> csvline(const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs,
+		char delim, cool::matrix_layout layout = cool::matrix_layout::col) noexcept;
+
+	// ATTN : does not flush the buffer and does not end line and does not terminate with delimiter
+	template <class stream_Ty, class Ty> inline void print_matrix_csvline(stream_Ty& stream, const Ty* const ptr, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, char delim, cool::matrix_layout layout);
 }
 
 // detail
@@ -7851,6 +7878,108 @@ template <class stream_Ty, class Ty> inline void cool::print_matrix_csv(stream_T
 			}
 
 			stream << *(ptr + i + _rows_padded * _cols_m1) << '\n';
+		}
+	}
+}
+
+// print csv line
+
+namespace cool
+{
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> class _print_matrix_csvline_proxy
+	{
+
+	public:
+
+		_print_matrix_csvline_proxy() = delete;
+		inline _print_matrix_csvline_proxy(const Ty* ptr, char delim, cool::matrix_layout _layout) noexcept : m_data_ptr(ptr), m_delimiter(delim), m_layout(_layout) {}
+
+		inline const Ty* data() const noexcept { return m_data_ptr; }
+		inline char delimiter() const noexcept { return m_delimiter; }
+		inline cool::matrix_layout layout() const noexcept { return m_layout; }
+
+	private:
+
+		const Ty* m_data_ptr;
+		char m_delimiter;
+		cool::matrix_layout m_layout;
+	};
+}
+
+// ATTN : does not flush the buffer and does not end line and does not terminate with delimiter
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, class char_Ty>
+inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& cool::operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out,
+	const cool::_print_matrix_csvline_proxy<Ty, _rows, _cols, _rows_padded>& rhs)
+{
+	cool::print_matrix_csvline(out, rhs.data(), _rows, _cols, _rows_padded, rhs.delimiter(), rhs.layout());
+	return out;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::_print_matrix_csvline_proxy<Ty, _rows, _cols, _rows_padded> cool::csvline(const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs,
+	char delim, cool::matrix_layout layout) noexcept
+{
+	return cool::_print_matrix_csvline_proxy<Ty, _rows, _cols, _rows_padded>(rhs.data(), delim, layout);
+}
+
+// ATTN : does not flush the buffer and does not end line and does not terminate with delimiter
+template <class stream_Ty, class Ty> inline void cool::print_matrix_csvline(stream_Ty& stream, const Ty* const ptr, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, char delim, cool::matrix_layout layout)
+{
+	if (_rows != 0 && _cols != 0)
+	{
+		switch (layout)
+		{
+
+		case cool::matrix_layout::col:
+		{
+			std::size_t _cols_m1 = _cols - 1;
+
+			for (std::size_t j = 0; j < _cols_m1; j++)
+			{
+				for (std::size_t i = 0; i < _rows; i++)
+				{
+					stream << *(ptr + i + _rows_padded * j) << delim;
+				}
+			}
+
+			std::size_t _rows_m1 = _rows - 1;
+
+			for (std::size_t i = 0; i < _rows_m1; i++)
+			{
+				stream << *(ptr + i + _rows_padded * _cols_m1) << delim;
+			}
+
+			stream << *(ptr + _rows_m1 + _rows_padded * _cols_m1);
+
+			break;
+		}
+
+		case cool::matrix_layout::row:
+		{
+			std::size_t _rows_m1 = _rows - 1;
+
+			for (std::size_t i = 0; i < _rows_m1; i++)
+			{
+				for (std::size_t j = 0; j < _cols; j++)
+				{
+					stream << *(ptr + i + _rows_padded * j) << delim;
+				}
+			}
+
+			std::size_t _cols_m1 = _cols - 1;
+
+			for (std::size_t j = 0; j < _cols_m1; j++)
+			{
+				stream << *(ptr + _rows_m1 + _rows_padded * j) << delim;
+			}
+
+			stream << *(ptr + _rows_m1 + _rows_padded * _cols_m1);
+
+			break;
+		}
+
+		default:
+			break;
 		}
 	}
 }
