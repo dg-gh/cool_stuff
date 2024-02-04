@@ -849,6 +849,12 @@ namespace cool
 
 	// free functions
 
+	template <class res_Ty, std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0,
+		class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty
+	>
+	inline cool::matrix_result<res_Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> matrix_cast(
+		const cool::const_matrix_interface < Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& A);
+
 	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _lhs_rows_padded, std::size_t _rhs_rows_padded,
 		std::size_t _lhs_align, std::size_t _rhs_align, class _lhs_matrix_data_Ty, class _rhs_matrix_data_Ty>
 	inline Ty dot(const cool::const_matrix_interface<Ty, _rows, _cols, _lhs_rows_padded, _lhs_align, _lhs_matrix_data_Ty>& lhs,
@@ -5617,6 +5623,43 @@ inline bool cool::operator>(Ty lhs, const cool::const_matrix_interface<Ty, _rows
 
 // free functions
 
+template <class res_Ty, std::size_t _opt_res_rows_padded, std::size_t _opt_res_align,
+	class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty
+>
+inline cool::matrix_result<res_Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::matrix_cast(
+	const cool::const_matrix_interface < Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& A)
+{
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _cols>::value;
+	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _res_rows_padded)) || (_cols == 1);
+
+	cool::matrix_result<res_Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
+
+	res_Ty* res_ptr = ret.data();
+	const Ty* ptrA = A.data();
+
+	if (_contiguous)
+	{
+		constexpr std::size_t _size = _rows * _cols;
+
+		for (std::size_t n = 0; n < _size; n++)
+		{
+			*(res_ptr + n) = static_cast<res_Ty>(*(ptrA + n));
+		}
+	}
+	else
+	{
+		for (std::size_t j = 0; j < _cols; j++)
+		{
+			for (std::size_t i = 0; i < _rows; i++)
+			{
+				*(res_ptr + i + _res_rows_padded * j) = static_cast<res_Ty>(*(ptrA + i + _rows_padded * j));
+			}
+		}
+	}
+
+	return ret;
+}
+
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _lhs_rows_padded, std::size_t _rhs_rows_padded,
 	std::size_t _lhs_align, std::size_t _rhs_align, class _lhs_matrix_data_Ty, class _rhs_matrix_data_Ty>
 inline Ty cool::dot(const cool::const_matrix_interface<Ty, _rows, _cols, _lhs_rows_padded, _lhs_align, _lhs_matrix_data_Ty>& lhs,
@@ -7643,68 +7686,18 @@ inline cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::val
 #endif // _COOL_MATRIX_HPP
 
 
-#if defined(_COOL_MATRIX_HPP) && (defined(_LIBCPP_IOSTREAM) || defined(_GLIBCXX_IOSTREAM) || defined(_IOSTREAM_))
-#ifndef _COOL_MATRIX_HPP_IOSTREAM
-#define _COOL_MATRIX_HPP_IOSTREAM
+#if defined(_COOL_MATRIX_HPP) && (defined(_LIBCPP_OSTREAM) || defined(_GLIBCXX_OSTREAM) || defined(_OSTREAM_))
+#ifndef _COOL_MATRIX_HPP_OSTREAM
+#define _COOL_MATRIX_HPP_OSTREAM
 namespace cool
 {
-	template <class Ty> inline void print_matrix(const Ty* const ptr, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded,
-		std::size_t _rows_blk, std::size_t _cols_blk, std::streamsize _cell_width) noexcept
-	{
-		std::cout << ">>>         [ size : " << _rows << " x " << _cols << " ]\n";
+	// print normal
 
-		if (_rows_blk == 0) { _rows_blk = _rows; }
+	// template specializable print block size and cell width
 
-		if (_cols_blk == 0) { _cols_blk = _cols; }
-
-		for (std::size_t iOut = 0; iOut < _rows; iOut += _rows_blk)
-		{
-			std::size_t imax = (iOut + _rows_blk < _rows) ? iOut + _rows_blk : _rows;
-			for (std::size_t jOut = 0; jOut < _cols; jOut += _cols_blk)
-			{
-				std::size_t jmax = (jOut + _cols_blk < _cols) ? jOut + _cols_blk : _cols;
-
-				std::cout << "            ";
-
-				for (std::size_t j = jOut; j < jmax; j++)
-				{
-					std::cout << "col ";
-					std::cout.fill(' '); std::cout.width(_cell_width);
-					std::cout << std::left << j;
-				}
-
-				for (std::size_t i = iOut; i < imax; i++)
-				{
-					for (std::size_t j = jOut; j < jmax; j++)
-					{
-						if (j == jOut)
-						{
-							std::cout << "\nrow ";
-							std::cout.fill(' '); std::cout.width(8);
-							std::cout << std::left << i;
-						}
-						std::cout << "> ";
-						std::cout.fill(' '); std::cout.width(_cell_width + 2);
-						std::cout << std::left << *(ptr + i + _rows_padded * j);
-					}
-				}
-
-				std::cout << '\n' << std::endl;
-			}
-		}
-	}
-}
-
-namespace cool
-{
 	template <class Ty> class _print_matrix_cols_blk {
 	public:
 		static constexpr std::streamsize value = 8;
-	};
-
-	template <class Ty> class _print_matrix_cols_blk<std::complex<Ty>> {
-	public:
-		static constexpr std::streamsize value = 4;
 	};
 
 	template <class Ty> class _print_matrix_cell_width {
@@ -7712,23 +7705,157 @@ namespace cool
 		static constexpr std::streamsize value = 12;
 	};
 
+	// template specializations
+
+	template <class Ty> class _print_matrix_cols_blk<std::complex<Ty>> {
+	public:
+		static constexpr std::streamsize value = 4;
+	};
+
 	template <class Ty> class _print_matrix_cell_width<std::complex<Ty>> {
 	public:
 		static constexpr std::streamsize value = 24;
 	};
 
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty, class char_Ty>
+	inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out,
+		const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs);
+
+	template <class stream_Ty, class Ty> inline void print_matrix(stream_Ty& stream, const Ty* const ptr, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded,
+		std::size_t _rows_blk, std::size_t _cols_blk, std::streamsize _cell_width);
+
+	// print csv
+
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> class _print_matrix_csv_proxy;
+
+	// ATTN : does not flush the buffer
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, class char_Ty>
+	inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out,
+		const cool::_print_matrix_csv_proxy<Ty, _rows, _cols, _rows_padded>& rhs);
+
 	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
-	inline std::ostream& operator<<(std::ostream& out, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs) noexcept
+	inline cool::_print_matrix_csv_proxy<Ty, _rows, _cols, _rows_padded> csv(const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs, char delim) noexcept;
+
+	// ATTN : does not flush the buffer
+	template <class stream_Ty, class Ty> inline void print_matrix_csv(stream_Ty& stream, const Ty* const ptr, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, char delim);
+}
+
+// detail
+
+// print normal
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty, class char_Ty>
+inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& cool::operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out,
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs)
+{
+	cool::print_matrix(out, rhs.data(), _rows, _cols, _rows_padded, 16,
+		cool::_print_matrix_cols_blk<Ty>::value,
+		cool::_print_matrix_cell_width<Ty>::value
+	);
+	return out;
+}
+
+template <class stream_Ty, class Ty> inline void cool::print_matrix(stream_Ty& stream, const Ty* const ptr, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded,
+	std::size_t _rows_blk, std::size_t _cols_blk, std::streamsize _cell_width)
+{
+	stream << ">>>         [ size : " << _rows << " x " << _cols << " ]\n";
+
+	if (_rows_blk == 0) { _rows_blk = _rows; }
+
+	if (_cols_blk == 0) { _cols_blk = _cols; }
+
+	for (std::size_t iOut = 0; iOut < _rows; iOut += _rows_blk)
 	{
-		cool::print_matrix(rhs.data(), _rows, _cols, _rows_padded, 16,
-			cool::_print_matrix_cols_blk<Ty>::value,
-			cool::_print_matrix_cell_width<Ty>::value
-		);
-		return out;
+		std::size_t imax = (iOut + _rows_blk < _rows) ? iOut + _rows_blk : _rows;
+		for (std::size_t jOut = 0; jOut < _cols; jOut += _cols_blk)
+		{
+			std::size_t jmax = (jOut + _cols_blk < _cols) ? jOut + _cols_blk : _cols;
+
+			stream << "            ";
+
+			for (std::size_t j = jOut; j < jmax; j++)
+			{
+				stream << "col ";
+				stream.fill(' '); stream.width(_cell_width);
+				stream << std::left << j;
+			}
+
+			for (std::size_t i = iOut; i < imax; i++)
+			{
+				for (std::size_t j = jOut; j < jmax; j++)
+				{
+					if (j == jOut)
+					{
+						stream << "\nrow ";
+						stream.fill(' '); stream.width(8);
+						stream << std::left << i;
+					}
+					stream << "> ";
+					stream.fill(' '); stream.width(_cell_width + 2);
+					stream << std::left << *(ptr + i + _rows_padded * j);
+				}
+			}
+
+			stream << '\n' << std::endl;
+		}
 	}
 }
-#endif // _COOL_MATRIX_HPP_IOSTREAM
-#endif // defined(_COOL_MATRIX_HPP) && (defined(_LIBCPP_IOSTREAM) || defined(_GLIBCXX_IOSTREAM) || defined(_IOSTREAM_))
+
+// print csv
+
+namespace cool
+{
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> class _print_matrix_csv_proxy
+	{
+
+	public:
+
+		_print_matrix_csv_proxy() = delete;
+		inline _print_matrix_csv_proxy(const Ty* ptr, char delim) noexcept : m_data_ptr(ptr), m_delimiter(delim) {}
+
+		inline const Ty* data() const noexcept { return m_data_ptr; }
+		inline char delimiter() const noexcept { return m_delimiter; }
+
+	private:
+
+		const Ty* m_data_ptr;
+		char m_delimiter;
+	};
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, class char_Ty>
+inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& cool::operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out,
+	const cool::_print_matrix_csv_proxy<Ty, _rows, _cols, _rows_padded>& rhs)
+{
+	cool::print_matrix_csv(out, rhs.data(), _rows, _cols, _rows_padded, rhs.delimiter());
+	return out;
+}
+
+template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
+inline cool::_print_matrix_csv_proxy<Ty, _rows, _cols, _rows_padded> cool::csv(const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs, char delim) noexcept
+{
+	return cool::_print_matrix_csv_proxy<Ty, _rows, _cols, _rows_padded>(rhs.data(), delim);
+}
+
+template <class stream_Ty, class Ty> inline void cool::print_matrix_csv(stream_Ty& stream, const Ty* const ptr, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, char delim)
+{
+	if (_cols != 0)
+	{
+		std::size_t _cols_m1 = _cols - 1;
+
+		for (std::size_t i = 0; i < _rows; i++)
+		{
+			for (std::size_t j = 0; j < _cols_m1; j++)
+			{
+				stream << *(ptr + i + _rows_padded * j) << delim;
+			}
+
+			stream << *(ptr + i + _rows_padded * _cols_m1) << '\n';
+		}
+	}
+}
+#endif // _COOL_MATRIX_HPP_OSTREAM
+#endif // defined(_COOL_MATRIX_HPP) && (defined(_LIBCPP_OSTREAM) || defined(_GLIBCXX_OSTREAM) || defined(_OSTREAM_))
 
 
 // cool_matrix.hpp
