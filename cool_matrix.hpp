@@ -5855,7 +5855,7 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 		Ty* res_ptr = ret.data();
 		const Ty* ptrA = A.data();
 
-		for (std::size_t n = 0; n < _cols; n++)
+		for (std::size_t n = 0; n < _rows; n++)
 		{
 			*(res_ptr + n) = *(ptrA + n);
 		}
@@ -5983,7 +5983,7 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 			Ty* res_ptr = ret.data();
 			const Ty* ptrA = A.data();
 
-			for (std::size_t n = 0; n < _cols; n++)
+			for (std::size_t n = 0; n < _rows; n++)
 			{
 				*(res_ptr + n) = *(ptrA + n);
 			}
@@ -6091,7 +6091,7 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 			Ty* res_ptr = ret.data();
 			const Ty* ptrA = A.data();
 
-			for (std::size_t n = 0; n < _cols; n++)
+			for (std::size_t n = 0; n < _rows; n++)
 			{
 				*(res_ptr + n) = cool::matrix_scalar_subroutine::conj(*(ptrA + n));
 			}
