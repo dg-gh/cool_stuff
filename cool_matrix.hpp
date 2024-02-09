@@ -7752,19 +7752,19 @@ namespace cool
 	};
 #endif // _COOL_MATRIX_LAYOUT_ENUM
 
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> class _print_matrix_csvline_proxy;
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> class _print_matrix_csv_line_proxy;
 
 	// ATTN : does not flush the buffer and does not end line and does not terminate with delimiter
 	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, class char_Ty>
 	inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out_stream,
-		const cool::_print_matrix_csvline_proxy<Ty, _rows, _cols, _rows_padded>& rhs);
+		const cool::_print_matrix_csv_line_proxy<Ty, _rows, _cols, _rows_padded>& rhs);
 
 	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
-	inline cool::_print_matrix_csvline_proxy<Ty, _rows, _cols, _rows_padded> csvline(const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs,
+	inline cool::_print_matrix_csv_line_proxy<Ty, _rows, _cols, _rows_padded> csv_line(const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs,
 		char delim, cool::matrix_layout layout = cool::matrix_layout::col) noexcept;
 
 	// ATTN : does not flush the buffer and does not end line and does not terminate with delimiter
-	template <class stream_Ty, class Ty> inline void print_matrix_csvline(stream_Ty& stream, const Ty* const ptr, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, char delim, cool::matrix_layout layout);
+	template <class stream_Ty, class Ty> inline void print_matrix_csv_line(stream_Ty& stream, const Ty* const ptr, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, char delim, cool::matrix_layout layout);
 }
 
 // detail
@@ -7886,13 +7886,13 @@ template <class stream_Ty, class Ty> inline void cool::print_matrix_csv(stream_T
 
 namespace cool
 {
-	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> class _print_matrix_csvline_proxy
+	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> class _print_matrix_csv_line_proxy
 	{
 
 	public:
 
-		_print_matrix_csvline_proxy() = delete;
-		inline _print_matrix_csvline_proxy(const Ty* ptr, char delim, cool::matrix_layout _layout) noexcept : m_data_ptr(ptr), m_delimiter(delim), m_layout(_layout) {}
+		_print_matrix_csv_line_proxy() = delete;
+		inline _print_matrix_csv_line_proxy(const Ty* ptr, char delim, cool::matrix_layout _layout) noexcept : m_data_ptr(ptr), m_delimiter(delim), m_layout(_layout) {}
 
 		inline const Ty* data() const noexcept { return m_data_ptr; }
 		inline char delimiter() const noexcept { return m_delimiter; }
@@ -7909,21 +7909,21 @@ namespace cool
 // ATTN : does not flush the buffer and does not end line and does not terminate with delimiter
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, class char_Ty>
 inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& cool::operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out_stream,
-	const cool::_print_matrix_csvline_proxy<Ty, _rows, _cols, _rows_padded>& rhs)
+	const cool::_print_matrix_csv_line_proxy<Ty, _rows, _cols, _rows_padded>& rhs)
 {
-	cool::print_matrix_csvline(out_stream, rhs.data(), _rows, _cols, _rows_padded, rhs.delimiter(), rhs.layout());
+	cool::print_matrix_csv_line(out_stream, rhs.data(), _rows, _cols, _rows_padded, rhs.delimiter(), rhs.layout());
 	return out_stream;
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
-inline cool::_print_matrix_csvline_proxy<Ty, _rows, _cols, _rows_padded> cool::csvline(const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs,
+inline cool::_print_matrix_csv_line_proxy<Ty, _rows, _cols, _rows_padded> cool::csv_line(const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs,
 	char delim, cool::matrix_layout layout) noexcept
 {
-	return cool::_print_matrix_csvline_proxy<Ty, _rows, _cols, _rows_padded>(rhs.data(), delim, layout);
+	return cool::_print_matrix_csv_line_proxy<Ty, _rows, _cols, _rows_padded>(rhs.data(), delim, layout);
 }
 
 // ATTN : does not flush the buffer and does not end line and does not terminate with delimiter
-template <class stream_Ty, class Ty> inline void cool::print_matrix_csvline(stream_Ty& out_stream, const Ty* const ptr, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, char delim, cool::matrix_layout layout)
+template <class stream_Ty, class Ty> inline void cool::print_matrix_csv_line(stream_Ty& out_stream, const Ty* const ptr, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, char delim, cool::matrix_layout layout)
 {
 	if (_rows != 0 && _cols != 0)
 	{
