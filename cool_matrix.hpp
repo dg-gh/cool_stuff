@@ -350,6 +350,11 @@ namespace cool
 
 		const_matrix_interface() = default;
 
+		static constexpr std::size_t rows = _rows;
+		static constexpr std::size_t cols = _cols;
+		static constexpr std::size_t rows_padded = _rows_padded;
+		static constexpr std::size_t align = _align;
+
 		constexpr inline std::size_t size() const noexcept;
 		constexpr inline std::size_t size_padded() const noexcept;
 
@@ -357,20 +362,20 @@ namespace cool
 		template <class uint_Ty> inline const Ty& operator[](uint_Ty mem_offset) const noexcept;
 
 
-		template <class uint_Ty> inline cool::const_matrix_span<Ty, _rows, 1, _rows, 0> col(uint_Ty j) const noexcept;
+		template <class uint_Ty> inline cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)> col(uint_Ty j) const noexcept;
 
-		template <class uint_Ty> inline cool::const_matrix_span<Ty, 1, _cols, _rows_padded, 0> row(uint_Ty i) const noexcept;
+		template <class uint_Ty> inline cool::const_matrix_span<Ty, 1, _cols, _rows_padded, alignof(Ty)> row(uint_Ty i) const noexcept;
 
-		inline cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0> diag() const noexcept;
+		inline cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, alignof(Ty)> diag() const noexcept;
 
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty1, class uint_Ty2>
-		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk(uint_Ty1 i, uint_Ty2 j) const noexcept;
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> blk(uint_Ty1 i, uint_Ty2 j) const noexcept;
 
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty1>
-		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk(uint_Ty1 i) const noexcept;
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> blk(uint_Ty1 i) const noexcept;
 
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1>
-		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk() const noexcept;
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> blk() const noexcept;
 
 		template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0>
 		cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator-() const noexcept;
@@ -601,37 +606,38 @@ namespace cool
 		template <class uint_Ty> inline const Ty& operator[](uint_Ty mem_offset) const noexcept;
 
 		template <class uint_Ty>
-		inline cool::matrix_span<Ty, _rows, 1, _rows, 0> col(uint_Ty j) noexcept;
+		inline cool::matrix_span<Ty, _rows, 1, _rows, alignof(Ty)> col(uint_Ty j) noexcept;
 
 		template <class uint_Ty>
-		inline cool::const_matrix_span<Ty, _rows, 1, _rows, 0> col(uint_Ty j) const noexcept;
+		inline cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)> col(uint_Ty j) const noexcept;
 
 		template <class uint_Ty>
-		inline cool::matrix_span<Ty, 1, _cols, _rows_padded, 0> row(uint_Ty i) noexcept;
+		inline cool::matrix_span<Ty, 1, _cols, _rows_padded, alignof(Ty)> row(uint_Ty i) noexcept;
 
 		template <class uint_Ty>
-		inline cool::const_matrix_span<Ty, 1, _cols, _rows_padded, 0> row(uint_Ty i) const noexcept;
+		inline cool::const_matrix_span<Ty, 1, _cols, _rows_padded, alignof(Ty)> row(uint_Ty i) const noexcept;
 
-		inline cool::matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0> diag() noexcept;
-		inline cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0> diag() const noexcept;
+		inline cool::matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, alignof(Ty)> diag() noexcept;
+
+		inline cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, alignof(Ty)> diag() const noexcept;
 
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty1, class uint_Ty2>
-		inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk(uint_Ty1 i, uint_Ty2 j) noexcept;
+		inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> blk(uint_Ty1 i, uint_Ty2 j) noexcept;
 
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty1, class uint_Ty2>
-		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk(uint_Ty1 i, uint_Ty2 j) const noexcept;
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> blk(uint_Ty1 i, uint_Ty2 j) const noexcept;
 
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty1>
-		inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk(uint_Ty1 i) noexcept;
+		inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> blk(uint_Ty1 i) noexcept;
 
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1, class uint_Ty1>
-		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk(uint_Ty1 i) const noexcept;
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> blk(uint_Ty1 i) const noexcept;
 
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1>
-		inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk() noexcept;
+		inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> blk() noexcept;
 
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1>
-		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> blk() const noexcept;
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> blk() const noexcept;
 
 
 		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
@@ -1198,7 +1204,7 @@ inline constexpr std::size_t cool::matrix_align_spec<Ty, _rows, _cols, _rows_pad
 		}
 	}
 
-	return 0;
+	return alignof(Ty);
 }
 
 // matrix_scalar_subroutine
@@ -1610,42 +1616,42 @@ inline const Ty& cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _a
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
-template <class uint_Ty> inline cool::const_matrix_span<Ty, _rows, 1, _rows, 0> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::col(uint_Ty j) const noexcept
+template <class uint_Ty> inline cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::col(uint_Ty j) const noexcept
 {
-	return cool::const_matrix_span<Ty, _rows, 1, _rows, 0>(this->data() + _rows_padded * static_cast<std::size_t>(j));
+	return cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)>(this->data() + _rows_padded * static_cast<std::size_t>(j));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
-template <class uint_Ty> inline cool::const_matrix_span<Ty, 1, _cols, _rows_padded, 0> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::row(uint_Ty i) const noexcept
+template <class uint_Ty> inline cool::const_matrix_span<Ty, 1, _cols, _rows_padded, alignof(Ty)> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::row(uint_Ty i) const noexcept
 {
-	return cool::const_matrix_span<Ty, 1, _cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i));
+	return cool::const_matrix_span<Ty, 1, _cols, _rows_padded, alignof(Ty)>(this->data() + static_cast<std::size_t>(i));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
-inline cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::diag() const noexcept
+inline cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, alignof(Ty)> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::diag() const noexcept
 {
-	return cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0>(this->data());
+	return cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, alignof(Ty)>(this->data());
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty1, class uint_Ty2>
-inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i, uint_Ty2 j) const noexcept
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i, uint_Ty2 j) const noexcept
 {
-	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)>(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty1>
-inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i) const noexcept
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i) const noexcept
 {
-	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i));
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)>(this->data() + static_cast<std::size_t>(i));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _blk_rows, std::size_t _blk_cols>
-inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk() const noexcept
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk() const noexcept
 {
-	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data());
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)>(this->data());
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
@@ -3965,83 +3971,83 @@ template <class uint_Ty> inline const Ty& cool::matrix_interface<Ty, _rows, _col
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty> template <class uint_Ty>
-inline cool::matrix_span<Ty, _rows, 1, _rows, 0>
+inline cool::matrix_span<Ty, _rows, 1, _rows, alignof(Ty)>
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::col(uint_Ty j) noexcept
 {
-	return cool::matrix_span<Ty, _rows, 1, _rows, 0>(this->data() + _rows_padded * static_cast<std::size_t>(j));
+	return cool::matrix_span<Ty, _rows, 1, _rows, alignof(Ty)>(this->data() + _rows_padded * static_cast<std::size_t>(j));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty> template <class uint_Ty>
-inline cool::const_matrix_span<Ty, _rows, 1, _rows, 0>
+inline cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)>
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::col(uint_Ty j) const noexcept
 {
-	return cool::const_matrix_span<Ty, _rows, 1, _rows, 0>(this->data() + _rows_padded * static_cast<std::size_t>(j));
+	return cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)>(this->data() + _rows_padded * static_cast<std::size_t>(j));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty> template <class uint_Ty>
-inline cool::matrix_span<Ty, 1, _cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::row(uint_Ty i) noexcept
+inline cool::matrix_span<Ty, 1, _cols, _rows_padded, alignof(Ty)> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::row(uint_Ty i) noexcept
 {
-	return cool::matrix_span<Ty, 1, _cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i));
+	return cool::matrix_span<Ty, 1, _cols, _rows_padded, alignof(Ty)>(this->data() + static_cast<std::size_t>(i));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty> template <class uint_Ty>
-inline cool::const_matrix_span<Ty, 1, _cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::row(uint_Ty i) const noexcept
+inline cool::const_matrix_span<Ty, 1, _cols, _rows_padded, alignof(Ty)> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::row(uint_Ty i) const noexcept
 {
-	return cool::const_matrix_span<Ty, 1, _cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i));
+	return cool::const_matrix_span<Ty, 1, _cols, _rows_padded, alignof(Ty)>(this->data() + static_cast<std::size_t>(i));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
-inline cool::matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::diag() noexcept
+inline cool::matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, alignof(Ty)> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::diag() noexcept
 {
-	return cool::matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0>(this->data());
+	return cool::matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, alignof(Ty)>(this->data());
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
-inline cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::diag() const noexcept
+inline cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, alignof(Ty)> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::diag() const noexcept
 {
-	return cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, 0>(this->data());
+	return cool::const_matrix_span<Ty, 1, cool::_diag_length<_rows, _cols>::value, _rows_padded + 1, alignof(Ty)>(this->data());
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty1, class uint_Ty2>
-inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i, uint_Ty2 j) noexcept
+inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i, uint_Ty2 j) noexcept
 {
-	return cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
+	return cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)>(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty1, class uint_Ty2>
-inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i, uint_Ty2 j) const noexcept
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i, uint_Ty2 j) const noexcept
 {
-	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)>(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty1>
-inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i) noexcept
+inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i) noexcept
 {
-	return cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i));
+	return cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)>(this->data() + static_cast<std::size_t>(i));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _blk_rows, std::size_t _blk_cols, class uint_Ty1>
-inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i) const noexcept
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk(uint_Ty1 i) const noexcept
 {
-	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data() + static_cast<std::size_t>(i));
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)>(this->data() + static_cast<std::size_t>(i));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _blk_rows, std::size_t _blk_cols>
-inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk() noexcept
+inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk() noexcept
 {
-	return cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data());
+	return cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)>(this->data());
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _blk_rows, std::size_t _blk_cols>
-inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk() const noexcept
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::blk() const noexcept
 {
-	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, 0>(this->data());
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)>(this->data());
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
