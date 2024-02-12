@@ -378,23 +378,27 @@ namespace cool
 		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> blk() const noexcept;
 
 		template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0>
-		cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator-() const noexcept;
+		inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator-() const noexcept;
 
 		template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
-		cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator+(const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
+		inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator+(
+			const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
 
 		template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
-		cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator-(const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
+		inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator-(
+			const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
 
 		template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0>
-		cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator+(Ty rhs) const noexcept;
+		inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator+(Ty rhs) const noexcept;
 
 		template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0>
-		cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator-(Ty rhs) const noexcept;
+		inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator-(Ty rhs) const noexcept;
 
-		template <std::size_t _res_rows_padded = _rows, std::size_t _res_align = cool::matrix_align_spec<Ty, _rows, _cols, _res_rows_padded>::value,
-			std::size_t _rhs_cols, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
-		cool::matrix<Ty, _rows, _rhs_cols, _res_rows_padded, _res_align> operator*(const cool::const_matrix_interface<Ty, _cols, _rhs_cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
+		template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0,
+			std::size_t _rhs_cols, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty
+		>
+		inline cool::matrix_result<Ty, _rows, _rhs_cols, _opt_res_rows_padded, _opt_res_align> operator*(
+			const cool::const_matrix_interface<Ty, _cols, _rhs_cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept;
 
 
 		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
@@ -641,34 +645,34 @@ namespace cool
 
 
 		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
-		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator+=(
+		inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator+=(
 			const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept;
 
 		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
-		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator-=(
+		inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator-=(
 			const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept;
 
 		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
-		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator*=(
+		inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator*=(
 			const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept;
 
-		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator+=(Ty rhs) noexcept;
+		inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator+=(Ty rhs) noexcept;
 
-		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator-=(Ty rhs) noexcept;
+		inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator-=(Ty rhs) noexcept;
 
-		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator*=(Ty rhs) noexcept;
+		inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& operator*=(Ty rhs) noexcept;
 
 		template <int _sign = 1, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
-		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& fmadd(Ty s,
+		inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& fmadd(Ty s,
 			const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept;
 
 		template <int _sign = 1, std::size_t _lhs_cols, std::size_t _rhs_rows_padded, std::size_t _lhs_rows_padded, std::size_t _lhs_align, std::size_t _rhs_align, class _lhs_matrix_data_Ty, class _rhs_matrix_data_Ty>
-		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& fmadd(
+		inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& fmadd(
 			const cool::const_matrix_interface<Ty, _rows, _lhs_cols, _lhs_rows_padded, _lhs_align, _lhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT lhs,
 			const cool::const_matrix_interface<Ty, _lhs_cols, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept;
 
 		template <int _sign = 1, std::size_t _lhs_cols, std::size_t _rhs_rows_padded, std::size_t _lhs_rows_padded, std::size_t _lhs_align, std::size_t _rhs_align, class _lhs_matrix_data_Ty, class _rhs_matrix_data_Ty>
-		cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& fmadd(Ty s,
+		inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& fmadd(Ty s,
 			const cool::const_matrix_interface<Ty, _rows, _lhs_cols, _lhs_rows_padded, _lhs_align, _lhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT lhs,
 			const cool::const_matrix_interface<Ty, _lhs_cols, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept;
 
@@ -1656,7 +1660,7 @@ inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(T
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align>
-cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator-() const noexcept
+inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator-() const noexcept
 {
 	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
 	constexpr bool _contiguous = ((_rows == _res_rows_padded) && (_rows == _rows_padded)) || (_cols == 1);
@@ -1691,7 +1695,7 @@ cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
-cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator+(
+inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator+(
 	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept
 {
 	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
@@ -1728,7 +1732,7 @@ cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
-cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator-(
+inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator-(
 	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept
 {
 	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
@@ -1765,7 +1769,7 @@ cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align>
-cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator+(Ty rhs) const noexcept
+inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator+(Ty rhs) const noexcept
 {
 	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
 	constexpr bool _contiguous = ((_rows == _res_rows_padded) && (_rows == _rows_padded)) || (_cols == 1);
@@ -1800,7 +1804,7 @@ cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align>
-cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator-(Ty rhs) const noexcept
+inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator-(Ty rhs) const noexcept
 {
 	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
 	constexpr bool _contiguous = ((_rows == _res_rows_padded) && (_rows == _rows_padded)) || (_cols == 1);
@@ -1834,8 +1838,8 @@ cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
-template <std::size_t _res_rows_padded, std::size_t _res_align, std::size_t _rhs_cols, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
-cool::matrix<Ty, _rows, _rhs_cols, _res_rows_padded, _res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator*(
+template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, std::size_t _rhs_cols, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
+inline cool::matrix_result<Ty, _rows, _rhs_cols, _opt_res_rows_padded, _opt_res_align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator*(
 	const cool::const_matrix_interface<Ty, _cols, _rhs_cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& rhs) const noexcept
 {
 	constexpr std::size_t i_size = cool::matrix_multiply_kernel_spec<Ty, _rows, _rhs_cols, _cols>::packed;
@@ -1852,7 +1856,9 @@ cool::matrix<Ty, _rows, _rhs_cols, _res_rows_padded, _res_align> cool::const_mat
 	constexpr std::size_t j_remainder_padded = (j_remainder != 0) ? j_remainder : 1;
 	constexpr bool j_remainder_non_zero = j_remainder != 0;
 
-	cool::matrix<Ty, _rows, _rhs_cols, _res_rows_padded, _res_align> ret;
+	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
+
+	cool::matrix_result<Ty, _rows, _rhs_cols, _opt_res_rows_padded, _opt_res_align> ret;
 
 	Ty* res_ptr = ret.data();
 	const Ty* lhs_ptr = this->data();
@@ -4052,7 +4058,7 @@ inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(T
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
-cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator+=(
 	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
 {
@@ -4129,7 +4135,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>:
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
-cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator-=(
 	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
 {
@@ -4206,7 +4212,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>:
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
-cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator*=(
 	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
 {
@@ -4282,7 +4288,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>:
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
-cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator+=(Ty rhs) noexcept
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
@@ -4313,7 +4319,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>:
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
-cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator-=(Ty rhs) noexcept
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
@@ -4344,7 +4350,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>:
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
-cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::operator*=(Ty rhs) noexcept
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
@@ -4376,7 +4382,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>:
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <int _sign, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_data_Ty>
-cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::fmadd(Ty s,
 	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
 {
@@ -4515,7 +4521,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>:
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <int _sign, std::size_t _lhs_cols, std::size_t _rhs_rows_padded, std::size_t _lhs_rows_padded, std::size_t _lhs_align, std::size_t _rhs_align, class _lhs_matrix_data_Ty, class _rhs_matrix_data_Ty>
-cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::fmadd(
 	const cool::const_matrix_interface<Ty, _rows, _lhs_cols, _lhs_rows_padded, _lhs_align, _lhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT lhs,
 	const cool::const_matrix_interface<Ty, _lhs_cols, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
@@ -4942,7 +4948,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>:
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
 template <int _sign, std::size_t _lhs_cols, std::size_t _rhs_rows_padded, std::size_t _lhs_rows_padded, std::size_t _lhs_align, std::size_t _rhs_align, class _lhs_matrix_data_Ty, class _rhs_matrix_data_Ty>
-cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
+inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>&
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::fmadd(Ty s,
 	const cool::const_matrix_interface<Ty, _rows, _lhs_cols, _lhs_rows_padded, _lhs_align, _lhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT lhs,
 	const cool::const_matrix_interface<Ty, _lhs_cols, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_data_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
