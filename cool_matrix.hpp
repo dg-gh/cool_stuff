@@ -148,10 +148,10 @@ namespace cool
 	>
 	using matrix = cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>>;
 
-	template <class Ty, std::size_t _rows, std::size_t _cols = 1, std::size_t _rows_padded = _rows, std::size_t _align = 0>
+	template <class Ty, std::size_t _rows, std::size_t _cols = 1, std::size_t _rows_padded = _rows, std::size_t _align = alignof(Ty)>
 	using matrix_span = cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>>;
 
-	template <class Ty, std::size_t _rows, std::size_t _cols = 1, std::size_t _rows_padded = _rows, std::size_t _align = 0>
+	template <class Ty, std::size_t _rows, std::size_t _cols = 1, std::size_t _rows_padded = _rows, std::size_t _align = alignof(Ty)>
 	using const_matrix_span = cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>>;
 
 
