@@ -9,7 +9,6 @@
 #include <initializer_list>
 #include <iterator>
 #include <type_traits>
-#include <complex>
 
 #ifndef COOL_MATRIX_RESTRICT
 #if defined(__clang__) || defined(__GNUC__) || defined(_MSC_VER)
@@ -172,12 +171,8 @@ namespace cool
 	namespace matrix_scalar_subroutine
 	{
 		// template specializable functions
-		template <class Ty> static inline Ty conj(const Ty& val) noexcept; // return type must be same type as val
-		template <class Ty> static inline Ty abs_sq(const Ty& val) noexcept; // return type must be comparable with operator<
-
-		// template specializations
-		template <class Ty> static inline std::complex<Ty> conj(const std::complex<Ty>& val) noexcept;
-		template <class Ty> static inline Ty abs_sq(const std::complex<Ty>& val) noexcept;
+		template <class Ty> inline Ty conj(const Ty& val) noexcept; // return type must be same type as val
+		template <class Ty> inline Ty abs_sq(const Ty& val) noexcept; // return type must be comparable with operator<
 	}
 
 
@@ -1228,18 +1223,14 @@ inline constexpr std::size_t cool::matrix_align_spec<Ty, _rows, _cols, _rows_pad
 
 // matrix_scalar_subroutine
 
-template <class Ty> inline Ty cool::matrix_scalar_subroutine::conj(const Ty& val) noexcept { return val; }
-
-template <class Ty> inline std::complex<Ty> cool::matrix_scalar_subroutine::conj(const std::complex<Ty>& val) noexcept { return std::conj(val); }
-
-template <class Ty> inline Ty cool::matrix_scalar_subroutine::abs_sq(const Ty& val) noexcept { return val * cool::matrix_scalar_subroutine::conj(val); }
-
-template <class Ty> inline Ty cool::matrix_scalar_subroutine::abs_sq(const std::complex<Ty>& val) noexcept
+template <class Ty> inline Ty cool::matrix_scalar_subroutine::conj(const Ty& val) noexcept
 {
-	Ty re = val.real();
-	Ty im = val.imag();
+	return val;
+}
 
-	return re * re + im * im;
+template <class Ty> inline Ty cool::matrix_scalar_subroutine::abs_sq(const Ty& val) noexcept
+{
+	return val * cool::matrix_scalar_subroutine::conj(val);
 }
 
 // _matrix_ptr
@@ -8151,18 +8142,6 @@ namespace cool
 		static constexpr std::streamsize value = 12;
 	};
 
-	// template specializations
-
-	template <class Ty> class _print_matrix_cols_blk<std::complex<Ty>> {
-	public:
-		static constexpr std::streamsize value = 4;
-	};
-
-	template <class Ty> class _print_matrix_cell_width<std::complex<Ty>> {
-	public:
-		static constexpr std::streamsize value = 24;
-	};
-
 	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty, class char_Ty>
 	inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out_stream,
 		const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>& rhs);
@@ -8431,6 +8410,55 @@ template <class stream_Ty, class Ty> inline void cool::print_matrix_csv_line(str
 }
 #endif // _COOL_MATRIX_HPP_OSTREAM
 #endif // defined(_COOL_MATRIX_HPP) && (defined(_LIBCPP_OSTREAM) || defined(_GLIBCXX_OSTREAM) || defined(_OSTREAM_))
+
+
+#if defined(_COOL_MATRIX_HPP) && (defined(_LIBCPP_COMPLEX) || defined(_GLIBCXX_COMPLEX) || defined(_COMPLEX_))
+#ifndef _COOL_MATRIX_HPP_COMPLEX
+#define _COOL_MATRIX_HPP_COMPLEX
+namespace cool
+{
+	namespace matrix_scalar_subroutine
+	{
+		// template specializations for std::complex
+
+		template <class Ty> inline std::complex<Ty> conj(const std::complex<Ty>& val) noexcept;
+		template <class Ty> inline Ty abs_sq(const std::complex<Ty>& val) noexcept;
+	}
+}
+
+template <class Ty> inline std::complex<Ty> cool::matrix_scalar_subroutine::conj(const std::complex<Ty>& val) noexcept
+{
+	return std::conj(val);
+}
+
+template <class Ty> inline Ty cool::matrix_scalar_subroutine::abs_sq(const std::complex<Ty>& val) noexcept
+{
+	Ty re = val.real();
+	Ty im = val.imag();
+
+	return re * re + im * im;
+}
+#endif // _COOL_MATRIX_HPP_COMPLEX
+#endif // defined(_COOL_MATRIX_HPP) && (defined(_LIBCPP_OSTREAM) || defined(_GLIBCXX_OSTREAM) || defined(_OSTREAM_))
+
+
+#if defined(_COOL_MATRIX_HPP_OSTREAM) && defined(_COOL_MATRIX_HPP_COMPLEX)
+#ifndef _COOL_MATRIX_HPP_OSTREAM_COMPLEX
+#define _COOL_MATRIX_HPP_OSTREAM_COMPLEX
+namespace cool
+{
+	template <class Ty> class _print_matrix_cols_blk<std::complex<Ty>> {
+	public:
+		static constexpr std::streamsize value = 4;
+	};
+
+	template <class Ty> class _print_matrix_cell_width<std::complex<Ty>> {
+	public:
+		static constexpr std::streamsize value = 24;
+	};
+}
+#endif // _COOL_MATRIX_HPP_OSTREAM_COMPLEX
+#endif // defined(_COOL_MATRIX_HPP_OSTREAM) && defined(_COOL_MATRIX_HPP_COMPLEX)
 
 
 // cool_matrix.hpp
