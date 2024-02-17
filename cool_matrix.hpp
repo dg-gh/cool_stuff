@@ -1026,7 +1026,7 @@ namespace cool
 		const cool::const_matrix_interface<Ty, 4, 1, _a2_rows_padded, _a2_align, _a2_matrix_data_Ty>& a2,
 		const cool::const_matrix_interface<Ty, 4, 1, _a3_rows_padded, _a3_align, _a3_matrix_data_Ty>& a3) noexcept;
 
-	template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _dim, std::size_t _Y_cols,
+	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _dim, std::size_t _Y_cols,
 		std::size_t _A_rows_padded, std::size_t _Y_rows_padded, std::size_t _A_align, std::size_t _Y_align, class _A_matrix_data_Ty, class _Y_matrix_data_Ty
 	>
 	inline cool::matrix_result<Ty, _dim, _Y_cols, _opt_res_rows_padded, _opt_res_align> solve(
