@@ -1210,8 +1210,13 @@ inline constexpr std::size_t cool::matrix_align_spec<Ty, _rows, _cols, _rows_pad
 		n--;
 		if (_default_multiples[n] != 0)
 		{
-			if (((_rows_padded * sizeof(Ty)) % _default_multiples[n] == 0)
-				&& (_default_multiples[n] % alignof(Ty) == 0))
+			bool _value_divides_row_size = ((_rows_padded * sizeof(Ty)) % _default_multiples[n] == 0);
+			bool _value_divides_total_size = ((_rows_padded * _cols * sizeof(Ty)) % _default_multiples[n] == 0);
+			bool _contiguous = (_rows == _rows_padded);
+			bool _type_align_divides_value = (_default_multiples[n] % alignof(Ty) == 0);
+
+			if ((_value_divides_row_size || (_value_divides_total_size && _contiguous))
+				&& _type_align_divides_value)
 			{
 				return _default_multiples[n];
 			}
