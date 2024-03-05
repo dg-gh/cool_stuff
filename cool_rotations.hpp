@@ -2387,8 +2387,8 @@ inline void cool::rotationXY<Ty, _dim_padded, _layout, _func_impl_number>::get_m
 	Ty* m3x3_rotation_ptr, const Ty* v2_rXY_ptr) noexcept
 {
 	Ty cosX = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v2_rXY_ptr);
-	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v2_rXY_ptr);
 	Ty cosY = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v2_rXY_ptr + 1));
+	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v2_rXY_ptr);
 	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v2_rXY_ptr + 1));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosY;
@@ -2432,8 +2432,8 @@ inline void cool::rotationXZ<Ty, _dim_padded, _layout, _func_impl_number>::get_m
 	Ty* m3x3_rotation_ptr, const Ty* v2_rXZ_ptr) noexcept
 {
 	Ty cosX = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v2_rXZ_ptr);
-	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v2_rXZ_ptr);
 	Ty cosZ = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v2_rXZ_ptr + 1));
+	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v2_rXZ_ptr);
 	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v2_rXZ_ptr + 1));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosZ;
@@ -2477,8 +2477,8 @@ inline void cool::rotationYZ<Ty, _dim_padded, _layout, _func_impl_number>::get_m
 	Ty* m3x3_rotation_ptr, const Ty* v2_rYZ_ptr) noexcept
 {
 	Ty cosY = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v2_rYZ_ptr);
-	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v2_rYZ_ptr);
 	Ty cosZ = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v2_rYZ_ptr + 1));
+	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v2_rYZ_ptr);
 	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v2_rYZ_ptr + 1));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosY * cosZ;
@@ -2522,8 +2522,8 @@ inline void cool::rotationYX<Ty, _dim_padded, _layout, _func_impl_number>::get_m
 	Ty* m3x3_rotation_ptr, const Ty* v2_rYX_ptr) noexcept
 {
 	Ty cosY = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v2_rYX_ptr);
-	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v2_rYX_ptr);
 	Ty cosX = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v2_rYX_ptr + 1));
+	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v2_rYX_ptr);
 	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v2_rYX_ptr + 1));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosY;
@@ -2567,8 +2567,8 @@ inline void cool::rotationZX<Ty, _dim_padded, _layout, _func_impl_number>::get_m
 	Ty* m3x3_rotation_ptr, const Ty* v2_rZX_ptr) noexcept
 {
 	Ty cosZ = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v2_rZX_ptr);
-	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v2_rZX_ptr);
 	Ty cosX = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v2_rZX_ptr + 1));
+	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v2_rZX_ptr);
 	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v2_rZX_ptr + 1));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosZ;
@@ -2612,8 +2612,8 @@ inline void cool::rotationZY<Ty, _dim_padded, _layout, _func_impl_number>::get_m
 	Ty* m3x3_rotation_ptr, const Ty* v2_rZY_ptr) noexcept
 {
 	Ty cosZ = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v2_rZY_ptr);
-	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v2_rZY_ptr);
 	Ty cosY = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v2_rZY_ptr + 1));
+	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v2_rZY_ptr);
 	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v2_rZY_ptr + 1));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosY * cosZ;
@@ -2657,10 +2657,10 @@ inline void cool::rotationXYZ<Ty, _dim_padded, _layout, _func_impl_number>::get_
 	Ty* m3x3_rotation_ptr, const Ty* v3_rXYZ_ptr) noexcept
 {
 	Ty cosX = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v3_rXYZ_ptr);
-	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rXYZ_ptr);
 	Ty cosY = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rXYZ_ptr + 1));
-	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rXYZ_ptr + 1));
 	Ty cosZ = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rXYZ_ptr + 2));
+	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rXYZ_ptr);
+	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rXYZ_ptr + 1));
 	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rXYZ_ptr + 2));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosY * cosZ;
@@ -2730,10 +2730,10 @@ inline void cool::rotationXZY<Ty, _dim_padded, _layout, _func_impl_number>::get_
 	Ty* m3x3_rotation_ptr, const Ty* v3_rXZY_ptr) noexcept
 {
 	Ty cosX = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v3_rXZY_ptr);
-	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rXZY_ptr);
 	Ty cosZ = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rXZY_ptr + 1));
-	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rXZY_ptr + 1));
 	Ty cosY = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rXZY_ptr + 2));
+	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rXZY_ptr);
+	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rXZY_ptr + 1));
 	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rXZY_ptr + 2));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosY * cosZ;
@@ -2803,10 +2803,10 @@ inline void cool::rotationYZX<Ty, _dim_padded, _layout, _func_impl_number>::get_
 	Ty* m3x3_rotation_ptr, const Ty* v3_rYZX_ptr) noexcept
 {
 	Ty cosY = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v3_rYZX_ptr);
-	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rYZX_ptr);
 	Ty cosZ = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rYZX_ptr + 1));
-	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rYZX_ptr + 1));
 	Ty cosX = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rYZX_ptr + 2));
+	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rYZX_ptr);
+	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rYZX_ptr + 1));
 	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rYZX_ptr + 2));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosY * cosZ;
@@ -2876,10 +2876,10 @@ inline void cool::rotationYXZ<Ty, _dim_padded, _layout, _func_impl_number>::get_
 	Ty* m3x3_rotation_ptr, const Ty* v3_rYXZ_ptr) noexcept
 {
 	Ty cosY = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v3_rYXZ_ptr);
-	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rYXZ_ptr);
 	Ty cosX = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rYXZ_ptr + 1));
-	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rYXZ_ptr + 1));
 	Ty cosZ = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rYXZ_ptr + 2));
+	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rYXZ_ptr);
+	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rYXZ_ptr + 1));
 	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rYXZ_ptr + 2));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosY * cosZ + sinX * sinY * sinZ;
@@ -2949,10 +2949,10 @@ inline void cool::rotationZXY<Ty, _dim_padded, _layout, _func_impl_number>::get_
 	Ty* m3x3_rotation_ptr, const Ty* v3_rZXY_ptr) noexcept
 {
 	Ty cosZ = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v3_rZXY_ptr);
-	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rZXY_ptr);
 	Ty cosX = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rZXY_ptr + 1));
-	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rZXY_ptr + 1));
 	Ty cosY = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rZXY_ptr + 2));
+	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rZXY_ptr);
+	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rZXY_ptr + 1));
 	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rZXY_ptr + 2));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosY * cosZ - sinX * sinY * sinZ;
@@ -3022,10 +3022,10 @@ inline void cool::rotationZYX<Ty, _dim_padded, _layout, _func_impl_number>::get_
 	Ty* m3x3_rotation_ptr, const Ty* v3_rZYX_ptr) noexcept
 {
 	Ty cosZ = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v3_rZYX_ptr);
-	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rZYX_ptr);
 	Ty cosY = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rZYX_ptr + 1));
-	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rZYX_ptr + 1));
 	Ty cosX = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rZYX_ptr + 2));
+	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rZYX_ptr);
+	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rZYX_ptr + 1));
 	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rZYX_ptr + 2));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosY * cosZ;
@@ -3095,10 +3095,10 @@ inline void cool::rotationXYX2<Ty, _dim_padded, _layout, _func_impl_number>::get
 	Ty* m3x3_rotation_ptr, const Ty* v3_rXYX2_ptr) noexcept
 {
 	Ty cosX = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v3_rXYX2_ptr);
-	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rXYX2_ptr);
 	Ty cosY = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rXYX2_ptr + 1));
-	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rXYX2_ptr + 1));
 	Ty cosX2 = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rXYX2_ptr + 2));
+	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rXYX2_ptr);
+	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rXYX2_ptr + 1));
 	Ty sinX2 = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rXYX2_ptr + 2));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosY;
@@ -3169,10 +3169,10 @@ inline void cool::rotationXZX2<Ty, _dim_padded, _layout, _func_impl_number>::get
 	Ty* m3x3_rotation_ptr, const Ty* v3_rXZX2_ptr) noexcept
 {
 	Ty cosX = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v3_rXZX2_ptr);
-	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rXZX2_ptr);
 	Ty cosZ = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rXZX2_ptr + 1));
-	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rXZX2_ptr + 1));
 	Ty cosX2 = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rXZX2_ptr + 2));
+	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rXZX2_ptr);
+	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rXZX2_ptr + 1));
 	Ty sinX2 = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rXZX2_ptr + 2));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosZ;
@@ -3243,10 +3243,10 @@ inline void cool::rotationYZY2<Ty, _dim_padded, _layout, _func_impl_number>::get
 	Ty* m3x3_rotation_ptr, const Ty* v3_rYZY2_ptr) noexcept
 {
 	Ty cosY = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v3_rYZY2_ptr);
-	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rYZY2_ptr);
 	Ty cosZ = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rYZY2_ptr + 1));
-	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rYZY2_ptr + 1));
 	Ty cosY2 = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rYZY2_ptr + 2));
+	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rYZY2_ptr);
+	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rYZY2_ptr + 1));
 	Ty sinY2 = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rYZY2_ptr + 2));
 
 	*(m3x3_rotation_ptr + dat.i00) = -sinY * sinY2 + cosY * cosZ * cosY2;
@@ -3317,10 +3317,10 @@ inline void cool::rotationYXY2<Ty, _dim_padded, _layout, _func_impl_number>::get
 	Ty* m3x3_rotation_ptr, const Ty* v3_rYXY2_ptr) noexcept
 {
 	Ty cosY = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v3_rYXY2_ptr);
-	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rYXY2_ptr);
 	Ty cosX = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rYXY2_ptr + 1));
-	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rYXY2_ptr + 1));
 	Ty cosY2 = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rYXY2_ptr + 2));
+	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rYXY2_ptr);
+	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rYXY2_ptr + 1));
 	Ty sinY2 = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rYXY2_ptr + 2));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosY * cosY2 - sinY * cosX * sinY2;
@@ -3391,10 +3391,10 @@ inline void cool::rotationZXZ2<Ty, _dim_padded, _layout, _func_impl_number>::get
 	Ty* m3x3_rotation_ptr, const Ty* v3_rZXZ2_ptr) noexcept
 {
 	Ty cosZ = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v3_rZXZ2_ptr);
-	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rZXZ2_ptr);
 	Ty cosX = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rZXZ2_ptr + 1));
-	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rZXZ2_ptr + 1));
 	Ty cosZ2 = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rZXZ2_ptr + 2));
+	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rZXZ2_ptr);
+	Ty sinX = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rZXZ2_ptr + 1));
 	Ty sinZ2 = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rZXZ2_ptr + 2));
 
 	*(m3x3_rotation_ptr + dat.i00) = cosZ * cosZ2 - sinZ * cosX * sinZ2;
@@ -3465,10 +3465,10 @@ inline void cool::rotationZYZ2<Ty, _dim_padded, _layout, _func_impl_number>::get
 	Ty* m3x3_rotation_ptr, const Ty* v3_rZYZ2_ptr) noexcept
 {
 	Ty cosZ = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*v3_rZYZ2_ptr);
-	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rZYZ2_ptr);
 	Ty cosY = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rZYZ2_ptr + 1));
-	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rZYZ2_ptr + 1));
 	Ty cosZ2 = cool::rotation_subroutine::cos<Ty, _func_impl_number>(*(v3_rZYZ2_ptr + 2));
+	Ty sinZ = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*v3_rZYZ2_ptr);
+	Ty sinY = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rZYZ2_ptr + 1));
 	Ty sinZ2 = cool::rotation_subroutine::sin<Ty, _func_impl_number>(*(v3_rZYZ2_ptr + 2));
 
 	*(m3x3_rotation_ptr + dat.i00) = -sinZ * sinZ2 + cosZ * cosY * cosZ2;

@@ -32,7 +32,7 @@
 #include <initializer_list>
 #include <type_traits>
 #include <iterator>
-#include <memory>
+#include <new>
 
 
 namespace cool
