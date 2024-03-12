@@ -18,6 +18,7 @@
 namespace cool
 {
 	// 64 (bytes) is the most usual value for cache_line_size
+	// alignof(void*) is the default value for arg_buffer_align
 	template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> class threads_sq;
 	template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> class threads_mq;
 
