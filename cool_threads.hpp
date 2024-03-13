@@ -50,8 +50,7 @@ namespace cool
 		cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>& operator=(cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>&&) = delete;
 		inline ~threads_sq() { delete_threads(); }
 
-		// WARNING: in 'try_async' and 'try_priority_async' methods, 'function_Ty task' must have a persistent lifetime
-		// and must not be relocated elsewhere until its execution is completed
+		// 'function_Ty task' must be a function pointer
 
 		template <class function_Ty, class ... _Args>
 		inline bool try_async(cool::no_target_t, function_Ty task, _Args ... args);
@@ -107,8 +106,7 @@ namespace cool
 		cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>& operator=(cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>&&) = delete;
 		inline ~threads_mq() { delete_threads(); }
 
-		// WARNING: in 'try_async' method, 'function_Ty task' must have a persistent lifetime
-		// and must not be relocated elsewhere until its execution is completed
+		// 'function_Ty task' must be a function pointer
 
 		// WARNING: queuing tasks with 'try_async' does not check wether threads have been initialized beforehand
 
