@@ -2162,15 +2162,11 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 
 							std::unique_lock<std::mutex> lock(ptr->m_mutex);
 
-							ptr->m_condition_var.wait(lock, [=]() -> bool
-								{
-									return (ptr->m_last_task_ptr != ptr->m_next_task_ptr) || ptr->m_stop_threads;
-								}
-							);
+							ptr->m_condition_var.wait(lock, [=]() -> bool { return (ptr->m_last_task_ptr != ptr->m_next_task_ptr) || ptr->m_stop_threads; });
 
 							if (ptr->m_last_task_ptr != ptr->m_next_task_ptr)
 							{
-								current_task = std::move(*(ptr->m_next_task_ptr));
+								ptr->m_next_task_ptr->m_callable(&current_task, ptr->m_next_task_ptr);
 
 								_cool_thmq_task* next_task_ptr_p1 = ptr->m_next_task_ptr + 1;
 
