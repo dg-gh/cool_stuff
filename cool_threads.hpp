@@ -1173,7 +1173,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		constexpr std::size_t task_buffer_padding = (_cache_line_size > _arg_buffer_align) ? _cache_line_size : _arg_buffer_align;
 		std::size_t new_task_buffer_size_p1 = new_task_buffer_size + 1;
 
-		this->m_task_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(new_task_buffer_size_p1 * sizeof(_cool_thsq_task) + 2 * task_buffer_padding, std::nothrow));
+		this->m_task_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(new_task_buffer_size_p1 * sizeof(_cool_thsq_task) + task_buffer_padding + _cache_line_size, std::nothrow));
 
 		if (this->m_task_buffer_unaligned_data_ptr == nullptr)
 		{
@@ -2321,7 +2321,7 @@ inline bool cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 	constexpr std::size_t task_buffer_padding = (_cache_line_size > _arg_buffer_align) ? _cache_line_size : _arg_buffer_align;
 	std::size_t new_task_buffer_size_p1 = new_task_buffer_size + 1;
 
-	m_task_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(new_task_buffer_size_p1 * sizeof(_cool_thmq_task) + 2 * task_buffer_padding, std::nothrow));
+	m_task_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(new_task_buffer_size_p1 * sizeof(_cool_thmq_task) + task_buffer_padding + _cache_line_size, std::nothrow));
 
 	if (m_task_buffer_unaligned_data_ptr == nullptr)
 	{
