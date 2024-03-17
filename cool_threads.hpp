@@ -17,37 +17,43 @@
 
 namespace cool
 {
-	// 64 (bytes) is the most usual value for cache_line_size
-	// alignof(void*) is the default value for arg_buffer_align
-	template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> class threads_sq;
-	template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> class threads_mq;
+	// 64 (bytes) is the most usual value for _cache_line_size
+	// alignof(void*) is the default value for _arg_buffer_align
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class threads_sq;
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class threads_mq;
 
 	enum no_target_t { no_target };
 	class async_task_end;
 	template <class Ty, class _allocator = std::allocator<Ty>> class async_task_result;
 
-	template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> class _threads_sq_data;
-	template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> class _threads_mq_data;
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class _threads_sq_data;
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class _threads_mq_data;
 	class _async_task_end_incr_proxy;
 	template <class Ty, class _allocator> class _async_task_result_proxy;
 	template <class Ty, class _allocator> class _async_task_result_incr_proxy;
 
 	// threads_sq
 
-	template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align = alignof(void*)>
-	class threads_sq : private cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align = alignof(void*)>
+	class threads_sq : private cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>
 	{
 
 	public:
 
-		static_assert((cache_line_size & (cache_line_size - 1)) == 0, "cool::threads_sq<...> requirement : cache_line_size must be a power of 2");
-		static_assert((arg_buffer_align & (arg_buffer_align - 1)) == 0, "cool::threads_sq<...> requirement : arg_buffer_align must be a power of 2");
+		static constexpr std::size_t cache_line_size = _cache_line_size;
+		static constexpr std::size_t arg_buffer_size = _arg_buffer_size;
+		static constexpr std::size_t arg_buffer_align = _arg_buffer_align;
+
+		static_assert((_cache_line_size & (_cache_line_size - 1)) == 0,
+			"cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : cache_line_size must be a power of 2");
+		static_assert((_arg_buffer_align & (_arg_buffer_align - 1)) == 0,
+			"cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : arg_buffer_align must be a power of 2");
 
 		threads_sq() = default;
-		threads_sq(const cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>&) = delete;
-		cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>& operator=(const cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>&) = delete;
-		threads_sq(cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>&&) = delete;
-		cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>& operator=(cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>&&) = delete;
+		threads_sq(const cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
+		cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>& operator=(const cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
+		threads_sq(cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&&) = delete;
+		cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>& operator=(cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&&) = delete;
 		inline ~threads_sq() { delete_threads(); }
 
 		// 'function_Ty task' must be a function pointer
@@ -92,20 +98,26 @@ namespace cool
 
 	// threads_mq
 
-	template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align = alignof(void*)>
-	class threads_mq : private cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align = alignof(void*)>
+	class threads_mq : private cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>
 	{
 
 	public:
 
-		static_assert((cache_line_size & (cache_line_size - 1)) == 0, "cool::threads_sq<...> requirement : cache_line_size must be a power of 2");
-		static_assert((arg_buffer_align & (arg_buffer_align - 1)) == 0, "cool::threads_sq<...> requirement : arg_buffer_align must be a power of 2");
+		static constexpr std::size_t cache_line_size = _cache_line_size;
+		static constexpr std::size_t arg_buffer_size = _arg_buffer_size;
+		static constexpr std::size_t arg_buffer_align = _arg_buffer_align;
+
+		static_assert((_cache_line_size & (_cache_line_size - 1)) == 0,
+			"cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : cache_line_size must be a power of 2");
+		static_assert((_arg_buffer_align & (_arg_buffer_align - 1)) == 0,
+			"cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : arg_buffer_align must be a power of 2");
 
 		threads_mq() = default;
-		threads_mq(const cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>&) = delete;
-		cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>& operator=(const cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>&) = delete;
-		threads_mq(cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>&&) = delete;
-		cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>& operator=(cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>&&) = delete;
+		threads_mq(const cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
+		cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>& operator=(const cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
+		threads_mq(cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&&) = delete;
+		cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>& operator=(cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&&) = delete;
 		inline ~threads_mq() { delete_threads(); }
 
 		// 'function_Ty task' must be a function pointer
@@ -169,8 +181,8 @@ namespace cool
 		std::mutex m_finish_mutex;
 		std::atomic<std::ptrdiff_t> m_tasks_awaited{ 0 };
 
-		template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> friend class cool::threads_sq;
-		template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> friend class cool::threads_mq;
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_sq;
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_mq;
 	};
 
 	// async_task_result
@@ -225,8 +237,8 @@ namespace cool
 		std::mutex m_finish_mutex;
 		std::atomic<std::ptrdiff_t> m_tasks_awaited{ 0 };
 
-		template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> friend class cool::threads_sq;
-		template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> friend class cool::threads_mq;
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_sq;
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_mq;
 	};
 
 	// _async_task_result_proxy
@@ -253,8 +265,8 @@ namespace cool
 		cool::async_task_result<return_Ty, _allocator>* m_parent_ptr;
 		std::size_t m_offset;
 
-		template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> friend class cool::threads_sq;
-		template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> friend class cool::threads_mq;
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_sq;
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_mq;
 		template <class return_Ty2, class _allocator2> friend class cool::async_task_result;
 	};
 }
@@ -264,24 +276,24 @@ namespace cool
 {
 	// _threads_sq_data detail
 
-	template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> class alignas(cache_line_size) _threads_sq_data
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class alignas(_cache_line_size) _threads_sq_data
 	{
 
 	private:
 
-		friend class cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>;
+		friend class cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>;
 
 		_threads_sq_data() = default;
-		_threads_sq_data(const cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>&) = delete;
-		cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>& operator=(const cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>&) = delete;
-		_threads_sq_data(cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>&&) = delete;
-		cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>& operator=(cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>&&) = delete;
+		_threads_sq_data(const cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
+		cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>& operator=(const cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
+		_threads_sq_data(cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&&) = delete;
+		cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>& operator=(cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&&) = delete;
 		virtual ~_threads_sq_data() = default;
 
 		inline void delete_threads_detail(std::size_t threads_constructed) noexcept;
 
 		class _task;
-		using _cool_thsq_task = typename cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+		using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 
 		_cool_thsq_task* m_task_buffer_data_ptr = nullptr;
 		_cool_thsq_task* m_task_buffer_end_ptr = static_cast<_cool_thsq_task*>(nullptr) + 1;
@@ -304,7 +316,7 @@ namespace cool
 
 		public:
 
-			alignas(arg_buffer_align) unsigned char m_arg_buffer[arg_buffer_size];
+			alignas(_arg_buffer_align) unsigned char m_arg_buffer[_arg_buffer_size];
 			void(*m_callable)(_cool_thsq_task*, _cool_thsq_task*);
 			void(*m_function_ptr)(void);
 			void* m_target_ptr;
@@ -338,27 +350,27 @@ namespace cool
 
 	// _threads_mq_data detail
 
-	template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> class alignas(cache_line_size) _threads_mq_data
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class alignas(_cache_line_size) _threads_mq_data
 	{
 
 	private:
 
-		friend class cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>;
+		friend class cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>;
 
 		_threads_mq_data() = default;
-		_threads_mq_data(const cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>&) = delete;
-		cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>& operator=(const cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>&) = delete;
-		_threads_mq_data(cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>&&) = delete;
-		cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>& operator=(cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>&&) = delete;
+		_threads_mq_data(const cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
+		cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>& operator=(const cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
+		_threads_mq_data(cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&&) = delete;
+		cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>& operator=(cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&&) = delete;
 		virtual ~_threads_mq_data() = default;
 
 		inline void delete_threads_detail(std::size_t threads_constructed, std::size_t threads_launched) noexcept;
 
 		class _task;
-		using _cool_thmq_task = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+		using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 
 		class _thread_block;
-		using _cool_thmq_tblk = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_thread_block;
+		using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 
 		_cool_thmq_tblk* m_thread_blocks_data_ptr = nullptr;
 		std::size_t m_thread_count = 0;
@@ -370,21 +382,21 @@ namespace cool
 
 		char* m_thread_blocks_unaligned_data_ptr = nullptr;
 
-		alignas(cache_line_size) std::atomic<unsigned int> m_thread_dispatch{ 0 };
+		alignas(_cache_line_size) std::atomic<unsigned int> m_thread_dispatch{ 0 };
 
 		class _task
 		{
 
 		public:
 
-			alignas(arg_buffer_align) unsigned char m_arg_buffer[arg_buffer_size];
+			alignas(_arg_buffer_align) unsigned char m_arg_buffer[_arg_buffer_size];
 			void(*m_callable)(_cool_thmq_task*, _cool_thmq_task*);
 			void(*m_function_ptr)(void);
 			void* m_target_ptr;
 			std::size_t m_offset;
 		};
 
-		class alignas(cache_line_size) _thread_block
+		class alignas(_cache_line_size) _thread_block
 		{
 
 		public:
@@ -451,8 +463,8 @@ namespace cool
 
 		cool::async_task_end* m_parent_ptr;
 
-		template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> friend class cool::threads_sq;
-		template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> friend class cool::threads_mq;
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_sq;
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_mq;
 		friend class cool::async_task_end;
 	};
 
@@ -476,8 +488,8 @@ namespace cool
 		cool::async_task_result<return_Ty, _allocator>* m_parent_ptr;
 		std::size_t m_offset;
 
-		template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> friend class cool::threads_sq;
-		template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> friend class cool::threads_mq;
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_sq;
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_mq;
 		template <class return_Ty2, class _allocator2> friend class cool::_async_task_result_proxy;
 	};
 }
@@ -485,13 +497,13 @@ namespace cool
 
 // threads_sq detail
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class function_Ty, class ... _Args>
-inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_async(cool::no_target_t, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... _Args>
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::no_target_t, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thsq_task = typename cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -509,7 +521,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 			{
 				if (_fetch_task_ptr == nullptr)
 				{
-					cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::call_no_return(
+					cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
 						reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 						std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 					);
@@ -538,13 +550,13 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return true;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class function_Ty, class ... _Args>
-inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_priority_async(cool::no_target_t, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... _Args>
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::no_target_t, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thsq_task = typename cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "cool::threads_sq<...>::try_priority_async : arguments too large");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : arguments too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -566,7 +578,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 			{
 				if (_fetch_task_ptr == nullptr)
 				{
-					cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::call_no_return(
+					cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
 						reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 						std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 					);
@@ -593,13 +605,13 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return true;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class function_Ty, class ... _Args>
-inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_async(cool::async_task_end& target, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... _Args>
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::async_task_end& target, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thsq_task = typename cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -618,7 +630,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 			{
 				if (_fetch_task_ptr == nullptr)
 				{
-					cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::call_no_return(
+					cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
 						reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 						std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 					);
@@ -656,13 +668,13 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return true;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class function_Ty, class ... _Args>
-inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_priority_async(cool::async_task_end& target, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... _Args>
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::async_task_end& target, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thsq_task = typename cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "cool::threads_sq<...>::try_priority_async : arguments too large");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : arguments too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -685,7 +697,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 			{
 				if (_fetch_task_ptr == nullptr)
 				{
-					cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::call_no_return(
+					cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
 						reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 						std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 					);
@@ -720,13 +732,13 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return true;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class function_Ty, class ... _Args>
-inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_async(cool::_async_task_end_incr_proxy target, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... _Args>
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_end_incr_proxy target, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thsq_task = typename cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -747,7 +759,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 			{
 				if (_fetch_task_ptr == nullptr)
 				{
-					cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::call_no_return(
+					cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
 						reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 						std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 					);
@@ -785,13 +797,13 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return true;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class function_Ty, class ... _Args>
-inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_priority_async(cool::_async_task_end_incr_proxy target, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... _Args>
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::_async_task_end_incr_proxy target, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thsq_task = typename cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "cool::threads_sq<...>::try_priority_async : arguments too large");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : arguments too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -816,7 +828,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 			{
 				if (_fetch_task_ptr == nullptr)
 				{
-					cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::call_no_return(
+					cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
 						reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 						std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 					);
@@ -851,13 +863,13 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return true;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class return_Ty, class _allocator, class function_Ty, class ... _Args>
-inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_async(cool::_async_task_result_proxy<return_Ty, _allocator> target, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class _allocator, class function_Ty, class ... _Args>
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_proxy<return_Ty, _allocator> target, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thsq_task = typename cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -879,7 +891,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 				{
 					cool::async_task_result<return_Ty, _allocator>& target_ref = *reinterpret_cast<cool::async_task_result<return_Ty, _allocator>*>(_task_ptr->m_target_ptr);
 
-					*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::call(
+					*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
 						reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 						std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 					);
@@ -917,13 +929,13 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return true;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class return_Ty, class _allocator, class function_Ty, class ... _Args>
-inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_priority_async(cool::_async_task_result_proxy<return_Ty, _allocator> target, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class _allocator, class function_Ty, class ... _Args>
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::_async_task_result_proxy<return_Ty, _allocator> target, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thsq_task = typename cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "cool::threads_sq<...>::try_priority_async : arguments too large");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : arguments too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -949,7 +961,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 				{
 					cool::async_task_result<return_Ty, _allocator>& target_ref = *reinterpret_cast<cool::async_task_result<return_Ty, _allocator>*>(_task_ptr->m_target_ptr);
 
-					*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::call(
+					*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
 						reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 						std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 					);
@@ -984,13 +996,13 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return true;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class return_Ty, class _allocator, class function_Ty, class ... _Args>
-inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_async(cool::_async_task_result_incr_proxy<return_Ty, _allocator> target, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class _allocator, class function_Ty, class ... _Args>
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_incr_proxy<return_Ty, _allocator> target, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thsq_task = typename cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -1014,7 +1026,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 				{
 					cool::async_task_result<return_Ty, _allocator>& target_ref = *reinterpret_cast<cool::async_task_result<return_Ty, _allocator>*>(_task_ptr->m_target_ptr);
 
-					*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::call(
+					*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
 						reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 						std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 					);
@@ -1052,13 +1064,13 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return true;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class return_Ty, class _allocator, class function_Ty, class ... _Args>
-inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_priority_async(cool::_async_task_result_incr_proxy<return_Ty, _allocator> target, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class _allocator, class function_Ty, class ... _Args>
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::_async_task_result_incr_proxy<return_Ty, _allocator> target, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thsq_task = typename cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -1086,7 +1098,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 				{
 					cool::async_task_result<return_Ty, _allocator>& target_ref = *reinterpret_cast<cool::async_task_result<return_Ty, _allocator>*>(_task_ptr->m_target_ptr);
 
-					*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::call(
+					*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
 						reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 						std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 					);
@@ -1122,10 +1134,10 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 }
 
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::init_new_threads(std::size_t new_thread_count, std::size_t new_task_buffer_size)
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::init_new_threads(std::size_t new_thread_count, std::size_t new_task_buffer_size)
 {
-	using _cool_thsq_task = typename cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 
 	delete_threads();
 
@@ -1143,7 +1155,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	try
 	{
 		this->m_threads_data_ptr = static_cast<std::thread*>(::operator new(
-			new_thread_count * sizeof(std::thread) + 2 * cache_line_size, std::nothrow));
+			new_thread_count * sizeof(std::thread) + 2 * _cache_line_size, std::nothrow));
 
 		if (this->m_threads_data_ptr == nullptr)
 		{
@@ -1153,12 +1165,12 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 		else
 		{
 			this->m_threads_data_ptr = reinterpret_cast<std::thread*>(
-				reinterpret_cast<char*>(this->m_threads_data_ptr) + cache_line_size);
+				reinterpret_cast<char*>(this->m_threads_data_ptr) + _cache_line_size);
 		}
 
 		this->m_thread_count = new_thread_count;
 
-		constexpr std::size_t task_buffer_padding = (cache_line_size > arg_buffer_align) ? cache_line_size : arg_buffer_align;
+		constexpr std::size_t task_buffer_padding = (_cache_line_size > _arg_buffer_align) ? _cache_line_size : _arg_buffer_align;
 		std::size_t new_task_buffer_size_p1 = new_task_buffer_size + 1;
 
 		this->m_task_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(new_task_buffer_size_p1 * sizeof(_cool_thsq_task) + 2 * task_buffer_padding, std::nothrow));
@@ -1229,14 +1241,14 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return true;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline std::size_t cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::thread_count() const noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline std::size_t cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::thread_count() const noexcept
 {
 	return this->m_thread_count;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline std::size_t cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::task_buffer_size() const noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline std::size_t cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::task_buffer_size() const noexcept
 {
 	if (this->m_task_buffer_data_ptr != nullptr)
 	{
@@ -1248,16 +1260,16 @@ inline std::size_t cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer
 	}
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline void cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>::delete_threads() noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads() noexcept
 {
 	this->delete_threads_detail(this->m_thread_count);
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline void cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::delete_threads_detail(std::size_t threads_constructed) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline void cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads_detail(std::size_t threads_constructed) noexcept
 {
-	using _cool_thsq_task = typename cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 
 	{
 		std::unique_lock<std::mutex> lock(this->m_mutex);
@@ -1277,7 +1289,7 @@ inline void cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_
 			(this->m_threads_data_ptr + k)->~thread();
 		}
 
-		::operator delete(reinterpret_cast<char*>(this->m_threads_data_ptr) - cache_line_size);
+		::operator delete(reinterpret_cast<char*>(this->m_threads_data_ptr) - _cache_line_size);
 	}
 
 	if (this->m_task_buffer_data_ptr != nullptr)
@@ -1305,14 +1317,14 @@ inline void cool::_threads_sq_data<cache_line_size, arg_buffer_size, arg_buffer_
 
 // threads_mq detail
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class function_Ty, class ... _Args>
-inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_async(cool::no_target_t, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... _Args>
+inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::no_target_t, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thmq_task = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
-	using _cool_thmq_tblk = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_thread_block;
+	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
 
 	std::size_t first_thread = static_cast<std::size_t>(this->m_thread_dispatch.fetch_add(
 		this->m_dispatch_interval, std::memory_order_relaxed)
@@ -1346,7 +1358,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 						{
 							if (_fetch_task_ptr == nullptr)
 							{
-								cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::call_no_return(
+								cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
 									reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 									std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 								);
@@ -1399,7 +1411,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 						{
 							if (_fetch_task_ptr == nullptr)
 							{
-								cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::call_no_return(
+								cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
 									reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 									std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 								);
@@ -1434,14 +1446,14 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return false;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class function_Ty, class ... _Args>
-inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_async(cool::async_task_end& target, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... _Args>
+inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::async_task_end& target, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thmq_task = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
-	using _cool_thmq_tblk = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_thread_block;
+	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
 
 	std::size_t first_thread = static_cast<std::size_t>(this->m_thread_dispatch.fetch_add(
 		this->m_dispatch_interval, std::memory_order_relaxed)
@@ -1476,7 +1488,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 						{
 							if (_fetch_task_ptr == nullptr)
 							{
-								cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::call_no_return(
+								cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
 									reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 									std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 								);
@@ -1538,7 +1550,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 						{
 							if (_fetch_task_ptr == nullptr)
 							{
-								cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::call_no_return(
+								cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
 									reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 									std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 								);
@@ -1581,14 +1593,14 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return false;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class function_Ty, class ... _Args>
-inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_async(cool::_async_task_end_incr_proxy target, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... _Args>
+inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_end_incr_proxy target, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thmq_task = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
-	using _cool_thmq_tblk = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_thread_block;
+	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
 
 	std::size_t first_thread = static_cast<std::size_t>(this->m_thread_dispatch.fetch_add(
 		this->m_dispatch_interval, std::memory_order_relaxed)
@@ -1625,7 +1637,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 						{
 							if (_fetch_task_ptr == nullptr)
 							{
-								cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::call_no_return(
+								cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
 									reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 									std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 								);
@@ -1689,7 +1701,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 						{
 							if (_fetch_task_ptr == nullptr)
 							{
-								cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::call_no_return(
+								cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
 									reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 									std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 								);
@@ -1732,14 +1744,14 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return false;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class return_Ty, class _allocator, class function_Ty, class ... _Args>
-inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_async(cool::_async_task_result_proxy<return_Ty, _allocator> target, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class _allocator, class function_Ty, class ... _Args>
+inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_proxy<return_Ty, _allocator> target, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thmq_task = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
-	using _cool_thmq_tblk = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_thread_block;
+	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
 
 	std::size_t first_thread = static_cast<std::size_t>(this->m_thread_dispatch.fetch_add(
 		this->m_dispatch_interval, std::memory_order_relaxed)
@@ -1777,7 +1789,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 							{
 								cool::async_task_result<return_Ty, _allocator>& target_ref = *reinterpret_cast<cool::async_task_result<return_Ty, _allocator>*>(_task_ptr->m_target_ptr);
 
-								*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::call(
+								*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
 									reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 									std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 								);
@@ -1842,7 +1854,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 							{
 								cool::async_task_result<return_Ty, _allocator>& target_ref = *reinterpret_cast<cool::async_task_result<return_Ty, _allocator>*>(_task_ptr->m_target_ptr);
 
-								*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::call(
+								*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
 									reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 									std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 								);
@@ -1885,14 +1897,14 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return false;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align> template <class return_Ty, class _allocator, class function_Ty, class ... _Args>
-inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::try_async(cool::_async_task_result_incr_proxy<return_Ty, _allocator> target, function_Ty task, _Args ... args) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class _allocator, class function_Ty, class ... _Args>
+inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_incr_proxy<return_Ty, _allocator> target, function_Ty task, _Args ... args) noexcept
 {
-	using _cool_thmq_task = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
-	using _cool_thmq_tblk = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_thread_block;
+	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 	using _pack = decltype(std::make_tuple(std::move(args)...));
 
-	static_assert(sizeof(_pack) <= arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
+	static_assert(sizeof(_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
 
 	std::size_t first_thread = static_cast<std::size_t>(this->m_thread_dispatch.fetch_add(
 		this->m_dispatch_interval, std::memory_order_relaxed)
@@ -1932,7 +1944,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 							{
 								cool::async_task_result<return_Ty, _allocator>& target_ref = *reinterpret_cast<cool::async_task_result<return_Ty, _allocator>*>(_task_ptr->m_target_ptr);
 
-								*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::call(
+								*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
 									reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 									std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 								);
@@ -1999,7 +2011,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 							{
 								cool::async_task_result<return_Ty, _allocator>& target_ref = *reinterpret_cast<cool::async_task_result<return_Ty, _allocator>*>(_task_ptr->m_target_ptr);
 
-								*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::call(
+								*(target_ref.m_stored_values_ptr + _task_ptr->m_offset) = cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
 									reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 									std::move(*reinterpret_cast<_pack*>(_task_ptr->m_arg_buffer))
 								);
@@ -2042,12 +2054,12 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return false;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::init_new_threads(std::size_t new_thread_count, std::size_t new_task_buffer_size,
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::init_new_threads(std::size_t new_thread_count, std::size_t new_task_buffer_size,
 	unsigned int push_rounds, unsigned int pop_rounds, unsigned int dispatch_interval)
 {
-	using _cool_thmq_task = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
-	using _cool_thmq_tblk = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_thread_block;
+	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 
 	delete_threads();
 
@@ -2073,7 +2085,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	try
 	{
 		this->m_thread_blocks_unaligned_data_ptr = static_cast<char*>(::operator new(
-			new_thread_count * sizeof(_cool_thmq_tblk) + 2 * cache_line_size, std::nothrow));
+			new_thread_count * sizeof(_cool_thmq_tblk) + 2 * _cache_line_size, std::nothrow));
 
 		if (this->m_thread_blocks_unaligned_data_ptr == nullptr)
 		{
@@ -2082,10 +2094,10 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 		}
 		else
 		{
-			std::uintptr_t ptr_remainder = reinterpret_cast<std::uintptr_t>(this->m_thread_blocks_unaligned_data_ptr) % static_cast<std::uintptr_t>(cache_line_size);
+			std::uintptr_t ptr_remainder = reinterpret_cast<std::uintptr_t>(this->m_thread_blocks_unaligned_data_ptr) % static_cast<std::uintptr_t>(_cache_line_size);
 
 			this->m_thread_blocks_data_ptr = reinterpret_cast<_cool_thmq_tblk*>(this->m_thread_blocks_unaligned_data_ptr
-				+ static_cast<std::size_t>(ptr_remainder != 0) * (cache_line_size - static_cast<std::size_t>(ptr_remainder)));
+				+ static_cast<std::size_t>(ptr_remainder != 0) * (_cache_line_size - static_cast<std::size_t>(ptr_remainder)));
 		}
 
 		this->m_thread_count = new_thread_count;
@@ -2205,14 +2217,14 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 	return true;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline std::size_t cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::thread_count() const noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline std::size_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::thread_count() const noexcept
 {
 	return this->m_thread_count;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline std::size_t cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::task_buffer_size() const noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline std::size_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::task_buffer_size() const noexcept
 {
 	if (this->m_thread_blocks_data_ptr != nullptr)
 	{
@@ -2232,34 +2244,34 @@ inline std::size_t cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer
 	}
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline unsigned int cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::push_rounds() const noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline unsigned int cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::push_rounds() const noexcept
 {
 	return this->m_push_rounds;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline unsigned int cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::pop_rounds() const noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline unsigned int cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::pop_rounds() const noexcept
 {
 	return this->m_pop_rounds;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline unsigned int cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::dispatch_interval() const noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline unsigned int cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::dispatch_interval() const noexcept
 {
 	return this->m_dispatch_interval;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline void cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>::delete_threads() noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads() noexcept
 {
 	this->delete_threads_detail(this->m_thread_count, this->m_thread_count);
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline void cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::delete_threads_detail(std::size_t threads_constructed, std::size_t threads_launched) noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads_detail(std::size_t threads_constructed, std::size_t threads_launched) noexcept
 {
-	using _cool_thmq_tblk = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_thread_block;
+	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 
 	if (this->m_thread_blocks_data_ptr != nullptr)
 	{
@@ -2301,12 +2313,12 @@ inline void cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_
 	this->m_dispatch_interval = 1;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline bool cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_thread_block::new_task_buffer(std::size_t new_task_buffer_size)
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline bool cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block::new_task_buffer(std::size_t new_task_buffer_size)
 {
-	using _cool_thmq_task = typename cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_task;
+	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 
-	constexpr std::size_t task_buffer_padding = (cache_line_size > arg_buffer_align) ? cache_line_size : arg_buffer_align;
+	constexpr std::size_t task_buffer_padding = (_cache_line_size > _arg_buffer_align) ? _cache_line_size : _arg_buffer_align;
 	std::size_t new_task_buffer_size_p1 = new_task_buffer_size + 1;
 
 	m_task_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(new_task_buffer_size_p1 * sizeof(_cool_thmq_task) + 2 * task_buffer_padding, std::nothrow));
@@ -2335,8 +2347,8 @@ inline bool cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_
 	return true;
 }
 
-template <std::size_t cache_line_size, std::size_t arg_buffer_size, std::size_t arg_buffer_align>
-inline void cool::_threads_mq_data<cache_line_size, arg_buffer_size, arg_buffer_align>::_thread_block::delete_task_buffer() noexcept
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block::delete_task_buffer() noexcept
 {
 	if (m_task_buffer_data_ptr != nullptr)
 	{

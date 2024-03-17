@@ -14,7 +14,7 @@
 namespace cool
 {
 	template <std::uintptr_t bad_alloc_address = 0> class mem_blocks;
-	template <std::size_t pool_count, std::uintptr_t bad_alloc_address = 0> class mem_pools;
+	template <std::size_t _pool_count, std::uintptr_t bad_alloc_address = 0> class mem_pools;
 
 	template <std::uintptr_t bad_alloc_address> class mem_blocks
 	{
@@ -82,7 +82,7 @@ namespace cool
 
 	private:
 
-		template <std::size_t pool_count, std::uintptr_t bad_alloc_address2> friend class cool::mem_pools;
+		template <std::size_t _pool_count, std::uintptr_t bad_alloc_address2> friend class cool::mem_pools;
 
 		std::size_t m_block_size;
 		void** m_next_block_ptr;
@@ -91,16 +91,16 @@ namespace cool
 		void** m_last_block_ptr;
 	};
 
-	template <std::size_t pool_count, std::uintptr_t bad_alloc_address> class mem_pools
+	template <std::size_t _pool_count, std::uintptr_t bad_alloc_address> class mem_pools
 	{
 
 	public:
 
 		mem_pools() noexcept = default;
-		mem_pools(const cool::mem_pools<pool_count, bad_alloc_address>& rhs) = delete;
-		cool::mem_pools<pool_count, bad_alloc_address>& operator=(const cool::mem_pools<pool_count, bad_alloc_address>& rhs) = delete;
-		mem_pools(cool::mem_pools<pool_count, bad_alloc_address>&& rhs) noexcept = default;
-		cool::mem_pools<pool_count, bad_alloc_address>& operator=(cool::mem_pools<pool_count, bad_alloc_address>&& rhs) noexcept = default;
+		mem_pools(const cool::mem_pools<_pool_count, bad_alloc_address>& rhs) = delete;
+		cool::mem_pools<_pool_count, bad_alloc_address>& operator=(const cool::mem_pools<_pool_count, bad_alloc_address>& rhs) = delete;
+		mem_pools(cool::mem_pools<_pool_count, bad_alloc_address>&& rhs) noexcept = default;
+		cool::mem_pools<_pool_count, bad_alloc_address>& operator=(cool::mem_pools<_pool_count, bad_alloc_address>&& rhs) noexcept = default;
 		~mem_pools() = default;
 
 		explicit inline mem_pools(
@@ -165,11 +165,11 @@ namespace cool
 
 		static inline constexpr void* bad_alloc_ptr() noexcept;
 
-		inline cool::mem_pools<pool_count, bad_alloc_address>& clear() noexcept;
+		inline cool::mem_pools<_pool_count, bad_alloc_address>& clear() noexcept;
 
 	private:
 
-		cool::mem_blocks<bad_alloc_address> m_pools[pool_count];
+		cool::mem_blocks<bad_alloc_address> m_pools[_pool_count];
 	};
 }
 
@@ -594,14 +594,14 @@ inline void cool::mem_blocks<bad_alloc_address>::deallocate_unchecked(void* ptr)
 
 // mem_pools
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline cool::mem_pools<pool_count, bad_alloc_address>::mem_pools(
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
+inline cool::mem_pools<_pool_count, bad_alloc_address>::mem_pools(
 	void* data_ptr,
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,
 	std::size_t block_alignment) noexcept
 {
-	std::size_t m = pool_count;
+	std::size_t m = _pool_count;
 	m = (m < block_sizes.size()) ? m : block_sizes.size();
 	m = (m < block_counts.size()) ? m : block_counts.size();
 
@@ -620,14 +620,14 @@ inline cool::mem_pools<pool_count, bad_alloc_address>::mem_pools(
 	}
 }
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline cool::mem_pools<pool_count, bad_alloc_address>::mem_pools(
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
+inline cool::mem_pools<_pool_count, bad_alloc_address>::mem_pools(
 	void* data_ptr,
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,
 	std::initializer_list<std::size_t> block_alignments) noexcept
 {
-	std::size_t m = pool_count;
+	std::size_t m = _pool_count;
 	m = (m < block_sizes.size()) ? m : block_sizes.size();
 	m = (m < block_counts.size()) ? m : block_counts.size();
 	m = (m < block_alignments.size()) ? m : block_alignments.size();
@@ -648,25 +648,25 @@ inline cool::mem_pools<pool_count, bad_alloc_address>::mem_pools(
 	}
 }
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address> template <class uint_Ty>
-inline cool::mem_blocks<bad_alloc_address>& cool::mem_pools<pool_count, bad_alloc_address>::operator[](uint_Ty pool_number) noexcept
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address> template <class uint_Ty>
+inline cool::mem_blocks<bad_alloc_address>& cool::mem_pools<_pool_count, bad_alloc_address>::operator[](uint_Ty pool_number) noexcept
 {
 	return m_pools[static_cast<std::size_t>(pool_number)];
 }
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address> template <class uint_Ty>
-inline const cool::mem_blocks<bad_alloc_address>& cool::mem_pools<pool_count, bad_alloc_address>::operator[](uint_Ty pool_number) const noexcept
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address> template <class uint_Ty>
+inline const cool::mem_blocks<bad_alloc_address>& cool::mem_pools<_pool_count, bad_alloc_address>::operator[](uint_Ty pool_number) const noexcept
 {
 	return m_pools[static_cast<std::size_t>(pool_number)];
 }
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline constexpr std::size_t cool::mem_pools<pool_count, bad_alloc_address>::eval_data_max_size(
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
+inline constexpr std::size_t cool::mem_pools<_pool_count, bad_alloc_address>::eval_data_max_size(
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,
 	std::size_t block_alignment) noexcept
 {
-	std::size_t m = pool_count;
+	std::size_t m = _pool_count;
 	m = (m < block_sizes.size()) ? m : block_sizes.size();
 	m = (m < block_counts.size()) ? m : block_counts.size();
 
@@ -688,13 +688,13 @@ inline constexpr std::size_t cool::mem_pools<pool_count, bad_alloc_address>::eva
 	return data_size;
 }
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline constexpr std::size_t cool::mem_pools<pool_count, bad_alloc_address>::eval_data_max_size(
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
+inline constexpr std::size_t cool::mem_pools<_pool_count, bad_alloc_address>::eval_data_max_size(
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,
 	std::initializer_list<std::size_t> block_alignments) noexcept
 {
-	std::size_t m = pool_count;
+	std::size_t m = _pool_count;
 	m = (m < block_sizes.size()) ? m : block_sizes.size();
 	m = (m < block_counts.size()) ? m : block_counts.size();
 	m = (m < block_alignments.size()) ? m : block_alignments.size();
@@ -718,13 +718,13 @@ inline constexpr std::size_t cool::mem_pools<pool_count, bad_alloc_address>::eva
 	return data_size;
 }
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline void* cool::mem_pools<pool_count, bad_alloc_address>::eval_data_end(void* data_ptr,
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
+inline void* cool::mem_pools<_pool_count, bad_alloc_address>::eval_data_end(void* data_ptr,
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,
 	std::size_t block_alignment) noexcept
 {
-	std::size_t m = pool_count;
+	std::size_t m = _pool_count;
 	m = (m < block_sizes.size()) ? m : block_sizes.size();
 	m = (m < block_counts.size()) ? m : block_counts.size();
 
@@ -746,14 +746,14 @@ inline void* cool::mem_pools<pool_count, bad_alloc_address>::eval_data_end(void*
 	return ptr;
 }
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline void* cool::mem_pools<pool_count, bad_alloc_address>::eval_data_end(
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
+inline void* cool::mem_pools<_pool_count, bad_alloc_address>::eval_data_end(
 	void* data_ptr,
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,
 	std::initializer_list<std::size_t> block_alignments) noexcept
 {
-	std::size_t m = pool_count;
+	std::size_t m = _pool_count;
 	m = (m < block_sizes.size()) ? m : block_sizes.size();
 	m = (m < block_counts.size()) ? m : block_counts.size();
 	m = (m < block_alignments.size()) ? m : block_alignments.size();
@@ -777,14 +777,14 @@ inline void* cool::mem_pools<pool_count, bad_alloc_address>::eval_data_end(
 	return ptr;
 }
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-constexpr inline std::uintptr_t cool::mem_pools<pool_count, bad_alloc_address>::eval_data_address_end(
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
+constexpr inline std::uintptr_t cool::mem_pools<_pool_count, bad_alloc_address>::eval_data_address_end(
 	std::uintptr_t data_ptr_address,
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,
 	std::size_t block_alignment) noexcept
 {
-	std::size_t m = pool_count;
+	std::size_t m = _pool_count;
 	m = (m < block_sizes.size()) ? m : block_sizes.size();
 	m = (m < block_counts.size()) ? m : block_counts.size();
 
@@ -806,14 +806,14 @@ constexpr inline std::uintptr_t cool::mem_pools<pool_count, bad_alloc_address>::
 	return ptr_address;
 }
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-constexpr inline std::uintptr_t cool::mem_pools<pool_count, bad_alloc_address>::eval_data_address_end(
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
+constexpr inline std::uintptr_t cool::mem_pools<_pool_count, bad_alloc_address>::eval_data_address_end(
 	std::uintptr_t data_ptr_address,
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,
 	std::initializer_list<std::size_t> block_alignments) noexcept
 {
-	std::size_t m = pool_count;
+	std::size_t m = _pool_count;
 	m = (m < block_sizes.size()) ? m : block_sizes.size();
 	m = (m < block_counts.size()) ? m : block_counts.size();
 	m = (m < block_alignments.size()) ? m : block_alignments.size();
@@ -837,8 +837,8 @@ constexpr inline std::uintptr_t cool::mem_pools<pool_count, bad_alloc_address>::
 	return ptr_address;
 }
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline void* cool::mem_pools<pool_count, bad_alloc_address>::init_set_data(
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
+inline void* cool::mem_pools<_pool_count, bad_alloc_address>::init_set_data(
 	void* data_ptr,
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,
@@ -846,7 +846,7 @@ inline void* cool::mem_pools<pool_count, bad_alloc_address>::init_set_data(
 {
 	clear();
 
-	std::size_t m = pool_count;
+	std::size_t m = _pool_count;
 	m = (m < block_sizes.size()) ? m : block_sizes.size();
 	m = (m < block_counts.size()) ? m : block_counts.size();
 
@@ -867,8 +867,8 @@ inline void* cool::mem_pools<pool_count, bad_alloc_address>::init_set_data(
 	return ptr;
 }
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline void* cool::mem_pools<pool_count, bad_alloc_address>::init_set_data(
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
+inline void* cool::mem_pools<_pool_count, bad_alloc_address>::init_set_data(
 	void* data_ptr,
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,
@@ -876,7 +876,7 @@ inline void* cool::mem_pools<pool_count, bad_alloc_address>::init_set_data(
 {
 	clear();
 
-	std::size_t m = pool_count;
+	std::size_t m = _pool_count;
 	m = (m < block_sizes.size()) ? m : block_sizes.size();
 	m = (m < block_counts.size()) ? m : block_counts.size();
 	m = (m < block_alignments.size()) ? m : block_alignments.size();
@@ -900,10 +900,10 @@ inline void* cool::mem_pools<pool_count, bad_alloc_address>::init_set_data(
 }
 
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline void* cool::mem_pools<pool_count, bad_alloc_address>::allocate(std::size_t block_size) noexcept
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
+inline void* cool::mem_pools<_pool_count, bad_alloc_address>::allocate(std::size_t block_size) noexcept
 {
-	for (std::size_t n = 0; n < pool_count; n++)
+	for (std::size_t n = 0; n < _pool_count; n++)
 	{
 		if ((block_size <= m_pools[n].block_size())
 			&& (m_pools[n].m_next_block_ptr != static_cast<void**>(bad_alloc_ptr())))
@@ -918,10 +918,10 @@ inline void* cool::mem_pools<pool_count, bad_alloc_address>::allocate(std::size_
 	return bad_alloc_ptr();
 }
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline bool cool::mem_pools<pool_count, bad_alloc_address>::deallocate(void* ptr) noexcept
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
+inline bool cool::mem_pools<_pool_count, bad_alloc_address>::deallocate(void* ptr) noexcept
 {
-	for (std::size_t n = 0; n < pool_count; n++)
+	for (std::size_t n = 0; n < _pool_count; n++)
 	{
 		if ((reinterpret_cast<std::uintptr_t>(m_pools[n].m_first_block_ptr) <= reinterpret_cast<std::uintptr_t>(ptr))
 			&& (reinterpret_cast<std::uintptr_t>(ptr) < reinterpret_cast<std::uintptr_t>(m_pools[n].m_last_block_ptr)))
@@ -937,16 +937,16 @@ inline bool cool::mem_pools<pool_count, bad_alloc_address>::deallocate(void* ptr
 	return false;
 }
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline constexpr void* cool::mem_pools<pool_count, bad_alloc_address>::bad_alloc_ptr() noexcept
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
+inline constexpr void* cool::mem_pools<_pool_count, bad_alloc_address>::bad_alloc_ptr() noexcept
 {
 	return reinterpret_cast<void*>(bad_alloc_address);
 }
 
-template <std::size_t pool_count, std::uintptr_t bad_alloc_address>
-inline cool::mem_pools<pool_count, bad_alloc_address>& cool::mem_pools<pool_count, bad_alloc_address>::clear() noexcept
+template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
+inline cool::mem_pools<_pool_count, bad_alloc_address>& cool::mem_pools<_pool_count, bad_alloc_address>::clear() noexcept
 {
-	for (std::size_t n = 0; n < pool_count; n++)
+	for (std::size_t n = 0; n < _pool_count; n++)
 	{
 		m_pools[n].clear();
 	}
