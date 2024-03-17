@@ -306,7 +306,7 @@ namespace cool
 
 			alignas(arg_buffer_align) unsigned char m_arg_buffer[arg_buffer_size];
 			void(*m_callable)(_cool_thsq_task*, _cool_thsq_task*);
-			void* m_function_ptr;
+			void(*m_function_ptr)(void);
 			void* m_target_ptr;
 			std::size_t m_offset;
 		};
@@ -379,7 +379,7 @@ namespace cool
 
 			alignas(arg_buffer_align) unsigned char m_arg_buffer[arg_buffer_size];
 			void(*m_callable)(_cool_thmq_task*, _cool_thmq_task*);
-			void* m_function_ptr;
+			void(*m_function_ptr)(void);
 			void* m_target_ptr;
 			std::size_t m_offset;
 		};
@@ -503,7 +503,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 				|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
 		{
 			new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-			this->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+			this->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 
 			this->m_last_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
 			{
@@ -560,7 +560,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-			this->m_next_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+			this->m_next_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 
 			this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
 			{
@@ -611,7 +611,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 				|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
 		{
 			new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-			this->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+			this->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 			this->m_last_task_ptr->m_target_ptr = reinterpret_cast<void*>(&target);
 
 			this->m_last_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
@@ -678,7 +678,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-			this->m_next_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+			this->m_next_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 			this->m_next_task_ptr->m_target_ptr = reinterpret_cast<void*>(&target);
 
 			this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
@@ -740,7 +740,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 			target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_acquire);
 
 			new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-			this->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+			this->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 			this->m_last_task_ptr->m_target_ptr = reinterpret_cast<void*>(target.m_parent_ptr);
 
 			this->m_last_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
@@ -809,7 +809,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-			this->m_next_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+			this->m_next_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 			this->m_next_task_ptr->m_target_ptr = reinterpret_cast<void*>(target.m_parent_ptr);
 
 			this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
@@ -869,7 +869,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 				|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
 		{
 			new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-			this->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+			this->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 			this->m_last_task_ptr->m_target_ptr = reinterpret_cast<void*>(target.m_parent_ptr);
 			this->m_last_task_ptr->m_offset = target.m_offset;
 
@@ -939,7 +939,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-			this->m_next_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+			this->m_next_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 			this->m_next_task_ptr->m_target_ptr = reinterpret_cast<void*>(target.m_parent_ptr);
 			this->m_next_task_ptr->m_offset = target.m_offset;
 
@@ -1004,7 +1004,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 			target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_acquire);
 
 			new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-			this->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+			this->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 			this->m_last_task_ptr->m_target_ptr = reinterpret_cast<void*>(target.m_parent_ptr);
 			this->m_last_task_ptr->m_offset = target.m_offset;
 
@@ -1076,7 +1076,7 @@ inline bool cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align>
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-			this->m_next_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+			this->m_next_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 			this->m_next_task_ptr->m_target_ptr = reinterpret_cast<void*>(target.m_parent_ptr);
 			this->m_next_task_ptr->m_offset = target.m_offset;
 
@@ -1340,7 +1340,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 							|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
 					{
 						new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 
 						current_thread_ptr->m_last_task_ptr->m_callable = [](_cool_thmq_task* _task_ptr, _cool_thmq_task* _fetch_task_ptr)
 						{
@@ -1393,7 +1393,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 							|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
 					{
 						new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 
 						current_thread_ptr->m_last_task_ptr->m_callable = [](_cool_thmq_task* _task_ptr, _cool_thmq_task* _fetch_task_ptr)
 						{
@@ -1469,7 +1469,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 							|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
 					{
 						new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 						current_thread_ptr->m_last_task_ptr->m_target_ptr = reinterpret_cast<void*>(&target);
 
 						current_thread_ptr->m_last_task_ptr->m_callable = [](_cool_thmq_task* _task_ptr, _cool_thmq_task* _fetch_task_ptr)
@@ -1531,7 +1531,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 							|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
 					{
 						new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 						current_thread_ptr->m_last_task_ptr->m_target_ptr = reinterpret_cast<void*>(&target);
 
 						current_thread_ptr->m_last_task_ptr->m_callable = [](_cool_thmq_task* _task_ptr, _cool_thmq_task* _fetch_task_ptr)
@@ -1618,7 +1618,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 						target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_acquire);
 
 						new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 						current_thread_ptr->m_last_task_ptr->m_target_ptr = reinterpret_cast<void*>(target.m_parent_ptr);
 
 						current_thread_ptr->m_last_task_ptr->m_callable = [](_cool_thmq_task* _task_ptr, _cool_thmq_task* _fetch_task_ptr)
@@ -1682,7 +1682,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 						target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_acquire);
 
 						new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 						current_thread_ptr->m_last_task_ptr->m_target_ptr = reinterpret_cast<void*>(target.m_parent_ptr);
 
 						current_thread_ptr->m_last_task_ptr->m_callable = [](_cool_thmq_task* _task_ptr, _cool_thmq_task* _fetch_task_ptr)
@@ -1767,7 +1767,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 							|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
 					{
 						new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 						current_thread_ptr->m_last_task_ptr->m_target_ptr = reinterpret_cast<void*>(target.m_parent_ptr);
 						current_thread_ptr->m_last_task_ptr->m_offset = target.m_offset;
 
@@ -1832,7 +1832,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 							|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
 					{
 						new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 						current_thread_ptr->m_last_task_ptr->m_target_ptr = reinterpret_cast<void*>(target.m_parent_ptr);
 						current_thread_ptr->m_last_task_ptr->m_offset = target.m_offset;
 
@@ -1922,7 +1922,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 						target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_acquire);
 
 						new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 						current_thread_ptr->m_last_task_ptr->m_target_ptr = reinterpret_cast<void*>(target.m_parent_ptr);
 						current_thread_ptr->m_last_task_ptr->m_offset = target.m_offset;
 
@@ -1989,7 +1989,7 @@ inline bool cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align>
 						target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_acquire);
 
 						new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _pack(std::make_tuple(std::move(args)...));
-						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void*>(task);
+						current_thread_ptr->m_last_task_ptr->m_function_ptr = reinterpret_cast<void(*)(void)>(task);
 						current_thread_ptr->m_last_task_ptr->m_target_ptr = reinterpret_cast<void*>(target.m_parent_ptr);
 						current_thread_ptr->m_last_task_ptr->m_offset = target.m_offset;
 
