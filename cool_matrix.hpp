@@ -350,8 +350,8 @@ namespace cool
 		static constexpr std::size_t rows_padded = _rows_padded;
 		static constexpr std::size_t align = _align;
 
-		constexpr inline std::size_t size() const noexcept;
-		constexpr inline std::size_t size_padded() const noexcept;
+		static constexpr inline std::size_t size() noexcept;
+		static constexpr inline std::size_t size_padded() noexcept;
 
 		template <class uint_Ty1, class uint_Ty2> inline const Ty& operator()(uint_Ty1 i, uint_Ty2 j) const noexcept;
 		template <class uint_Ty> inline const Ty& operator[](uint_Ty mem_offset) const noexcept;
@@ -1607,13 +1607,13 @@ inline const Ty* cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::da
 // const_matrix_interface
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
-constexpr inline std::size_t cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::size() const noexcept
+constexpr inline std::size_t cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::size() noexcept
 {
 	return _rows * _cols;
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_data_Ty>
-constexpr inline std::size_t cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::size_padded() const noexcept
+constexpr inline std::size_t cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_data_Ty>::size_padded() noexcept
 {
 	return _rows_padded * _cols;
 }
