@@ -231,9 +231,9 @@ namespace cool
 		inline return_Ty& get(std::size_t offset) noexcept;
 		inline return_Ty& get_unchecked(std::size_t offset) noexcept;
 		inline const return_Ty& get_unchecked(std::size_t offset) const noexcept;
-		template <class ... _Args>
+		inline cool::async_task_result<return_Ty, _size, _allocator>& reset();
 		inline cool::async_task_result<return_Ty, _size, _allocator>& reset(const return_Ty& rhs);
-		template <class ... _Args>
+		inline cool::async_task_result<return_Ty, _size, _allocator>& reset_unchecked();
 		inline cool::async_task_result<return_Ty, _size, _allocator>& reset_unchecked(const return_Ty& rhs);
 
 		static constexpr inline std::size_t size() noexcept;
@@ -283,7 +283,9 @@ namespace cool
 		inline return_Ty& get(std::size_t offset) noexcept;
 		inline return_Ty& get_unchecked(std::size_t offset) noexcept;
 		inline const return_Ty& get_unchecked(std::size_t offset) const noexcept;
+		inline cool::async_task_result<return_Ty, cool::dynamic_size, _allocator>& reset();
 		inline cool::async_task_result<return_Ty, cool::dynamic_size, _allocator>& reset(const return_Ty& rhs);
+		inline cool::async_task_result<return_Ty, cool::dynamic_size, _allocator>& reset_unchecked();
 		inline cool::async_task_result<return_Ty, cool::dynamic_size, _allocator>& reset_unchecked(const return_Ty& rhs);
 
 		inline void resize(std::size_t new_size);
@@ -2556,7 +2558,20 @@ inline const return_Ty& cool::async_task_result<return_Ty, _size, _allocator>::g
 	return m_stored_values[offset];
 }
 
-template <class return_Ty, std::size_t _size, class _allocator> template <class ... _Args>
+template <class return_Ty, std::size_t _size, class _allocator>
+inline cool::async_task_result<return_Ty, _size, _allocator>& cool::async_task_result<return_Ty, _size, _allocator>::reset()
+{
+	finish();
+
+	for (std::size_t k = 0; k < _size; k++)
+	{
+		m_stored_values[k] = return_Ty();
+	}
+
+	return *this;
+}
+
+template <class return_Ty, std::size_t _size, class _allocator>
 inline cool::async_task_result<return_Ty, _size, _allocator>& cool::async_task_result<return_Ty, _size, _allocator>::reset(const return_Ty& rhs)
 {
 	finish();
@@ -2569,7 +2584,18 @@ inline cool::async_task_result<return_Ty, _size, _allocator>& cool::async_task_r
 	return *this;
 }
 
-template <class return_Ty, std::size_t _size, class _allocator> template <class ... _Args>
+template <class return_Ty, std::size_t _size, class _allocator>
+inline cool::async_task_result<return_Ty, _size, _allocator>& cool::async_task_result<return_Ty, _size, _allocator>::reset_unchecked()
+{
+	for (std::size_t k = 0; k < _size; k++)
+	{
+		m_stored_values[k] = return_Ty();
+	}
+
+	return *this;
+}
+
+template <class return_Ty, std::size_t _size, class _allocator>
 inline cool::async_task_result<return_Ty, _size, _allocator>& cool::async_task_result<return_Ty, _size, _allocator>::reset_unchecked(const return_Ty& rhs)
 {
 	for (std::size_t k = 0; k < _size; k++)
@@ -2692,6 +2718,19 @@ inline const return_Ty& cool::async_task_result<return_Ty, cool::dynamic_size, _
 }
 
 template <class return_Ty, class _allocator>
+inline cool::async_task_result<return_Ty, cool::dynamic_size, _allocator>& cool::async_task_result<return_Ty, cool::dynamic_size, _allocator>::reset()
+{
+	finish();
+
+	for (std::size_t k = 0; k < m_size; k++)
+	{
+		*(m_stored_values + k) = return_Ty();
+	}
+
+	return *this;
+}
+
+template <class return_Ty, class _allocator>
 inline cool::async_task_result<return_Ty, cool::dynamic_size, _allocator>& cool::async_task_result<return_Ty, cool::dynamic_size, _allocator>::reset(const return_Ty& rhs)
 {
 	finish();
@@ -2699,6 +2738,17 @@ inline cool::async_task_result<return_Ty, cool::dynamic_size, _allocator>& cool:
 	for (std::size_t k = 0; k < m_size; k++)
 	{
 		*(m_stored_values + k) = rhs;
+	}
+
+	return *this;
+}
+
+template <class return_Ty, class _allocator>
+inline cool::async_task_result<return_Ty, cool::dynamic_size, _allocator>& cool::async_task_result<return_Ty, cool::dynamic_size, _allocator>::reset_unchecked()
+{
+	for (std::size_t k = 0; k < m_size; k++)
+	{
+		*(m_stored_values + k) = return_Ty();
 	}
 
 	return *this;
