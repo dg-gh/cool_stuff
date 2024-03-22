@@ -28,7 +28,10 @@ namespace cool
 	enum no_target_t { no_target };
 #endif // _COOL_NOT_TARGET_ENUM
 
+#ifndef _COOL_DYNAMIC_SIZE_CONSTANT
+#define _COOL_DYNAMIC_SIZE_CONSTANT
 	static constexpr std::size_t dynamic_size = 0;
+#endif // _COOL_DYNAMIC_SIZE_CONSTANT
 
 	class async_task_end;
 	// _size == 0 or cool::dynamic_size means dynamically resizable, otherwise fixed size
