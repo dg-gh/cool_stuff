@@ -45,15 +45,15 @@ namespace cool
 
 	// threads_sq
 
-	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align = alignof(void*)>
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align = 0>
 	class threads_sq : private cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>
 	{
 
 	public:
 
-		static constexpr std::size_t cache_line_size = _cache_line_size;
+		static constexpr std::size_t cache_line_size = alignof(cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>);
 		static constexpr std::size_t arg_buffer_size = _arg_buffer_size;
-		static constexpr std::size_t arg_buffer_align = _arg_buffer_align;
+		static constexpr std::size_t arg_buffer_align = alignof(typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task);
 
 		static_assert((_cache_line_size & (_cache_line_size - 1)) == 0,
 			"cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : cache_line_size must be a power of 2");
@@ -109,7 +109,7 @@ namespace cool
 
 	// threads_mq
 
-	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align = alignof(void*)>
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align = 0>
 	class threads_mq : private cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>
 	{
 
@@ -121,9 +121,9 @@ namespace cool
 		using countdown_type = std::uint32_t;
 #endif // UINT64_MAX
 
-		static constexpr std::size_t cache_line_size = _cache_line_size;
+		static constexpr std::size_t cache_line_size = alignof(cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>);
 		static constexpr std::size_t arg_buffer_size = _arg_buffer_size;
-		static constexpr std::size_t arg_buffer_align = _arg_buffer_align;
+		static constexpr std::size_t arg_buffer_align = alignof(typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task);
 
 		static_assert((_cache_line_size & (_cache_line_size - 1)) == 0,
 			"cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : cache_line_size must be a power of 2");
@@ -385,7 +385,9 @@ namespace cool
 
 		public:
 
-			alignas(_arg_buffer_align) unsigned char m_arg_buffer[_arg_buffer_size];
+			static constexpr std::size_t _arg_buffer_size_padded = (_arg_buffer_size != 0) ? _arg_buffer_size : 1;
+
+			alignas(_arg_buffer_align) unsigned char m_arg_buffer[_arg_buffer_size_padded];
 			void(*m_callable)(_cool_thsq_task*, _cool_thsq_task*);
 			void(*m_function_ptr)(void);
 			void* m_target_ptr;
@@ -464,7 +466,9 @@ namespace cool
 
 		public:
 
-			alignas(_arg_buffer_align) unsigned char m_arg_buffer[_arg_buffer_size];
+			static constexpr std::size_t _arg_buffer_size_padded = (_arg_buffer_size != 0) ? _arg_buffer_size : 1;
+
+			alignas(_arg_buffer_align) unsigned char m_arg_buffer[_arg_buffer_size_padded];
 			void(*m_callable)(_cool_thmq_task*, _cool_thmq_task*);
 			void(*m_function_ptr)(void);
 			void* m_target_ptr;
@@ -1230,7 +1234,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	try
 	{
 		this->m_threads_data_ptr = static_cast<std::thread*>(::operator new(
-			new_thread_count * sizeof(std::thread) + 2 * _cache_line_size, std::nothrow));
+			new_thread_count * sizeof(std::thread) + 2 * cache_line_size, std::nothrow));
 
 		if (this->m_threads_data_ptr == nullptr)
 		{
@@ -1240,15 +1244,15 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		else
 		{
 			this->m_threads_data_ptr = reinterpret_cast<std::thread*>(
-				reinterpret_cast<char*>(this->m_threads_data_ptr) + _cache_line_size);
+				reinterpret_cast<char*>(this->m_threads_data_ptr) + cache_line_size);
 		}
 
 		this->m_thread_count = new_thread_count;
 
-		constexpr std::size_t task_buffer_padding = (_cache_line_size > _arg_buffer_align) ? _cache_line_size : _arg_buffer_align;
+		constexpr std::size_t task_buffer_padding = (cache_line_size > arg_buffer_align) ? cache_line_size : arg_buffer_align;
 		std::size_t new_task_buffer_size_p1 = new_task_buffer_size + 1;
 
-		this->m_task_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(new_task_buffer_size_p1 * sizeof(_cool_thsq_task) + task_buffer_padding + _cache_line_size, std::nothrow));
+		this->m_task_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(new_task_buffer_size_p1 * sizeof(_cool_thsq_task) + task_buffer_padding + cache_line_size, std::nothrow));
 
 		if (this->m_task_buffer_unaligned_data_ptr == nullptr)
 		{
@@ -1346,6 +1350,8 @@ inline void cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 
+	constexpr std::size_t cache_line_size = alignof(cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>);
+
 	{
 		std::unique_lock<std::mutex> lock(this->m_mutex);
 		this->m_stop_threads = true;
@@ -1364,7 +1370,7 @@ inline void cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 			(this->m_threads_data_ptr + k)->~thread();
 		}
 
-		::operator delete(reinterpret_cast<char*>(this->m_threads_data_ptr) - _cache_line_size);
+		::operator delete(reinterpret_cast<char*>(this->m_threads_data_ptr) - cache_line_size);
 	}
 
 	if (this->m_task_buffer_data_ptr != nullptr)
@@ -2164,7 +2170,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	try
 	{
 		this->m_thread_blocks_unaligned_data_ptr = static_cast<char*>(::operator new(
-			new_thread_count * sizeof(_cool_thmq_tblk) + 2 * _cache_line_size, std::nothrow));
+			new_thread_count * sizeof(_cool_thmq_tblk) + 2 * cache_line_size, std::nothrow));
 
 		if (this->m_thread_blocks_unaligned_data_ptr == nullptr)
 		{
@@ -2173,10 +2179,10 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		}
 		else
 		{
-			std::uintptr_t ptr_remainder = reinterpret_cast<std::uintptr_t>(this->m_thread_blocks_unaligned_data_ptr) % static_cast<std::uintptr_t>(_cache_line_size);
+			std::uintptr_t ptr_remainder = reinterpret_cast<std::uintptr_t>(this->m_thread_blocks_unaligned_data_ptr) % static_cast<std::uintptr_t>(cache_line_size);
 
 			this->m_thread_blocks_data_ptr = reinterpret_cast<_cool_thmq_tblk*>(this->m_thread_blocks_unaligned_data_ptr
-				+ static_cast<std::size_t>(ptr_remainder != 0) * (_cache_line_size - static_cast<std::size_t>(ptr_remainder)));
+				+ static_cast<std::size_t>(ptr_remainder != 0) * (cache_line_size - static_cast<std::size_t>(ptr_remainder)));
 		}
 
 		this->m_thread_count = new_thread_count;
@@ -2397,10 +2403,13 @@ inline bool cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 
-	constexpr std::size_t task_buffer_padding = (_cache_line_size > _arg_buffer_align) ? _cache_line_size : _arg_buffer_align;
+	constexpr std::size_t cache_line_size = alignof(cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>);
+	constexpr std::size_t arg_buffer_align = alignof(_cool_thmq_task);
+
+	constexpr std::size_t task_buffer_padding = (cache_line_size > _arg_buffer_align) ? cache_line_size : _arg_buffer_align;
 	std::size_t new_task_buffer_size_p1 = new_task_buffer_size + 1;
 
-	m_task_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(new_task_buffer_size_p1 * sizeof(_cool_thmq_task) + task_buffer_padding + _cache_line_size, std::nothrow));
+	m_task_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(new_task_buffer_size_p1 * sizeof(_cool_thmq_task) + task_buffer_padding + cache_line_size, std::nothrow));
 
 	if (m_task_buffer_unaligned_data_ptr == nullptr)
 	{
