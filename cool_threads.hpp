@@ -405,11 +405,11 @@ namespace cool
 			std::size_t m_offset;
 		};
 
-		template <std::size_t... _indices> struct indices {};
-		template <std::size_t n, std::size_t... _indices> struct build_indices : build_indices<n - 1, n - 1, _indices...> {};
-		template <std::size_t... _indices> struct build_indices<0, _indices...> : indices<_indices...> {};
+		template <std::size_t ... _indices> struct indices {};
+		template <std::size_t n, std::size_t ... _indices> struct build_indices : build_indices<n - 1, n - 1, _indices...> {};
+		template <std::size_t ... _indices> struct build_indices<0, _indices...> : indices<_indices...> {};
 
-		template <class function_Ty, class tuple_Ty, std::size_t... _indices>
+		template <class function_Ty, class tuple_Ty, std::size_t ... _indices>
 		static inline auto call(function_Ty task, tuple_Ty&& args, indices<_indices...>) -> decltype(task(std::get<_indices>(std::forward<tuple_Ty>(args))...)) {
 			return std::move(task(std::get<_indices>(std::forward<tuple_Ty>(args))...));
 		}
@@ -419,7 +419,7 @@ namespace cool
 			return std::move(call(task, std::move(args), build_indices<std::tuple_size<tuple_Ty>::value>()));
 		}
 
-		template <class function_Ty, class tuple_Ty, std::size_t... _indices>
+		template <class function_Ty, class tuple_Ty, std::size_t ... _indices>
 		static inline void call_no_return(function_Ty task, tuple_Ty&& args, indices<_indices...>) {
 			task(std::get<_indices>(std::forward<tuple_Ty>(args))...);
 		}
@@ -468,9 +468,9 @@ namespace cool
 		std::size_t m_thread_count = 0;
 		countdown_type m_push_rounds = 1;
 		countdown_type m_pop_rounds = 1;
-
+		
+		uint2X_t m_mod_D = 1;
 		uint2X_t m_mod_a = static_cast<uint2X_t>(1) << (sizeof(uintX_t) * CHAR_BIT);
-		uintX_t m_mod_D = 1;
 		uintX_t m_mod_k = 0;
 		uintX_t m_dispatch_interval = 1;
 		char* m_thread_blocks_unaligned_data_ptr = nullptr;
@@ -514,11 +514,11 @@ namespace cool
 			char* m_task_buffer_unaligned_data_ptr = nullptr;
 		};
 
-		template <std::size_t... _indices> struct indices {};
-		template <std::size_t n, std::size_t... _indices> struct build_indices : build_indices<n - 1, n - 1, _indices...> {};
-		template <std::size_t... _indices> struct build_indices<0, _indices...> : indices<_indices...> {};
+		template <std::size_t ... _indices> struct indices {};
+		template <std::size_t n, std::size_t ... _indices> struct build_indices : build_indices<n - 1, n - 1, _indices...> {};
+		template <std::size_t ... _indices> struct build_indices<0, _indices...> : indices<_indices...> {};
 
-		template <class function_Ty, class tuple_Ty, std::size_t... _indices>
+		template <class function_Ty, class tuple_Ty, std::size_t ... _indices>
 		static inline auto call(function_Ty task, tuple_Ty&& args, indices<_indices...>) -> decltype(task(std::get<_indices>(std::forward<tuple_Ty>(args))...)) {
 			return std::move(task(std::get<_indices>(std::forward<tuple_Ty>(args))...));
 		}
@@ -1430,7 +1430,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	{
 		constexpr std::size_t uintX_bitcount = sizeof(uintX_t) * CHAR_BIT;
 
-		uint2X_t N = this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed);
+		uint2X_t N = static_cast<uint2X_t>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
 		uint2X_t b = (N * this->m_mod_a) >> uintX_bitcount;
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
@@ -1565,7 +1565,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	{
 		constexpr std::size_t uintX_bitcount = sizeof(uintX_t) * CHAR_BIT;
 
-		uint2X_t N = this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed);
+		uint2X_t N = static_cast<uint2X_t>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
 		uint2X_t b = (N * this->m_mod_a) >> uintX_bitcount;
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
@@ -1718,7 +1718,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	{
 		constexpr std::size_t uintX_bitcount = sizeof(uintX_t) * CHAR_BIT;
 
-		uint2X_t N = this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed);
+		uint2X_t N = static_cast<uint2X_t>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
 		uint2X_t b = (N * this->m_mod_a) >> uintX_bitcount;
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
@@ -1875,7 +1875,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	{
 		constexpr std::size_t uintX_bitcount = sizeof(uintX_t) * CHAR_BIT;
 
-		uint2X_t N = this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed);
+		uint2X_t N = static_cast<uint2X_t>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
 		uint2X_t b = (N * this->m_mod_a) >> uintX_bitcount;
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
@@ -2034,7 +2034,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	{
 		constexpr std::size_t uintX_bitcount = sizeof(uintX_t) * CHAR_BIT;
 
-		uint2X_t N = this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed);
+		uint2X_t N = static_cast<uint2X_t>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
 		uint2X_t b = (N * this->m_mod_a) >> uintX_bitcount;
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
@@ -2250,7 +2250,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			constexpr std::size_t uintX_bitcount = sizeof(uintX_t) * CHAR_BIT;
 
-			this->m_mod_D = static_cast<uintX_t>(new_thread_count);
+			this->m_mod_D = static_cast<uint2X_t>(new_thread_count);
 
 			uintX_t i = 0;
 			while ((static_cast<uint2X_t>(1) << i) < static_cast<uint2X_t>(new_thread_count))
@@ -2260,7 +2260,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			this->m_mod_k = uintX_bitcount + i;
 
 			uint2X_t temp = (static_cast<uint2X_t>(1) << this->m_mod_k) / this->m_mod_D;
-			if (temp * this->m_mod_D != (static_cast<uint2X_t>(1) << this->m_mod_k))
+			if ((temp * this->m_mod_D) != (static_cast<uint2X_t>(1) << this->m_mod_k))
 			{
 				temp++;
 			}
@@ -2272,8 +2272,8 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			constexpr std::size_t uintX_bitcount = sizeof(uintX_t) * CHAR_BIT;
 
-			this->m_mod_a = static_cast<uint2X_t>(1) << uintX_bitcount;
 			this->m_mod_D = 1;
+			this->m_mod_a = static_cast<uint2X_t>(1) << uintX_bitcount;
 			this->m_mod_k = 0;
 		}
 
@@ -2468,8 +2468,6 @@ inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 		}
 
 		::operator delete(this->m_thread_blocks_unaligned_data_ptr);
-
-		m_thread_blocks_unaligned_data_ptr = nullptr;
 	}
 
 	this->m_thread_blocks_data_ptr = nullptr;
@@ -2479,10 +2477,11 @@ inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 
 	constexpr std::size_t uintX_bitcount = sizeof(uintX_t) * CHAR_BIT;
 
-	this->m_mod_a = static_cast<uint2X_t>(1) << uintX_bitcount;
 	this->m_mod_D = 1;
+	this->m_mod_a = static_cast<uint2X_t>(1) << uintX_bitcount;
 	this->m_mod_k = 0;
 	this->m_dispatch_interval = 1;
+	this->m_thread_blocks_unaligned_data_ptr = nullptr;
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
@@ -2493,7 +2492,7 @@ inline bool cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 	constexpr std::size_t cache_line_size = alignof(cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>);
 	constexpr std::size_t arg_buffer_align = alignof(_cool_thmq_task);
 
-	constexpr std::size_t task_buffer_padding = (cache_line_size > _arg_buffer_align) ? cache_line_size : _arg_buffer_align;
+	constexpr std::size_t task_buffer_padding = (cache_line_size > arg_buffer_align) ? cache_line_size : arg_buffer_align;
 	std::size_t new_task_buffer_size_p1 = new_task_buffer_size + 1;
 
 	m_task_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(new_task_buffer_size_p1 * sizeof(_cool_thmq_task) + task_buffer_padding + cache_line_size, std::nothrow));
