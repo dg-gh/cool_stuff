@@ -2,8 +2,8 @@
 // License <http://unlicense.org/> (statement below at the end of the file)
 // Feel free to Ctrl+F/replace the silly namespace and rename the file if convenient
 
-#ifndef _COOL_ROTATIONS_HPP
-#define _COOL_ROTATIONS_HPP
+#ifndef xCOOL_ROTATIONS_HPP
+#define xCOOL_ROTATIONS_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -12,14 +12,14 @@
 
 namespace cool
 {
-#ifndef _COOL_MATRIX_LAYOUT_ENUM
-#define _COOL_MATRIX_LAYOUT_ENUM
+#ifndef xCOOL_MATRIX_LAYOUT_ENUM
+#define xCOOL_MATRIX_LAYOUT_ENUM
 	enum class matrix_layout
 	{
 		col = 0, // indicates usage of column-major matrices
 		row = 1 // indicates usage of row-major matrices
 	};
-#endif // _COOL_MATRIX_LAYOUT_ENUM
+#endif // xCOOL_MATRIX_LAYOUT_ENUM
 }
 
 #ifndef COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT
@@ -3554,7 +3554,7 @@ inline cool::rotation_status cool::_rotation_angles_3d_functions<rotation_angles
 	}
 }
 
-#endif // _COOL_ROTATIONS_HPP
+#endif // xCOOL_ROTATIONS_HPP
 
 
 // cool_rotations.hpp

@@ -2,8 +2,8 @@
 // License <http://unlicense.org/> (statement below at the end of the file)
 // Feel free to Ctrl+F/replace the silly namespace and rename the file if convenient
 
-#ifndef _COOL_MATRIX_HPP
-#define _COOL_MATRIX_HPP
+#ifndef xCOOL_MATRIX_HPP
+#define xCOOL_MATRIX_HPP
 
 #include <cstddef>
 #include <initializer_list>
@@ -128,10 +128,10 @@ namespace cool
 
 namespace cool
 {
-#ifndef _COOL_NO_INIT_ENUM
-#define _COOL_NO_INIT_ENUM
+#ifndef xCOOL_NO_INIT_ENUM
+#define xCOOL_NO_INIT_ENUM
 	enum no_init_t { no_init };
-#endif // _COOL_NO_INIT_ENUM
+#endif // xCOOL_NO_INIT_ENUM
 
 	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align> class _matrix_ptr;
 	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align> class _const_matrix_ptr;
@@ -8125,12 +8125,12 @@ inline cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::val
 	return LU;
 }
 
-#endif // _COOL_MATRIX_HPP
+#endif // xCOOL_MATRIX_HPP
 
 
-#if defined(_COOL_MATRIX_HPP) && (defined(_LIBCPP_OSTREAM) || defined(_GLIBCXX_OSTREAM) || defined(_OSTREAM_))
-#ifndef _COOL_MATRIX_HPP_OSTREAM
-#define _COOL_MATRIX_HPP_OSTREAM
+#if defined(xCOOL_MATRIX_HPP) && (defined(_LIBCPP_OSTREAM) || defined(_GLIBCXX_OSTREAM) || defined(_OSTREAM_))
+#ifndef xCOOL_MATRIX_HPP_OSTREAM
+#define xCOOL_MATRIX_HPP_OSTREAM
 namespace cool
 {
 	// print normal
@@ -8173,14 +8173,14 @@ namespace cool
 
 	// print csv line
 
-#ifndef _COOL_MATRIX_LAYOUT_ENUM
-#define _COOL_MATRIX_LAYOUT_ENUM
+#ifndef xCOOL_MATRIX_LAYOUT_ENUM
+#define xCOOL_MATRIX_LAYOUT_ENUM
 	enum class matrix_layout
 	{
 		col = 0, // indicates column-major write
 		row = 1 // indicates row-major write
 	};
-#endif // _COOL_MATRIX_LAYOUT_ENUM
+#endif // xCOOL_MATRIX_LAYOUT_ENUM
 
 	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded> class _print_matrix_csv_line_proxy;
 
@@ -8413,13 +8413,13 @@ template <class stream_Ty, class Ty> inline void cool::print_matrix_csv_line(str
 		}
 	}
 }
-#endif // _COOL_MATRIX_HPP_OSTREAM
-#endif // defined(_COOL_MATRIX_HPP) && (defined(_LIBCPP_OSTREAM) || defined(_GLIBCXX_OSTREAM) || defined(_OSTREAM_))
+#endif // xCOOL_MATRIX_HPP_OSTREAM
+#endif // defined(xCOOL_MATRIX_HPP) && (defined(_LIBCPP_OSTREAM) || defined(_GLIBCXX_OSTREAM) || defined(_OSTREAM_))
 
 
-#if defined(_COOL_MATRIX_HPP) && (defined(_LIBCPP_COMPLEX) || defined(_GLIBCXX_COMPLEX) || defined(_COMPLEX_))
-#ifndef _COOL_MATRIX_HPP_COMPLEX
-#define _COOL_MATRIX_HPP_COMPLEX
+#if defined(xCOOL_MATRIX_HPP) && (defined(_LIBCPP_COMPLEX) || defined(_GLIBCXX_COMPLEX) || defined(_COMPLEX_))
+#ifndef xCOOL_MATRIX_HPP_COMPLEX
+#define xCOOL_MATRIX_HPP_COMPLEX
 namespace cool
 {
 	namespace matrix_scalar_subroutine
@@ -8443,13 +8443,13 @@ template <class Ty> inline Ty cool::matrix_scalar_subroutine::abs_sq(const std::
 
 	return re * re + im * im;
 }
-#endif // _COOL_MATRIX_HPP_COMPLEX
-#endif // defined(_COOL_MATRIX_HPP) && (defined(_LIBCPP_OSTREAM) || defined(_GLIBCXX_OSTREAM) || defined(_OSTREAM_))
+#endif // COOL_MATRIX_HPP_COMPLEX
+#endif // defined(COOL_MATRIX_HPP) && (defined(_LIBCPP_OSTREAM) || defined(_GLIBCXX_OSTREAM) || defined(_OSTREAM_))
 
 
-#if defined(_COOL_MATRIX_HPP_OSTREAM) && defined(_COOL_MATRIX_HPP_COMPLEX)
-#ifndef _COOL_MATRIX_HPP_OSTREAM_COMPLEX
-#define _COOL_MATRIX_HPP_OSTREAM_COMPLEX
+#if defined(xCOOL_MATRIX_HPP_OSTREAM) && defined(xCOOL_MATRIX_HPP_COMPLEX)
+#ifndef xCOOL_MATRIX_HPP_OSTREAM_COMPLEX
+#define xCOOL_MATRIX_HPP_OSTREAM_COMPLEX
 namespace cool
 {
 	template <class Ty> class _print_matrix_cols_blk<std::complex<Ty>> {
@@ -8462,8 +8462,8 @@ namespace cool
 		static constexpr std::streamsize value = 24;
 	};
 }
-#endif // _COOL_MATRIX_HPP_OSTREAM_COMPLEX
-#endif // defined(_COOL_MATRIX_HPP_OSTREAM) && defined(_COOL_MATRIX_HPP_COMPLEX)
+#endif // xCOOL_MATRIX_HPP_OSTREAM_COMPLEX
+#endif // defined(xCOOL_MATRIX_HPP_OSTREAM) && defined(xCOOL_MATRIX_HPP_COMPLEX)
 
 
 // cool_matrix.hpp

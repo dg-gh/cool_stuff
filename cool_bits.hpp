@@ -23,8 +23,8 @@
 #endif // COOL_BITS_DEFINE_LIST_MACROS
 
 
-#ifndef _COOL_BITS_HPP
-#define _COOL_BITS_HPP
+#ifndef xCOOL_BITS_HPP
+#define xCOOL_BITS_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -114,10 +114,10 @@ namespace cool
 
 namespace cool
 {
-#ifndef _COOL_NO_INIT_ENUM
-#define _COOL_NO_INIT_ENUM
+#ifndef xCOOL_NO_INIT_ENUM
+#define xCOOL_NO_INIT_ENUM
 	enum no_init_t { no_init };
-#endif // _COOL_NO_INIT_ENUM
+#endif // xCOOL_NO_INIT_ENUM
 
 
 	// bits
@@ -3520,7 +3520,7 @@ template <std::size_t bit_count, class ptr_Ty1, class ptr_Ty2>
 inline cool::_masked_proxy<bit_count, ptr_Ty1, ptr_Ty2>::_masked_proxy(ptr_Ty1 rhs_ptr, ptr_Ty2 mask_ptr) noexcept
 	: m_rhs_ptr(rhs_ptr), m_mask_ptr(mask_ptr) {}
 
-#endif // _COOL_BITS_HPP
+#endif // xCOOL_BITS_HPP
 
 
 // cool_bits.hpp

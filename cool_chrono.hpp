@@ -2,8 +2,8 @@
 // License <http://unlicense.org/> (statement below at the end of the file)
 // Feel free to Ctrl+F/replace the silly namespace and rename the file if convenient
 
-#ifndef _COOL_CHRONO_HPP
-#define _COOL_CHRONO_HPP
+#ifndef xCOOL_CHRONO_HPP
+#define xCOOL_CHRONO_HPP
 
 #include <chrono>
 #include <cstddef>
@@ -12,23 +12,24 @@
 
 namespace cool
 {
-#ifndef _COOL_DURATION_ENUM
-#define _COOL_DURATION_ENUM
+#ifndef xCOOL_DURATION_ENUM
+#define xCOOL_DURATION_ENUM
 	enum class duration : std::size_t
 	{
 		s = 0,
 		ms = 1,
 		us = 2,
 		ns = 3,
+
 		min = 4,
 		hour = 5
 	};
-#endif // _COOL_DURATION_ENUM
+#endif // xCOOL_DURATION_ENUM
 
-#ifndef _COOL_NO_INIT_ENUM
-#define _COOL_NO_INIT_ENUM
+#ifndef xCOOL_NO_INIT_ENUM
+#define xCOOL_NO_INIT_ENUM
 	enum no_init_t { no_init };
-#endif // _COOL_NO_INIT_ENUM
+#endif // xCOOL_NO_INIT_ENUM
 
 	template <class float_Ty, class int_Ty = unsigned int, class clock_Ty = std::chrono::steady_clock> class chrono
 	{
@@ -489,7 +490,7 @@ inline cool::chrono<float_Ty, int_Ty, clock_Ty>& cool::chrono<float_Ty, int_Ty, 
 	return *this;
 }
 
-#endif // _COOL_CHRONO_HPP
+#endif // xCOOL_CHRONO_HPP
 
 
 // cool_chrono.hpp

@@ -2,8 +2,8 @@
 // License <http://unlicense.org/> (statement below at the end of the file)
 // Feel free to Ctrl+F/replace the silly namespace and rename the file if convenient
 
-#ifndef _COOL_MEM_BLOCKS_HPP
-#define _COOL_MEM_BLOCKS_HPP
+#ifndef xCOOL_MEM_BLOCKS_HPP
+#define xCOOL_MEM_BLOCKS_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -954,7 +954,7 @@ inline cool::mem_pools<_pool_count, bad_alloc_address>& cool::mem_pools<_pool_co
 	return *this;
 }
 
-#endif // _COOL_MEM_BLOCKS_HPP
+#endif // xCOOL_MEM_BLOCKS_HPP
 
 
 // cool_mem_blocks.hpp
