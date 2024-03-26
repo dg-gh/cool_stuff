@@ -167,16 +167,6 @@ namespace cool
 		inline countdown_type pop_rounds() const noexcept;
 		inline std::uint16_t dispatch_interval() const noexcept;
 		inline void delete_threads() noexcept;
-
-	private:
-
-#ifdef UINT64_MAX
-		using _uintX = std::uint32_t;
-		using _uint2X = std::uint64_t;
-#else // UINT64_MAX
-		using _uintX = std::uint16_t;
-		using _uint2X = std::uint32_t;
-#endif // UINT64_MAX
 	};
 
 	// async_task_end
@@ -1422,15 +1412,18 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 	using _cool_thmq_pack = decltype(std::make_tuple(std::move(args)...));
 
+	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
+	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
+
 	static_assert(sizeof(_cool_thmq_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
 
 	std::size_t first_thread;
 
 	{
-		constexpr std::size_t uintX_bitcount = sizeof(_uintX) * CHAR_BIT;
+		constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
 
-		_uint2X N = static_cast<_uint2X>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
-		_uint2X b = (N * this->m_mod_a) >> uintX_bitcount;
+		_cool_thmq_uint2X N = static_cast<_cool_thmq_uint2X>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
+		_cool_thmq_uint2X b = (N * this->m_mod_a) >> uintX_bitcount;
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
 
@@ -1557,15 +1550,18 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 	using _cool_thmq_pack = decltype(std::make_tuple(std::move(args)...));
 
+	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
+	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
+
 	static_assert(sizeof(_cool_thmq_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
 
 	std::size_t first_thread;
 
 	{
-		constexpr std::size_t uintX_bitcount = sizeof(_uintX) * CHAR_BIT;
+		constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
 
-		_uint2X N = static_cast<_uint2X>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
-		_uint2X b = (N * this->m_mod_a) >> uintX_bitcount;
+		_cool_thmq_uint2X N = static_cast<_cool_thmq_uint2X>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
+		_cool_thmq_uint2X b = (N * this->m_mod_a) >> uintX_bitcount;
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
 
@@ -1710,15 +1706,18 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 	using _cool_thmq_pack = decltype(std::make_tuple(std::move(args)...));
 
+	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
+	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
+
 	static_assert(sizeof(_cool_thmq_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
 
 	std::size_t first_thread;
 
 	{
-		constexpr std::size_t uintX_bitcount = sizeof(_uintX) * CHAR_BIT;
+		constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
 
-		_uint2X N = static_cast<_uint2X>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
-		_uint2X b = (N * this->m_mod_a) >> uintX_bitcount;
+		_cool_thmq_uint2X N = static_cast<_cool_thmq_uint2X>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
+		_cool_thmq_uint2X b = (N * this->m_mod_a) >> uintX_bitcount;
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
 
@@ -1867,15 +1866,18 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 	using _cool_thmq_pack = decltype(std::make_tuple(std::move(args)...));
 
+	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
+	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
+
 	static_assert(sizeof(_cool_thmq_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
 
 	std::size_t first_thread;
 
 	{
-		constexpr std::size_t uintX_bitcount = sizeof(_uintX) * CHAR_BIT;
+		constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
 
-		_uint2X N = static_cast<_uint2X>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
-		_uint2X b = (N * this->m_mod_a) >> uintX_bitcount;
+		_cool_thmq_uint2X N = static_cast<_cool_thmq_uint2X>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
+		_cool_thmq_uint2X b = (N * this->m_mod_a) >> uintX_bitcount;
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
 
@@ -2026,15 +2028,18 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 	using _cool_thmq_pack = decltype(std::make_tuple(std::move(args)...));
 
+	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
+	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
+
 	static_assert(sizeof(_cool_thmq_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
 
 	std::size_t first_thread;
 
 	{
-		constexpr std::size_t uintX_bitcount = sizeof(_uintX) * CHAR_BIT;
+		constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
 
-		_uint2X N = static_cast<_uint2X>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
-		_uint2X b = (N * this->m_mod_a) >> uintX_bitcount;
+		_cool_thmq_uint2X N = static_cast<_cool_thmq_uint2X>(this->m_thread_dispatch.fetch_add(this->m_dispatch_interval, std::memory_order_relaxed));
+		_cool_thmq_uint2X b = (N * this->m_mod_a) >> uintX_bitcount;
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
 
@@ -2193,6 +2198,9 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 
+	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
+	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
+
 	delete_threads();
 
 	if ((new_thread_count == 0) || (new_task_buffer_size == 0)
@@ -2247,36 +2255,36 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 		if (new_thread_count != 1)
 		{
-			constexpr std::size_t uintX_bitcount = sizeof(_uintX) * CHAR_BIT;
+			constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
 
-			this->m_mod_D = static_cast<_uint2X>(new_thread_count);
+			this->m_mod_D = static_cast<_cool_thmq_uint2X>(new_thread_count);
 
-			_uintX i = 0;
-			while ((static_cast<_uint2X>(1) << i) < static_cast<_uint2X>(new_thread_count))
+			_cool_thmq_uintX i = 0;
+			while ((static_cast<_cool_thmq_uint2X>(1) << i) < static_cast<_cool_thmq_uint2X>(new_thread_count))
 			{
 				i++;
 			}
 			this->m_mod_k = uintX_bitcount + i;
 
-			_uint2X temp = (static_cast<_uint2X>(1) << this->m_mod_k) / this->m_mod_D;
-			if ((temp * this->m_mod_D) != (static_cast<_uint2X>(1) << this->m_mod_k))
+			_cool_thmq_uint2X temp = (static_cast<_cool_thmq_uint2X>(1) << this->m_mod_k) / this->m_mod_D;
+			if ((temp * this->m_mod_D) != (static_cast<_cool_thmq_uint2X>(1) << this->m_mod_k))
 			{
 				temp++;
 			}
 
-			this->m_mod_a = temp - (static_cast<_uint2X>(1) << uintX_bitcount);
+			this->m_mod_a = temp - (static_cast<_cool_thmq_uint2X>(1) << uintX_bitcount);
 			this->m_mod_k -= (uintX_bitcount + 1);
 		}
 		else
 		{
-			constexpr std::size_t uintX_bitcount = sizeof(_uintX) * CHAR_BIT;
+			constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
 
 			this->m_mod_D = 1;
-			this->m_mod_a = static_cast<_uint2X>(1) << uintX_bitcount;
+			this->m_mod_a = static_cast<_cool_thmq_uint2X>(1) << uintX_bitcount;
 			this->m_mod_k = 0;
 		}
 
-		this->m_dispatch_interval = static_cast<_uintX>(dispatch_interval);
+		this->m_dispatch_interval = static_cast<_cool_thmq_uintX>(dispatch_interval);
 
 		for (std::size_t thread_num = 0; thread_num < _new_thread_count; thread_num++)
 		{
