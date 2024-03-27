@@ -588,6 +588,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
 
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : arguments alignment too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -641,6 +642,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
 
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : arguments alignment too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -696,6 +698,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
 
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : arguments alignment too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -719,10 +722,19 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 					{
-						target_ref.m_finish_condition_var.notify_one();
+						bool notify_target;
+						cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
+
+						{
+							std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+							notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+						}
+
+						if (notify_target)
+						{
+							target_ref.m_finish_condition_var.notify_one();
+						}
 					}
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
@@ -759,6 +771,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
 
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : arguments alignment too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -786,10 +799,19 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 					{
-						target_ref.m_finish_condition_var.notify_one();
+						bool notify_target;
+						cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
+
+						{
+							std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+							notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+						}
+
+						if (notify_target)
+						{
+							target_ref.m_finish_condition_var.notify_one();
+						}
 					}
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
@@ -823,6 +845,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
 
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : arguments alignment too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -848,10 +871,19 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 					{
-						target_ref.m_finish_condition_var.notify_one();
+						bool notify_target;
+						cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
+
+						{
+							std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+							notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+						}
+
+						if (notify_target)
+						{
+							target_ref.m_finish_condition_var.notify_one();
+						}
 					}
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
@@ -888,6 +920,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
 
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : arguments alignment too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -917,10 +950,19 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 					{
-						target_ref.m_finish_condition_var.notify_one();
+						bool notify_target;
+						cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
+
+						{
+							std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+							notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+						}
+
+						if (notify_target)
+						{
+							target_ref.m_finish_condition_var.notify_one();
+						}
 					}
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
@@ -954,6 +996,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
 
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : arguments alignment too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -980,9 +1023,18 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 					{
-						target_ref.m_finish_condition_var.notify_one();
+						bool notify_target;
+
+						{
+							std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+							notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+						}
+
+						if (notify_target)
+						{
+							target_ref.m_finish_condition_var.notify_one();
+						}
 					}
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
@@ -1020,6 +1072,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
 
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : arguments alignment too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -1050,9 +1103,18 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 					{
-						target_ref.m_finish_condition_var.notify_one();
+						bool notify_target;
+
+						{
+							std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+							notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+						}
+
+						if (notify_target)
+						{
+							target_ref.m_finish_condition_var.notify_one();
+						}
 					}
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
@@ -1087,6 +1149,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
 
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : arguments alignment too large");
 
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
@@ -1115,9 +1178,18 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 					{
-						target_ref.m_finish_condition_var.notify_one();
+						bool notify_target;
+
+						{
+							std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+							notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+						}
+
+						if (notify_target)
+						{
+							target_ref.m_finish_condition_var.notify_one();
+						}
 					}
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
@@ -1187,9 +1259,18 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 					{
-						target_ref.m_finish_condition_var.notify_one();
+						bool notify_target;
+
+						{
+							std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+							notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+						}
+
+						if (notify_target)
+						{
+							target_ref.m_finish_condition_var.notify_one();
+						}
 					}
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
@@ -1416,6 +1497,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
 
 	static_assert(sizeof(_cool_thmq_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
+	static_assert(alignof(_cool_thmq_pack) <= alignof(_cool_thmq_task), "cool::threads_mq<...>::try_async : arguments alignment too large");
 
 	std::size_t first_thread;
 
@@ -1554,6 +1636,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
 
 	static_assert(sizeof(_cool_thmq_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
+	static_assert(alignof(_cool_thmq_pack) <= alignof(_cool_thmq_task), "cool::threads_mq<...>::try_async : arguments alignment too large");
 
 	std::size_t first_thread;
 
@@ -1599,10 +1682,19 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 								{
-									target_ref.m_finish_condition_var.notify_one();
+									bool notify_target;
+									cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
+
+									{
+										std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+										notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+									}
+
+									if (notify_target)
+									{
+										target_ref.m_finish_condition_var.notify_one();
+									}
 								}
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
@@ -1661,10 +1753,19 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 								{
-									target_ref.m_finish_condition_var.notify_one();
+									bool notify_target;
+									cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
+
+									{
+										std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+										notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+									}
+
+									if (notify_target)
+									{
+										target_ref.m_finish_condition_var.notify_one();
+									}
 								}
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
@@ -1710,6 +1811,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
 
 	static_assert(sizeof(_cool_thmq_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
+	static_assert(alignof(_cool_thmq_pack) <= alignof(_cool_thmq_task), "cool::threads_mq<...>::try_async : arguments alignment too large");
 
 	std::size_t first_thread;
 
@@ -1757,10 +1859,19 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 								{
-									target_ref.m_finish_condition_var.notify_one();
+									bool notify_target;
+									cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
+
+									{
+										std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+										notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+									}
+
+									if (notify_target)
+									{
+										target_ref.m_finish_condition_var.notify_one();
+									}
 								}
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
@@ -1821,10 +1932,19 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 								{
-									target_ref.m_finish_condition_var.notify_one();
+									bool notify_target;
+									cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
+
+									{
+										std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+										notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+									}
+
+									if (notify_target)
+									{
+										target_ref.m_finish_condition_var.notify_one();
+									}
 								}
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
@@ -1870,6 +1990,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
 
 	static_assert(sizeof(_cool_thmq_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
+	static_assert(alignof(_cool_thmq_pack) <= alignof(_cool_thmq_task), "cool::threads_mq<...>::try_async : arguments alignment too large");
 
 	std::size_t first_thread;
 
@@ -1918,9 +2039,18 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 								{
-									target_ref.m_finish_condition_var.notify_one();
+									bool notify_target;
+
+									{
+										std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+										notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+									}
+
+									if (notify_target)
+									{
+										target_ref.m_finish_condition_var.notify_one();
+									}
 								}
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
@@ -1983,9 +2113,18 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 								{
-									target_ref.m_finish_condition_var.notify_one();
+									bool notify_target;
+
+									{
+										std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+										notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+									}
+
+									if (notify_target)
+									{
+										target_ref.m_finish_condition_var.notify_one();
+									}
 								}
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
@@ -2032,6 +2171,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
 
 	static_assert(sizeof(_cool_thmq_pack) <= _arg_buffer_size, "cool::threads_mq<...>::try_async : arguments too large");
+	static_assert(alignof(_cool_thmq_pack) <= alignof(_cool_thmq_task), "cool::threads_mq<...>::try_async : arguments alignment too large");
 
 	std::size_t first_thread;
 
@@ -2082,9 +2222,18 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 								{
-									target_ref.m_finish_condition_var.notify_one();
+									bool notify_target;
+
+									{
+										std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+										notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+									}
+
+									if (notify_target)
+									{
+										target_ref.m_finish_condition_var.notify_one();
+									}
 								}
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
@@ -2149,9 +2298,18 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 								{
-									target_ref.m_finish_condition_var.notify_one();
+									bool notify_target;
+
+									{
+										std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
+										notify_target = (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) <= 1);
+									}
+
+									if (notify_target)
+									{
+										target_ref.m_finish_condition_var.notify_one();
+									}
 								}
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
