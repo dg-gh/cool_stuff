@@ -2563,7 +2563,7 @@ inline std::ptrdiff_t cool::async_task_end::get_awaited() const noexcept
 
 inline cool::async_task_end& cool::async_task_end::finish() noexcept
 {
-	if (m_tasks_awaited.load(std::memory_order_seq_cst) > 0)
+	while (m_tasks_awaited.load(std::memory_order_seq_cst) > 0)
 	{
 		std::unique_lock<std::mutex> lock(m_finish_mutex);
 
@@ -2637,7 +2637,7 @@ inline cool::_async_task_result_proxy<return_Ty> cool::async_task_result<return_
 template <class return_Ty>
 inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::finish() noexcept
 {
-	if (m_tasks_awaited.load(std::memory_order_seq_cst) > 0)
+	while (m_tasks_awaited.load(std::memory_order_seq_cst) > 0)
 	{
 		std::unique_lock<std::mutex> lock(m_finish_mutex);
 
