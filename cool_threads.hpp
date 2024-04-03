@@ -180,6 +180,8 @@ namespace cool
 		inline cool::async_task_end& sub_awaited(std::ptrdiff_t number_of_tasks) noexcept;
 		inline cool::async_task_end& set_awaited(std::ptrdiff_t number_of_tasks) noexcept;
 		inline std::ptrdiff_t get_awaited() const noexcept;
+		inline bool decr_awaited_and_notify() noexcept; // returns true iff notified
+		inline cool::async_task_end& notify() noexcept;
 		inline cool::async_task_end& finish() noexcept;
 		inline bool finished() const noexcept;
 
@@ -225,6 +227,8 @@ namespace cool
 		inline cool::async_task_result<return_Ty>& set_awaited(std::ptrdiff_t number_of_tasks) noexcept;
 		inline std::ptrdiff_t get_awaited() const noexcept;
 		inline cool::_async_task_result_proxy<return_Ty> to(std::size_t offset) noexcept;
+		inline bool decr_awaited_and_notify() noexcept; // returns true iff notified
+		inline cool::async_task_result<return_Ty>& notify() noexcept;
 		inline cool::async_task_result<return_Ty>& finish() noexcept;
 		inline bool finished() const noexcept;
 
@@ -559,6 +563,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
+
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
 				else
@@ -617,6 +622,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
+
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
 				else
@@ -671,12 +677,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-					{
-						std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-						target_ref.m_finish_condition_var.notify_one();
-					}
+					reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -740,12 +741,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-					{
-						std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-						target_ref.m_finish_condition_var.notify_one();
-					}
+					reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -804,12 +800,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-					{
-						std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-						target_ref.m_finish_condition_var.notify_one();
-					}
+					reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -875,12 +866,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-					{
-						std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-						target_ref.m_finish_condition_var.notify_one();
-					}
+					reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -940,11 +926,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-					{
-						std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-						target_ref.m_finish_condition_var.notify_one();
-					}
+					target_ref.decr_awaited_and_notify();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -1012,11 +994,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-					{
-						std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-						target_ref.m_finish_condition_var.notify_one();
-					}
+					target_ref.decr_awaited_and_notify();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -1079,11 +1057,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-					{
-						std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-						target_ref.m_finish_condition_var.notify_one();
-					}
+					target_ref.decr_awaited_and_notify();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -1153,11 +1127,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-					{
-						std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-						target_ref.m_finish_condition_var.notify_one();
-					}
+					target_ref.decr_awaited_and_notify();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -1433,6 +1403,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
+
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
 							else
@@ -1486,6 +1457,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									reinterpret_cast<function_Ty>(_task_ptr->m_function_ptr),
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
+
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
 							else
@@ -1574,12 +1546,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-								{
-									std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-									target_ref.m_finish_condition_var.notify_one();
-								}
+								reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -1637,12 +1604,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-								{
-									std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-									target_ref.m_finish_condition_var.notify_one();
-								}
+								reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -1735,12 +1697,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-								{
-									std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-									target_ref.m_finish_condition_var.notify_one();
-								}
+								reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -1800,12 +1757,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								cool::async_task_end& target_ref = *reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr);
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-								{
-									std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-									target_ref.m_finish_condition_var.notify_one();
-								}
+								reinterpret_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -1899,11 +1851,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-								{
-									std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-									target_ref.m_finish_condition_var.notify_one();
-								}
+								target_ref.decr_awaited_and_notify();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -1965,11 +1913,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-								{
-									std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-									target_ref.m_finish_condition_var.notify_one();
-								}
+								target_ref.decr_awaited_and_notify();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -2066,11 +2010,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-								{
-									std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-									target_ref.m_finish_condition_var.notify_one();
-								}
+								target_ref.decr_awaited_and_notify();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -2134,11 +2074,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								if (target_ref.m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
-								{
-									std::lock_guard<std::mutex> target_lock(target_ref.m_finish_mutex);
-									target_ref.m_finish_condition_var.notify_one();
-								}
+								target_ref.decr_awaited_and_notify();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -2561,6 +2497,27 @@ inline std::ptrdiff_t cool::async_task_end::get_awaited() const noexcept
 	return m_tasks_awaited.load(std::memory_order_seq_cst);
 }
 
+inline bool cool::async_task_end::decr_awaited_and_notify() noexcept
+{
+	if (m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
+	{
+		std::lock_guard<std::mutex> lock(m_finish_mutex);
+		m_finish_condition_var.notify_all();
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+inline cool::async_task_end& cool::async_task_end::notify() noexcept
+{
+	std::lock_guard<std::mutex> lock(m_finish_mutex);
+	m_finish_condition_var.notify_all();
+	return *this;
+}
+
 inline cool::async_task_end& cool::async_task_end::finish() noexcept
 {
 	while (m_tasks_awaited.load(std::memory_order_seq_cst) > 0)
@@ -2618,7 +2575,7 @@ inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::s
 template <class return_Ty>
 inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::set_awaited(std::ptrdiff_t number_of_tasks) noexcept
 {
-	m_tasks_awaited.fetch_add(number_of_tasks, std::memory_order_seq_cst);
+	m_tasks_awaited.store(number_of_tasks, std::memory_order_seq_cst);
 	return *this;
 }
 
@@ -2632,6 +2589,29 @@ template <class return_Ty>
 inline cool::_async_task_result_proxy<return_Ty> cool::async_task_result<return_Ty>::to(std::size_t offset) noexcept
 {
 	return cool::_async_task_result_proxy<return_Ty>(this, offset);
+}
+
+template <class return_Ty>
+inline bool cool::async_task_result<return_Ty>::decr_awaited_and_notify() noexcept
+{
+	if (m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
+	{
+		std::lock_guard<std::mutex> lock(m_finish_mutex);
+		m_finish_condition_var.notify_all();
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+template <class return_Ty>
+inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::notify() noexcept
+{
+	std::lock_guard<std::mutex> lock(m_finish_mutex);
+	m_finish_condition_var.notify_all();
+	return *this;
 }
 
 template <class return_Ty>
