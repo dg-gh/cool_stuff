@@ -6755,15 +6755,10 @@ inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> cool:
 	const Ty* xptr = x.data();
 	const Ty* yptr = y.data();
 
-	Ty x0 = *(xptr + 0);
-	Ty x1 = *(xptr + 1);
-	Ty x2 = *(xptr + 2);
-	Ty x3 = *(xptr + 3);
-
-	*(res_ptr + 0) = x0 * *(yptr + 0) - x1 * *(yptr + 1) - x2 * *(yptr + 2) - x3 * *(yptr + 3);
-	*(res_ptr + 1) = x0 * *(yptr + 1) + x1 * *(yptr + 0) - x2 * *(yptr + 3) + x3 * *(yptr + 2);
-	*(res_ptr + 2) = x0 * *(yptr + 2) + x1 * *(yptr + 3) + x2 * *(yptr + 0) - x3 * *(yptr + 1);
-	*(res_ptr + 3) = x0 * *(yptr + 3) - x1 * *(yptr + 2) + x2 * *(yptr + 1) + x3 * *(yptr + 0);
+	*(res_ptr + 0) = *(xptr + 0) * *(yptr + 0) - *(xptr + 1) * *(yptr + 1) - *(xptr + 2) * *(yptr + 2) - *(xptr + 3) * *(yptr + 3);
+	*(res_ptr + 1) = *(xptr + 0) * *(yptr + 1) + *(xptr + 1) * *(yptr + 0) + *(xptr + 2) * *(yptr + 3) - *(xptr + 3) * *(yptr + 2);
+	*(res_ptr + 2) = *(xptr + 0) * *(yptr + 2) - *(xptr + 1) * *(yptr + 3) + *(xptr + 2) * *(yptr + 0) + *(xptr + 3) * *(yptr + 1);
+	*(res_ptr + 3) = *(xptr + 0) * *(yptr + 3) + *(xptr + 1) * *(yptr + 2) - *(xptr + 2) * *(yptr + 1) + *(xptr + 3) * *(yptr + 0);
 
 	return ret;
 }
