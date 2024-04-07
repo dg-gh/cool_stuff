@@ -269,27 +269,10 @@ namespace cool
 		int _func_impl_number = 0> class rotationZYZ2;
 
 
+	template <std::size_t _dim_padded, cool::matrix_layout _layout, std::size_t _dim_padded_min> class _rotation_matrix_index_data;
+
+
 	// class member details
-
-	template <std::size_t _dim_padded, cool::matrix_layout _layout, std::size_t _dim_padded_min> class _rotation_matrix_index_data
-	{
-
-	public:
-
-		static_assert(_dim_padded >= _dim_padded_min, "dimension too small");
-
-		static constexpr std::size_t i00 = (_layout == cool::matrix_layout::col) ? 0 + _dim_padded * 0 : _dim_padded * 0 + 0;
-		static constexpr std::size_t i10 = (_layout == cool::matrix_layout::col) ? 1 + _dim_padded * 0 : _dim_padded * 1 + 0;
-		static constexpr std::size_t i20 = (_layout == cool::matrix_layout::col) ? 2 + _dim_padded * 0 : _dim_padded * 2 + 0;
-
-		static constexpr std::size_t i01 = (_layout == cool::matrix_layout::col) ? 0 + _dim_padded * 1 : _dim_padded * 0 + 1;
-		static constexpr std::size_t i11 = (_layout == cool::matrix_layout::col) ? 1 + _dim_padded * 1 : _dim_padded * 1 + 1;
-		static constexpr std::size_t i21 = (_layout == cool::matrix_layout::col) ? 2 + _dim_padded * 1 : _dim_padded * 2 + 1;
-
-		static constexpr std::size_t i02 = (_layout == cool::matrix_layout::col) ? 0 + _dim_padded * 2 : _dim_padded * 0 + 2;
-		static constexpr std::size_t i12 = (_layout == cool::matrix_layout::col) ? 1 + _dim_padded * 2 : _dim_padded * 1 + 2;
-		static constexpr std::size_t i22 = (_layout == cool::matrix_layout::col) ? 2 + _dim_padded * 2 : _dim_padded * 2 + 2;
-	};
 
 	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotation2d
 	{
@@ -311,10 +294,10 @@ namespace cool
 	};
 
 
-
-
-
+#ifndef xCOOL_NO_AXIS_NORM_ENUM
+#define xCOOL_NO_AXIS_NORM_ENUM
 	enum no_axis_norm_t { no_axis_norm };
+#endif // xCOOL_NO_AXIS_NORM_ENUM
 
 	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotation_axis_angle
 	{
@@ -344,7 +327,10 @@ namespace cool
 	};
 
 
+#ifndef xCOOL_NO_QUATERNION_NORM_ENUM
+#define xCOOL_NO_QUATERNION_NORM_ENUM
 	enum no_quaternion_norm_t { no_quaternion_norm };
+#endif // xCOOL_NO_QUATERNION_NORM_ENUM
 
 	template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number> class rotation_quaternion
 	{
@@ -1273,6 +1259,29 @@ namespace cool
 
 
 // detail
+
+namespace cool
+{
+	template <std::size_t _dim_padded, cool::matrix_layout _layout, std::size_t _dim_padded_min> class _rotation_matrix_index_data
+	{
+
+	public:
+
+		static_assert(_dim_padded >= _dim_padded_min, "dimension too small");
+
+		static constexpr std::size_t i00 = (_layout == cool::matrix_layout::col) ? 0 + _dim_padded * 0 : _dim_padded * 0 + 0;
+		static constexpr std::size_t i10 = (_layout == cool::matrix_layout::col) ? 1 + _dim_padded * 0 : _dim_padded * 1 + 0;
+		static constexpr std::size_t i20 = (_layout == cool::matrix_layout::col) ? 2 + _dim_padded * 0 : _dim_padded * 2 + 0;
+
+		static constexpr std::size_t i01 = (_layout == cool::matrix_layout::col) ? 0 + _dim_padded * 1 : _dim_padded * 0 + 1;
+		static constexpr std::size_t i11 = (_layout == cool::matrix_layout::col) ? 1 + _dim_padded * 1 : _dim_padded * 1 + 1;
+		static constexpr std::size_t i21 = (_layout == cool::matrix_layout::col) ? 2 + _dim_padded * 1 : _dim_padded * 2 + 1;
+
+		static constexpr std::size_t i02 = (_layout == cool::matrix_layout::col) ? 0 + _dim_padded * 2 : _dim_padded * 0 + 2;
+		static constexpr std::size_t i12 = (_layout == cool::matrix_layout::col) ? 1 + _dim_padded * 2 : _dim_padded * 1 + 2;
+		static constexpr std::size_t i22 = (_layout == cool::matrix_layout::col) ? 2 + _dim_padded * 2 : _dim_padded * 2 + 2;
+	};
+}
 
 template <class Ty, int _func_impl_number>
 inline Ty cool::rotation_subroutine::cos(Ty x) noexcept
