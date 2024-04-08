@@ -94,6 +94,8 @@ namespace cool
 		singular = 1,
 	};
 
+#ifndef xCOOL_AXIS_CONSTANTS
+#define xCOOL_AXIS_CONSTANTS
 	namespace axis
 	{
 		static constexpr std::size_t X = 0;
@@ -106,6 +108,7 @@ namespace cool
 	{
 		static constexpr std::size_t none = 3;
 	}
+#endif // xCOOL_AXIS_CONSTANTS
 
 
 	// 2D rotations
@@ -143,6 +146,7 @@ namespace cool
 
 	// cool::rotation_type::AA :
 	// rotation with axis angle representation
+	// coordinate data as (axis_x, axis_y, axis_z, angle)
 
 	// cool::rotation_type::Q :
 	// rotation with quaternion representation
@@ -369,9 +373,9 @@ namespace cool
 		inline std::size_t iZ() const noexcept;
 		inline std::size_t iSg() const noexcept;
 
-		inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v_angles_ptr) const noexcept;
-		inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v_angles_ptr) const noexcept;
-		inline cool::rotation_status get_coord(Ty* v_angles_ptr, const Ty* m3x3_rotation_ptr,
+		inline void get_matrix(Ty* m3x3_rotation_ptr, const Ty* v4_coord_ptr) const noexcept;
+		inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v4_coord_ptr) const noexcept;
+		inline cool::rotation_status get_coord(Ty* v4_coord_ptr, const Ty* m3x3_rotation_ptr,
 			Ty angle_tol = static_cast<Ty>(0), Ty angle_choice_if_singular = static_cast<Ty>(0)) const noexcept;
 
 	protected:
@@ -2029,22 +2033,22 @@ inline std::size_t cool::template_rotation3d<Ty>::iSg() const noexcept
 }
 
 template <class Ty>
-inline void cool::template_rotation3d<Ty>::get_matrix(Ty* m3x3_rotation_ptr, const Ty* v_angles_ptr) const noexcept
+inline void cool::template_rotation3d<Ty>::get_matrix(Ty* m3x3_rotation_ptr, const Ty* v4_coord_ptr) const noexcept
 {
-	this->m_rotation_functions(m3x3_rotation_ptr, v_angles_ptr, static_cast<Ty>(0), static_cast<Ty>(0), 0);
+	this->m_rotation_functions(m3x3_rotation_ptr, v4_coord_ptr, static_cast<Ty>(0), static_cast<Ty>(0), 0);
 }
 
 template <class Ty>
-inline void cool::template_rotation3d<Ty>::get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v_angles_ptr) const noexcept
+inline void cool::template_rotation3d<Ty>::get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v4_coord_ptr) const noexcept
 {
-	this->m_rotation_functions(m3x3_rotation_ptr, v_angles_ptr, static_cast<Ty>(0), static_cast<Ty>(0), 1);
+	this->m_rotation_functions(m3x3_rotation_ptr, v4_coord_ptr, static_cast<Ty>(0), static_cast<Ty>(0), 1);
 }
 
 template <class Ty>
-inline cool::rotation_status cool::template_rotation3d<Ty>::get_coord(Ty* v_angles_ptr, const Ty* m3x3_rotation_ptr,
+inline cool::rotation_status cool::template_rotation3d<Ty>::get_coord(Ty* v4_coord_ptr, const Ty* m3x3_rotation_ptr,
 	Ty angle_tol, Ty angle_choice_if_singular) const noexcept
 {
-	return this->m_rotation_functions(v_angles_ptr, m3x3_rotation_ptr, angle_tol, angle_choice_if_singular, 2);
+	return this->m_rotation_functions(v4_coord_ptr, m3x3_rotation_ptr, angle_tol, angle_choice_if_singular, 2);
 }
 
 
