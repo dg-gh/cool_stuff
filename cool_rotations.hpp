@@ -150,6 +150,7 @@ namespace cool
 
 	// cool::rotation_type::Q :
 	// rotation with quaternion representation
+	// with A = angle coordinate data as (cos(A/2), sin(A/2) * axis_x, sin(A/2) * axis_y, sin(A/2) * axis_z)
 
 	// cool::rotation_type::id :
 	// no rotation
