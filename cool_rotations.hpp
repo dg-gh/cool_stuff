@@ -394,9 +394,9 @@ namespace cool
 
 	public:
 
-		using value_type = Ty;
-		using pointer = Ty*;
-		using const_pointer = const Ty*;
+		using typename cool::template_rotation3d<Ty>::value_type;
+		using typename cool::template_rotation3d<Ty>::pointer;
+		using typename cool::template_rotation3d<Ty>::const_pointer;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
@@ -1971,12 +1971,12 @@ inline cool::rotation_type cool::template_rotation3d<Ty>::rotation_type() const 
 template <class Ty>
 inline std::size_t cool::template_rotation3d<Ty>::axis_count() const noexcept
 {
-	constexpr std::uint32_t limit1 = cool::rotation_type_as_index(cool::rotation_type::X);
-	constexpr std::uint32_t limit2 = cool::rotation_type_as_index(cool::rotation_type::XY);
-	constexpr std::uint32_t limit3 = cool::rotation_type_as_index(cool::rotation_type::XYZ);
-	constexpr std::uint32_t limit5 = cool::rotation_type_as_index(cool::rotation_type::AA);
+	constexpr std::size_t limit1 = cool::rotation_type_as_index(cool::rotation_type::X);
+	constexpr std::size_t limit2 = cool::rotation_type_as_index(cool::rotation_type::XY);
+	constexpr std::size_t limit3 = cool::rotation_type_as_index(cool::rotation_type::XYZ);
+	constexpr std::size_t limit5 = cool::rotation_type_as_index(cool::rotation_type::AA);
 
-	std::uint32_t index = cool::rotation_type_as_index(m_rotation_type);
+	std::size_t index = cool::rotation_type_as_index(m_rotation_type);
 
 	return (index >= limit5) ? 1
 		: static_cast<std::size_t>(index >= limit1)
@@ -2133,10 +2133,6 @@ cool::rotation3d<Ty, _dim_padded, _layout, _func_impl_number>::set_rotation_type
 
 	case cool::rotation_type_as_index(cool::rotation_type::AA):
 	{
-		using value_type = Ty;
-		using pointer = Ty*;
-		using const_pointer = const Ty*;
-
 		this->m_rotation_functions = [](pointer dest_ptr, const_pointer orig_ptr, value_type angle_tol, value_type angle_choice_if_singular, int param)
 		{
 			if (param == 0)
@@ -2159,10 +2155,6 @@ cool::rotation3d<Ty, _dim_padded, _layout, _func_impl_number>::set_rotation_type
 
 	case cool::rotation_type_as_index(cool::rotation_type::Q):
 	{
-		using value_type = Ty;
-		using pointer = Ty*;
-		using const_pointer = const Ty*;
-
 		this->m_rotation_functions = [](pointer dest_ptr, const_pointer orig_ptr, value_type angle_tol, value_type angle_choice_if_singular, int param)
 		{
 			if (param == 0)
