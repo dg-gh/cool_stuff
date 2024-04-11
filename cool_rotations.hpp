@@ -2133,7 +2133,7 @@ cool::rotation3d<Ty, _dim_padded, _layout, _func_impl_number>::set_rotation_type
 
 	case cool::rotation_type_as_index(cool::rotation_type::AA):
 	{
-		this->m_rotation_functions = [](pointer dest_ptr, const_pointer orig_ptr, value_type angle_tol, value_type angle_choice_if_singular, int param)
+		this->m_rotation_functions = [](Ty* dest_ptr, const Ty* orig_ptr, Ty angle_tol, Ty angle_choice_if_singular, int param)
 		{
 			if (param == 0)
 			{
@@ -2155,7 +2155,7 @@ cool::rotation3d<Ty, _dim_padded, _layout, _func_impl_number>::set_rotation_type
 
 	case cool::rotation_type_as_index(cool::rotation_type::Q):
 	{
-		this->m_rotation_functions = [](pointer dest_ptr, const_pointer orig_ptr, value_type angle_tol, value_type angle_choice_if_singular, int param)
+		this->m_rotation_functions = [](Ty* dest_ptr, const Ty* orig_ptr, Ty angle_tol, Ty angle_choice_if_singular, int param)
 		{
 			if (param == 0)
 			{
