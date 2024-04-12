@@ -1681,16 +1681,16 @@ inline void cool::rotation_quaternion<Ty, _dim_padded, _layout, _func_impl_numbe
 {
 	using _index_data = cool::_rotation_matrix_index_data<_dim_padded, _layout, 3>;
 
-	Ty q00 = cool::rotation_subroutine::two<Ty, _func_impl_number>()** v4_quaternion_ptr** v4_quaternion_ptr;
-	Ty q01 = cool::rotation_subroutine::two<Ty, _func_impl_number>()** v4_quaternion_ptr** (v4_quaternion_ptr + 1);
-	Ty q02 = cool::rotation_subroutine::two<Ty, _func_impl_number>()** v4_quaternion_ptr** (v4_quaternion_ptr + 2);
-	Ty q03 = cool::rotation_subroutine::two<Ty, _func_impl_number>()** v4_quaternion_ptr** (v4_quaternion_ptr + 3);
-	Ty q11 = cool::rotation_subroutine::two<Ty, _func_impl_number>()** (v4_quaternion_ptr + 1)** (v4_quaternion_ptr + 1);
-	Ty q12 = cool::rotation_subroutine::two<Ty, _func_impl_number>()** (v4_quaternion_ptr + 1)** (v4_quaternion_ptr + 2);
-	Ty q13 = cool::rotation_subroutine::two<Ty, _func_impl_number>()** (v4_quaternion_ptr + 1)** (v4_quaternion_ptr + 3);
-	Ty q22 = cool::rotation_subroutine::two<Ty, _func_impl_number>()** (v4_quaternion_ptr + 2)** (v4_quaternion_ptr + 2);
-	Ty q23 = cool::rotation_subroutine::two<Ty, _func_impl_number>()** (v4_quaternion_ptr + 2)** (v4_quaternion_ptr + 3);
-	Ty q33 = cool::rotation_subroutine::two<Ty, _func_impl_number>()** (v4_quaternion_ptr + 3)** (v4_quaternion_ptr + 3);
+	Ty q00 = cool::rotation_subroutine::two<Ty, _func_impl_number>() * *v4_quaternion_ptr * *v4_quaternion_ptr;
+	Ty q01 = cool::rotation_subroutine::two<Ty, _func_impl_number>() * *v4_quaternion_ptr * *(v4_quaternion_ptr + 1);
+	Ty q02 = cool::rotation_subroutine::two<Ty, _func_impl_number>() * *v4_quaternion_ptr * *(v4_quaternion_ptr + 2);
+	Ty q03 = cool::rotation_subroutine::two<Ty, _func_impl_number>() * *v4_quaternion_ptr * *(v4_quaternion_ptr + 3);
+	Ty q11 = cool::rotation_subroutine::two<Ty, _func_impl_number>() * *(v4_quaternion_ptr + 1) * *(v4_quaternion_ptr + 1);
+	Ty q12 = cool::rotation_subroutine::two<Ty, _func_impl_number>() * *(v4_quaternion_ptr + 1) * *(v4_quaternion_ptr + 2);
+	Ty q13 = cool::rotation_subroutine::two<Ty, _func_impl_number>() * *(v4_quaternion_ptr + 1) * *(v4_quaternion_ptr + 3);
+	Ty q22 = cool::rotation_subroutine::two<Ty, _func_impl_number>() * *(v4_quaternion_ptr + 2) * *(v4_quaternion_ptr + 2);
+	Ty q23 = cool::rotation_subroutine::two<Ty, _func_impl_number>() * *(v4_quaternion_ptr + 2) * *(v4_quaternion_ptr + 3);
+	Ty q33 = cool::rotation_subroutine::two<Ty, _func_impl_number>() * *(v4_quaternion_ptr + 3) * *(v4_quaternion_ptr + 3);
 
 	*(m3x3_rotation_ptr + _index_data::i00) = cool::rotation_subroutine::one<Ty, _func_impl_number>() - q22 - q33;
 	*(m3x3_rotation_ptr + _index_data::i10) = q12 + q03;
