@@ -223,9 +223,8 @@ namespace cool
 	public:
 
 		_matrix_ptr() = delete;
-		inline _matrix_ptr(Ty* ptr) noexcept;
+		explicit inline _matrix_ptr(Ty* ptr) noexcept;
 		inline _matrix_ptr(const cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) noexcept = default;
-		inline ~_matrix_ptr() = default;
 
 		inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& operator=(
 			const cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) noexcept;
@@ -233,6 +232,7 @@ namespace cool
 		template <std::size_t _rhs_rows, std::size_t _rhs_cols, std::size_t _rhs_rows_padded, std::size_t _rhs_align>
 		inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& operator=(
 			const cool::_matrix_ptr<Ty, _rhs_rows, _rhs_cols, _rhs_rows_padded, _rhs_align>& rhs) noexcept;
+
 
 		inline Ty* data() noexcept;
 		inline const Ty* data() const noexcept;
@@ -250,10 +250,9 @@ namespace cool
 	public:
 
 		_const_matrix_ptr() = delete;
-		inline _const_matrix_ptr(const Ty* ptr) noexcept;
+		explicit inline _const_matrix_ptr(const Ty* ptr) noexcept;
 		inline _const_matrix_ptr(const cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) noexcept = default;
 		inline _const_matrix_ptr(const cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) noexcept;
-		inline ~_const_matrix_ptr() = default;
 
 		inline cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& operator=(
 			const cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) = delete;
@@ -268,6 +267,7 @@ namespace cool
 		template <std::size_t _rhs_rows, std::size_t _rhs_cols, std::size_t _rhs_rows_padded, std::size_t _rhs_align>
 		inline cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& operator=(
 			const cool::_matrix_ptr<Ty, _rhs_rows, _rhs_cols, _rhs_rows_padded, _rhs_align>& rhs) = delete;
+
 
 		inline const Ty* data() const noexcept;
 
@@ -301,7 +301,6 @@ namespace cool
 		inline _matrix_array(cool::cm<Ty> rhs);
 		inline _matrix_array(cool::rm<Ty> rhs);
 
-		inline ~_matrix_array() = default;
 
 		inline Ty* data() noexcept;
 		inline const Ty* data() const noexcept;
