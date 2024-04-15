@@ -329,7 +329,7 @@ namespace cool
 		static_assert(_rows != 0, "cool::matrix...<value_type, cols, rows, rows_padded, align, ...> requirement : rows != 0");
 		static_assert(_cols != 0, "cool::matrix...<value_type, cols, rows, rows_padded, align, ...> requirement : cols != 0");
 		static_assert(_rows <= _rows_padded, "cool::matrix...<value_type, cols, rows, rows_padded, align, ...> requirement : rows <= rows_padded");
-		static_assert(_align% alignof(Ty) == 0, "cool::matrix...<value_type, cols, rows, rows_padded, align, ...> requirement : align mutiple of alignof(value_type)");
+		static_assert(_align % alignof(Ty) == 0, "cool::matrix...<value_type, cols, rows, rows_padded, align, ...> requirement : align mutiple of alignof(value_type)");
 
 
 		using _matrix_storage_Ty::_matrix_storage_Ty;
