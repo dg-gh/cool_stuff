@@ -1247,6 +1247,7 @@ inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& cool::_matrix_
 	const cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& rhs) noexcept
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+	constexpr std::size_t _packed = cool::matrix_multiply_kernel_spec<Ty, _rows, 2, _cols>::packed;
 
 	Ty* res_ptr = m_data_ptr;
 	const Ty* rhs_ptr = rhs.data();
@@ -1254,18 +1255,18 @@ inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& cool::_matrix_
 	if (_contiguous)
 	{
 		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t _size_mult16 = _size - _size % 16;
-		constexpr std::size_t _size_remainder = _size % 16;
+		constexpr std::size_t _size_mult_packed = _size - _size % _packed;
+		constexpr std::size_t _size_remainder = _size % _packed;
 		constexpr std::size_t _size_remainder_padded = (_size_remainder != 0) ? _size_remainder : 1;
 
-		for (std::size_t n = 0; n < _size_mult16; n += 16)
+		for (std::size_t n = 0; n < _size_mult_packed; n += _packed)
 		{
-			Ty temp[16];
-			for (std::size_t m = 0; m < 16; m++)
+			Ty temp[_packed];
+			for (std::size_t m = 0; m < _packed; m++)
 			{
 				temp[m] = *(rhs_ptr + n + m);
 			}
-			for (std::size_t m = 0; m < 16; m++)
+			for (std::size_t m = 0; m < _packed; m++)
 			{
 				*(res_ptr + n + m) = temp[m];
 			}
@@ -1274,29 +1275,29 @@ inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& cool::_matrix_
 		Ty temp[_size_remainder_padded];
 		for (std::size_t m = 0; m < _size_remainder; m++)
 		{
-			temp[m] = *(rhs_ptr + _size_mult16 + m);
+			temp[m] = *(rhs_ptr + _size_mult_packed + m);
 		}
 		for (std::size_t m = 0; m < _size_remainder; m++)
 		{
-			*(res_ptr + _size_mult16 + m) = temp[m];
+			*(res_ptr + _size_mult_packed + m) = temp[m];
 		}
 	}
 	else
 	{
-		constexpr std::size_t _rows_mult16 = _rows - _rows % 16;
-		constexpr std::size_t _rows_remainder = _rows % 16;
+		constexpr std::size_t _rows_mult_packed = _rows - _rows % _packed;
+		constexpr std::size_t _rows_remainder = _rows % _packed;
 		constexpr std::size_t _rows_remainder_padded = (_rows_remainder != 0) ? _rows_remainder : 1;
 
 		for (std::size_t j = 0; j < _cols; j++)
 		{
-			for (std::size_t i = 0; i < _rows_mult16; i += 16)
+			for (std::size_t i = 0; i < _rows_mult_packed; i += _packed)
 			{
-				Ty temp[16];
-				for (std::size_t m = 0; m < 16; m++)
+				Ty temp[_packed];
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					temp[m] = *(rhs_ptr + i + m + _rows_padded * j);
 				}
-				for (std::size_t m = 0; m < 16; m++)
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					*(res_ptr + i + m + _rows_padded * j) = temp[m];
 				}
@@ -1305,11 +1306,11 @@ inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& cool::_matrix_
 			Ty temp[_rows_remainder_padded];
 			for (std::size_t m = 0; m < _rows_remainder; m++)
 			{
-				temp[m] = *(rhs_ptr + _rows_mult16 + m + _rows_padded * j);
+				temp[m] = *(rhs_ptr + _rows_mult_packed + m + _rows_padded * j);
 			}
 			for (std::size_t m = 0; m < _rows_remainder; m++)
 			{
-				*(res_ptr + _rows_mult16 + m + _rows_padded * j) = temp[m];
+				*(res_ptr + _rows_mult_packed + m + _rows_padded * j) = temp[m];
 			}
 		}
 	}
@@ -1323,6 +1324,7 @@ inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& cool::_matrix_
 	const cool::_matrix_ptr<Ty, _rhs_rows, _rhs_cols, _rhs_rows_padded, _rhs_align>& rhs) noexcept
 {
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	constexpr std::size_t _packed = cool::matrix_multiply_kernel_spec<Ty, _rows, 2, _cols>::packed;
 
 	Ty* res_ptr = m_data_ptr;
 	const Ty* rhs_ptr = rhs.data();
@@ -1330,18 +1332,18 @@ inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& cool::_matrix_
 	if (_contiguous)
 	{
 		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t _size_mult16 = _size - _size % 16;
-		constexpr std::size_t _size_remainder = _size % 16;
+		constexpr std::size_t _size_mult_packed = _size - _size % _packed;
+		constexpr std::size_t _size_remainder = _size % _packed;
 		constexpr std::size_t _size_remainder_padded = (_size_remainder != 0) ? _size_remainder : 1;
 
-		for (std::size_t n = 0; n < _size_mult16; n += 16)
+		for (std::size_t n = 0; n < _size_mult_packed; n += _packed)
 		{
-			Ty temp[16];
-			for (std::size_t m = 0; m < 16; m++)
+			Ty temp[_packed];
+			for (std::size_t m = 0; m < _packed; m++)
 			{
 				temp[m] = *(rhs_ptr + n + m);
 			}
-			for (std::size_t m = 0; m < 16; m++)
+			for (std::size_t m = 0; m < _packed; m++)
 			{
 				*(res_ptr + n + m) = temp[m];
 			}
@@ -1350,29 +1352,29 @@ inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& cool::_matrix_
 		Ty temp[_size_remainder_padded];
 		for (std::size_t m = 0; m < _size_remainder; m++)
 		{
-			temp[m] = *(rhs_ptr + _size_mult16 + m);
+			temp[m] = *(rhs_ptr + _size_mult_packed + m);
 		}
 		for (std::size_t m = 0; m < _size_remainder; m++)
 		{
-			*(res_ptr + _size_mult16 + m) = temp[m];
+			*(res_ptr + _size_mult_packed + m) = temp[m];
 		}
 	}
 	else
 	{
-		constexpr std::size_t _rows_mult16 = _rows - _rows % 16;
-		constexpr std::size_t _rows_remainder = _rows % 16;
+		constexpr std::size_t _rows_mult_packed = _rows - _rows % _packed;
+		constexpr std::size_t _rows_remainder = _rows % _packed;
 		constexpr std::size_t _rows_remainder_padded = (_rows_remainder != 0) ? _rows_remainder : 1;
 
 		for (std::size_t j = 0; j < _cols; j++)
 		{
-			for (std::size_t i = 0; i < _rows_mult16; i += 16)
+			for (std::size_t i = 0; i < _rows_mult_packed; i += _packed)
 			{
-				Ty temp[16];
-				for (std::size_t m = 0; m < 16; m++)
+				Ty temp[_packed];
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					temp[m] = *(rhs_ptr + i + m + _rhs_rows_padded * j);
 				}
-				for (std::size_t m = 0; m < 16; m++)
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					*(res_ptr + i + m + _rows_padded * j) = temp[m];
 				}
@@ -1381,11 +1383,11 @@ inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& cool::_matrix_
 			Ty temp[_rows_remainder_padded];
 			for (std::size_t m = 0; m < _rows_remainder; m++)
 			{
-				temp[m] = *(rhs_ptr + _rows_mult16 + m + _rhs_rows_padded * j);
+				temp[m] = *(rhs_ptr + _rows_mult_packed + m + _rhs_rows_padded * j);
 			}
 			for (std::size_t m = 0; m < _rows_remainder; m++)
 			{
-				*(res_ptr + _rows_mult16 + m + _rows_padded * j) = temp[m];
+				*(res_ptr + _rows_mult_packed + m + _rows_padded * j) = temp[m];
 			}
 		}
 	}
@@ -3818,6 +3820,7 @@ inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_st
 	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_storage_Ty>& rhs)
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
+	constexpr std::size_t _packed = cool::matrix_multiply_kernel_spec<Ty, _rows, 2, _cols>::packed;
 
 	Ty* res_ptr = this->data();
 	const Ty* rhs_ptr = rhs.data();
@@ -3825,18 +3828,18 @@ inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_st
 	if (_contiguous)
 	{
 		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t _size_mult16 = _size - _size % 16;
-		constexpr std::size_t _size_remainder = _size % 16;
+		constexpr std::size_t _size_mult_packed = _size - _size % _packed;
+		constexpr std::size_t _size_remainder = _size % _packed;
 		constexpr std::size_t _size_remainder_padded = (_size_remainder != 0) ? _size_remainder : 1;
 
-		for (std::size_t n = 0; n < _size_mult16; n += 16)
+		for (std::size_t n = 0; n < _size_mult_packed; n += _packed)
 		{
-			Ty temp[16];
-			for (std::size_t m = 0; m < 16; m++)
+			Ty temp[_packed];
+			for (std::size_t m = 0; m < _packed; m++)
 			{
 				temp[m] = *(rhs_ptr + n + m);
 			}
-			for (std::size_t m = 0; m < 16; m++)
+			for (std::size_t m = 0; m < _packed; m++)
 			{
 				*(res_ptr + n + m) = temp[m];
 			}
@@ -3845,29 +3848,29 @@ inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_st
 		Ty temp[_size_remainder_padded];
 		for (std::size_t m = 0; m < _size_remainder; m++)
 		{
-			temp[m] = *(rhs_ptr + _size_mult16 + m);
+			temp[m] = *(rhs_ptr + _size_mult_packed + m);
 		}
 		for (std::size_t m = 0; m < _size_remainder; m++)
 		{
-			*(res_ptr + _size_mult16 + m) = temp[m];
+			*(res_ptr + _size_mult_packed + m) = temp[m];
 		}
 	}
 	else
 	{
-		constexpr std::size_t _rows_mult16 = _rows - _rows % 16;
-		constexpr std::size_t _rows_remainder = _rows % 16;
+		constexpr std::size_t _rows_mult_packed = _rows - _rows % _packed;
+		constexpr std::size_t _rows_remainder = _rows % _packed;
 		constexpr std::size_t _rows_remainder_padded = (_rows_remainder != 0) ? _rows_remainder : 1;
 
 		for (std::size_t j = 0; j < _cols; j++)
 		{
-			for (std::size_t i = 0; i < _rows_mult16; i += 16)
+			for (std::size_t i = 0; i < _rows_mult_packed; i += _packed)
 			{
-				Ty temp[16];
-				for (std::size_t m = 0; m < 16; m++)
+				Ty temp[_packed];
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					temp[m] = *(rhs_ptr + i + m + _rhs_rows_padded * j);
 				}
-				for (std::size_t m = 0; m < 16; m++)
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					*(res_ptr + i + m + _rows_padded * j) = temp[m];
 				}
@@ -3876,11 +3879,11 @@ inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_st
 			Ty temp[_rows_remainder_padded];
 			for (std::size_t m = 0; m < _rows_remainder; m++)
 			{
-				temp[m] = *(rhs_ptr + _rows_mult16 + m + _rhs_rows_padded * j);
+				temp[m] = *(rhs_ptr + _rows_mult_packed + m + _rhs_rows_padded * j);
 			}
 			for (std::size_t m = 0; m < _rows_remainder; m++)
 			{
-				*(res_ptr + _rows_mult16 + m + _rows_padded * j) = temp[m];
+				*(res_ptr + _rows_mult_packed + m + _rows_padded * j) = temp[m];
 			}
 		}
 	}
@@ -4112,6 +4115,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_storage_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
 {
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	constexpr std::size_t _packed = cool::matrix_multiply_kernel_spec<Ty, _rows, 2, _cols>::packed;
 
 	Ty* res_ptr = this->data();
 	const Ty* rhs_ptr = rhs.data();
@@ -4119,18 +4123,18 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 	if (_contiguous)
 	{
 		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t _size_mult16 = _size - _size % 16;
-		constexpr std::size_t _size_remainder = _size % 16;
+		constexpr std::size_t _size_mult_packed = _size - _size % _packed;
+		constexpr std::size_t _size_remainder = _size % _packed;
 		constexpr std::size_t _size_remainder_padded = (_size_remainder != 0) ? _size_remainder : 1;
 
-		for (std::size_t n = 0; n < _size_mult16; n += 16)
+		for (std::size_t n = 0; n < _size_mult_packed; n += _packed)
 		{
-			Ty temp[16];
-			for (std::size_t m = 0; m < 16; m++)
+			Ty temp[_packed];
+			for (std::size_t m = 0; m < _packed; m++)
 			{
 				temp[m] = *(rhs_ptr + n + m);
 			}
-			for (std::size_t m = 0; m < 16; m++)
+			for (std::size_t m = 0; m < _packed; m++)
 			{
 				*(res_ptr + n + m) += temp[m];
 			}
@@ -4139,29 +4143,29 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 		Ty temp[_size_remainder_padded];
 		for (std::size_t m = 0; m < _size_remainder; m++)
 		{
-			temp[m] = *(rhs_ptr + _size_mult16 + m);
+			temp[m] = *(rhs_ptr + _size_mult_packed + m);
 		}
 		for (std::size_t m = 0; m < _size_remainder; m++)
 		{
-			*(res_ptr + _size_mult16 + m) += temp[m];
+			*(res_ptr + _size_mult_packed + m) += temp[m];
 		}
 	}
 	else
 	{
-		constexpr std::size_t _rows_mult16 = _rows - _rows % 16;
-		constexpr std::size_t _rows_remainder = _rows % 16;
+		constexpr std::size_t _rows_mult_packed = _rows - _rows % _packed;
+		constexpr std::size_t _rows_remainder = _rows % _packed;
 		constexpr std::size_t _rows_remainder_padded = (_rows_remainder != 0) ? _rows_remainder : 1;
 
 		for (std::size_t j = 0; j < _cols; j++)
 		{
-			for (std::size_t i = 0; i < _rows_mult16; i += 16)
+			for (std::size_t i = 0; i < _rows_mult_packed; i += _packed)
 			{
-				Ty temp[16];
-				for (std::size_t m = 0; m < 16; m++)
+				Ty temp[_packed];
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					temp[m] = *(rhs_ptr + i + m + _rhs_rows_padded * j);
 				}
-				for (std::size_t m = 0; m < 16; m++)
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					*(res_ptr + i + m + _rows_padded * j) += temp[m];
 				}
@@ -4170,11 +4174,11 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 			Ty temp[_rows_remainder_padded];
 			for (std::size_t m = 0; m < _rows_remainder; m++)
 			{
-				temp[m] = *(rhs_ptr + _rows_mult16 + m + _rhs_rows_padded * j);
+				temp[m] = *(rhs_ptr + _rows_mult_packed + m + _rhs_rows_padded * j);
 			}
 			for (std::size_t m = 0; m < _rows_remainder; m++)
 			{
-				*(res_ptr + _rows_mult16 + m + _rows_padded * j) += temp[m];
+				*(res_ptr + _rows_mult_packed + m + _rows_padded * j) += temp[m];
 			}
 		}
 	}
@@ -4189,6 +4193,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_storage_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
 {
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	constexpr std::size_t _packed = cool::matrix_multiply_kernel_spec<Ty, _rows, 2, _cols>::packed;
 
 	Ty* res_ptr = this->data();
 	const Ty* rhs_ptr = rhs.data();
@@ -4196,18 +4201,18 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 	if (_contiguous)
 	{
 		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t _size_mult16 = _size - _size % 16;
-		constexpr std::size_t _size_remainder = _size % 16;
+		constexpr std::size_t _size_mult_packed = _size - _size % _packed;
+		constexpr std::size_t _size_remainder = _size % _packed;
 		constexpr std::size_t _size_remainder_padded = (_size_remainder != 0) ? _size_remainder : 1;
 
-		for (std::size_t n = 0; n < _size_mult16; n += 16)
+		for (std::size_t n = 0; n < _size_mult_packed; n += _packed)
 		{
-			Ty temp[16];
-			for (std::size_t m = 0; m < 16; m++)
+			Ty temp[_packed];
+			for (std::size_t m = 0; m < _packed; m++)
 			{
 				temp[m] = *(rhs_ptr + n + m);
 			}
-			for (std::size_t m = 0; m < 16; m++)
+			for (std::size_t m = 0; m < _packed; m++)
 			{
 				*(res_ptr + n + m) -= temp[m];
 			}
@@ -4216,29 +4221,29 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 		Ty temp[_size_remainder_padded];
 		for (std::size_t m = 0; m < _size_remainder; m++)
 		{
-			temp[m] = *(rhs_ptr + _size_mult16 + m);
+			temp[m] = *(rhs_ptr + _size_mult_packed + m);
 		}
 		for (std::size_t m = 0; m < _size_remainder; m++)
 		{
-			*(res_ptr + _size_mult16 + m) -= temp[m];
+			*(res_ptr + _size_mult_packed + m) -= temp[m];
 		}
 	}
 	else
 	{
-		constexpr std::size_t _rows_mult16 = _rows - _rows % 16;
-		constexpr std::size_t _rows_remainder = _rows % 16;
+		constexpr std::size_t _rows_mult_packed = _rows - _rows % _packed;
+		constexpr std::size_t _rows_remainder = _rows % _packed;
 		constexpr std::size_t _rows_remainder_padded = (_rows_remainder != 0) ? _rows_remainder : 1;
 
 		for (std::size_t j = 0; j < _cols; j++)
 		{
-			for (std::size_t i = 0; i < _rows_mult16; i += 16)
+			for (std::size_t i = 0; i < _rows_mult_packed; i += _packed)
 			{
-				Ty temp[16];
-				for (std::size_t m = 0; m < 16; m++)
+				Ty temp[_packed];
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					temp[m] = *(rhs_ptr + i + m + _rhs_rows_padded * j);
 				}
-				for (std::size_t m = 0; m < 16; m++)
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					*(res_ptr + i + m + _rows_padded * j) -= temp[m];
 				}
@@ -4247,11 +4252,11 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 			Ty temp[_rows_remainder_padded];
 			for (std::size_t m = 0; m < _rows_remainder; m++)
 			{
-				temp[m] = *(rhs_ptr + _rows_mult16 + m + _rhs_rows_padded * j);
+				temp[m] = *(rhs_ptr + _rows_mult_packed + m + _rhs_rows_padded * j);
 			}
 			for (std::size_t m = 0; m < _rows_remainder; m++)
 			{
-				*(res_ptr + _rows_mult16 + m + _rows_padded * j) -= temp[m];
+				*(res_ptr + _rows_mult_packed + m + _rows_padded * j) -= temp[m];
 			}
 		}
 	}
@@ -4266,6 +4271,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 	const cool::const_matrix_interface<Ty, _rows, _cols, _rhs_rows_padded, _rhs_align, _rhs_matrix_storage_Ty>& COOL_MATRIX_RESTRICT rhs) noexcept
 {
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
+	constexpr std::size_t _packed = cool::matrix_multiply_kernel_spec<Ty, _rows, 2, _cols>::packed;
 
 	Ty* res_ptr = this->data();
 	const Ty* rhs_ptr = rhs.data();
@@ -4273,18 +4279,18 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 	if (_contiguous)
 	{
 		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t _size_mult16 = _size - _size % 16;
-		constexpr std::size_t _size_remainder = _size % 16;
+		constexpr std::size_t _size_mult_packed = _size - _size % _packed;
+		constexpr std::size_t _size_remainder = _size % _packed;
 		constexpr std::size_t _size_remainder_padded = (_size_remainder != 0) ? _size_remainder : 1;
 
-		for (std::size_t n = 0; n < _size_mult16; n += 16)
+		for (std::size_t n = 0; n < _size_mult_packed; n += _packed)
 		{
-			Ty temp[16];
-			for (std::size_t m = 0; m < 16; m++)
+			Ty temp[_packed];
+			for (std::size_t m = 0; m < _packed; m++)
 			{
 				temp[m] = *(rhs_ptr + n + m);
 			}
-			for (std::size_t m = 0; m < 16; m++)
+			for (std::size_t m = 0; m < _packed; m++)
 			{
 				*(res_ptr + n + m) *= temp[m];
 			}
@@ -4293,29 +4299,29 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 		Ty temp[_size_remainder_padded];
 		for (std::size_t m = 0; m < _size_remainder; m++)
 		{
-			temp[m] = *(rhs_ptr + _size_mult16 + m);
+			temp[m] = *(rhs_ptr + _size_mult_packed + m);
 		}
 		for (std::size_t m = 0; m < _size_remainder; m++)
 		{
-			*(res_ptr + _size_mult16 + m) *= temp[m];
+			*(res_ptr + _size_mult_packed + m) *= temp[m];
 		}
 	}
 	else
 	{
-		constexpr std::size_t _rows_mult16 = _rows - _rows % 16;
-		constexpr std::size_t _rows_remainder = _rows % 16;
+		constexpr std::size_t _rows_mult_packed = _rows - _rows % _packed;
+		constexpr std::size_t _rows_remainder = _rows % _packed;
 		constexpr std::size_t _rows_remainder_padded = (_rows_remainder != 0) ? _rows_remainder : 1;
 
 		for (std::size_t j = 0; j < _cols; j++)
 		{
-			for (std::size_t i = 0; i < _rows_mult16; i += 16)
+			for (std::size_t i = 0; i < _rows_mult_packed; i += _packed)
 			{
-				Ty temp[16];
-				for (std::size_t m = 0; m < 16; m++)
+				Ty temp[_packed];
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					temp[m] = *(rhs_ptr + i + m + _rhs_rows_padded * j);
 				}
-				for (std::size_t m = 0; m < 16; m++)
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					*(res_ptr + i + m + _rows_padded * j) *= temp[m];
 				}
@@ -4324,11 +4330,11 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 			Ty temp[_rows_remainder_padded];
 			for (std::size_t m = 0; m < _rows_remainder; m++)
 			{
-				temp[m] = *(rhs_ptr + _rows_mult16 + m + _rhs_rows_padded * j);
+				temp[m] = *(rhs_ptr + _rows_mult_packed + m + _rhs_rows_padded * j);
 			}
 			for (std::size_t m = 0; m < _rows_remainder; m++)
 			{
-				*(res_ptr + _rows_mult16 + m + _rows_padded * j) *= temp[m];
+				*(res_ptr + _rows_mult_packed + m + _rows_padded * j) *= temp[m];
 			}
 		}
 	}
@@ -4437,6 +4443,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 {
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 	constexpr bool _positive = _sign >= 0;
+	constexpr std::size_t _packed = cool::matrix_multiply_kernel_spec<Ty, _rows, 2, _cols>::packed;
 
 	static_assert(_sign == 1 || _sign == -1, "sign template argument requirement : value must be 1 or -1");
 
@@ -4446,20 +4453,20 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 	if (_contiguous)
 	{
 		constexpr std::size_t _size = _rows * _cols;
-		constexpr std::size_t _size_mult16 = _size - _size % 16;
-		constexpr std::size_t _size_remainder = _size % 16;
+		constexpr std::size_t _size_mult_packed = _size - _size % _packed;
+		constexpr std::size_t _size_remainder = _size % _packed;
 		constexpr std::size_t _size_remainder_padded = (_size_remainder != 0) ? _size_remainder : 1;
 
 		if (_positive)
 		{
-			for (std::size_t n = 0; n < _size_mult16; n += 16)
+			for (std::size_t n = 0; n < _size_mult_packed; n += _packed)
 			{
-				Ty temp[16];
-				for (std::size_t m = 0; m < 16; m++)
+				Ty temp[_packed];
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					temp[m] = *(rhs_ptr + n + m);
 				}
-				for (std::size_t m = 0; m < 16; m++)
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					*(res_ptr + n + m) += s * temp[m];
 				}
@@ -4468,23 +4475,23 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 			Ty temp[_size_remainder_padded];
 			for (std::size_t m = 0; m < _size_remainder; m++)
 			{
-				temp[m] = *(rhs_ptr + _size_mult16 + m);
+				temp[m] = *(rhs_ptr + _size_mult_packed + m);
 			}
 			for (std::size_t m = 0; m < _size_remainder; m++)
 			{
-				*(res_ptr + _size_mult16 + m) += s * temp[m];
+				*(res_ptr + _size_mult_packed + m) += s * temp[m];
 			}
 		}
 		else
 		{
-			for (std::size_t n = 0; n < _size_mult16; n += 16)
+			for (std::size_t n = 0; n < _size_mult_packed; n += _packed)
 			{
-				Ty temp[16];
-				for (std::size_t m = 0; m < 16; m++)
+				Ty temp[_packed];
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					temp[m] = *(rhs_ptr + n + m);
 				}
-				for (std::size_t m = 0; m < 16; m++)
+				for (std::size_t m = 0; m < _packed; m++)
 				{
 					*(res_ptr + n + m) -= s * temp[m];
 				}
@@ -4493,32 +4500,32 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 			Ty temp[_size_remainder_padded];
 			for (std::size_t m = 0; m < _size_remainder; m++)
 			{
-				temp[m] = *(rhs_ptr + _size_mult16 + m);
+				temp[m] = *(rhs_ptr + _size_mult_packed + m);
 			}
 			for (std::size_t m = 0; m < _size_remainder; m++)
 			{
-				*(res_ptr + _size_mult16 + m) -= s * temp[m];
+				*(res_ptr + _size_mult_packed + m) -= s * temp[m];
 			}
 		}
 	}
 	else
 	{
-		constexpr std::size_t _rows_mult16 = _rows - _rows % 16;
-		constexpr std::size_t _rows_remainder = _rows % 16;
+		constexpr std::size_t _rows_mult_packed = _rows - _rows % _packed;
+		constexpr std::size_t _rows_remainder = _rows % _packed;
 		constexpr std::size_t _rows_remainder_padded = (_rows_remainder != 0) ? _rows_remainder : 1;
 
 		if (_positive)
 		{
 			for (std::size_t j = 0; j < _cols; j++)
 			{
-				for (std::size_t i = 0; i < _rows_mult16; i += 16)
+				for (std::size_t i = 0; i < _rows_mult_packed; i += _packed)
 				{
-					Ty temp[16];
-					for (std::size_t m = 0; m < 16; m++)
+					Ty temp[_packed];
+					for (std::size_t m = 0; m < _packed; m++)
 					{
 						temp[m] = *(rhs_ptr + i + m + _rhs_rows_padded * j);
 					}
-					for (std::size_t m = 0; m < 16; m++)
+					for (std::size_t m = 0; m < _packed; m++)
 					{
 						*(res_ptr + i + m + _rows_padded * j) += s * temp[m];
 					}
@@ -4527,11 +4534,11 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 				Ty temp[_rows_remainder_padded];
 				for (std::size_t m = 0; m < _rows_remainder; m++)
 				{
-					temp[m] = *(rhs_ptr + _rows_mult16 + m + _rhs_rows_padded * j);
+					temp[m] = *(rhs_ptr + _rows_mult_packed + m + _rhs_rows_padded * j);
 				}
 				for (std::size_t m = 0; m < _rows_remainder; m++)
 				{
-					*(res_ptr + _rows_mult16 + m + _rows_padded * j) += s * temp[m];
+					*(res_ptr + _rows_mult_packed + m + _rows_padded * j) += s * temp[m];
 				}
 			}
 		}
@@ -4539,14 +4546,14 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 		{
 			for (std::size_t j = 0; j < _cols; j++)
 			{
-				for (std::size_t i = 0; i < _rows_mult16; i += 16)
+				for (std::size_t i = 0; i < _rows_mult_packed; i += _packed)
 				{
-					Ty temp[16];
-					for (std::size_t m = 0; m < 16; m++)
+					Ty temp[_packed];
+					for (std::size_t m = 0; m < _packed; m++)
 					{
 						temp[m] = *(rhs_ptr + i + m + _rhs_rows_padded * j);
 					}
-					for (std::size_t m = 0; m < 16; m++)
+					for (std::size_t m = 0; m < _packed; m++)
 					{
 						*(res_ptr + i + m + _rows_padded * j) -= s * temp[m];
 					}
@@ -4555,11 +4562,11 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 				Ty temp[_rows_remainder_padded];
 				for (std::size_t m = 0; m < _rows_remainder; m++)
 				{
-					temp[m] = *(rhs_ptr + _rows_mult16 + m + _rhs_rows_padded * j);
+					temp[m] = *(rhs_ptr + _rows_mult_packed + m + _rhs_rows_padded * j);
 				}
 				for (std::size_t m = 0; m < _rows_remainder; m++)
 				{
-					*(res_ptr + _rows_mult16 + m + _rows_padded * j) -= s * temp[m];
+					*(res_ptr + _rows_mult_packed + m + _rows_padded * j) -= s * temp[m];
 				}
 			}
 		}
