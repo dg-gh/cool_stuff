@@ -179,11 +179,11 @@ namespace cool
 		cool::async_task_end& operator=(cool::async_task_end&& rhs) = delete;
 		~async_task_end() = default;
 
-		inline cool::async_task_end& add_awaited(std::ptrdiff_t number_of_tasks) noexcept;
-		inline cool::async_task_end& sub_awaited(std::ptrdiff_t number_of_tasks) noexcept;
-		inline cool::async_task_end& set_awaited(std::ptrdiff_t number_of_tasks) noexcept;
+		inline cool::async_task_end& add_awaited(std::size_t number_of_tasks) noexcept;
+		inline bool sub_awaited(std::size_t number_of_tasks) noexcept; // returns true iff notified
+		inline bool set_awaited(std::ptrdiff_t number_of_tasks) noexcept; // returns true iff notified
 		inline std::ptrdiff_t get_awaited() const noexcept;
-		inline bool decr_awaited_and_notify() noexcept; // returns true iff notified
+		inline bool decr_awaited() noexcept; // returns true iff notified
 		inline cool::async_task_end& notify() noexcept;
 		inline cool::async_task_end& finish() noexcept;
 		inline bool finished() const noexcept;
@@ -225,12 +225,12 @@ namespace cool
 		explicit inline async_task_result(return_Ty* storage_ptr);
 		explicit inline async_task_result(return_Ty* storage_ptr, const return_Ty& rhs);
 
-		inline cool::async_task_result<return_Ty>& add_awaited(std::ptrdiff_t number_of_tasks) noexcept;
-		inline cool::async_task_result<return_Ty>& sub_awaited(std::ptrdiff_t number_of_tasks) noexcept;
-		inline cool::async_task_result<return_Ty>& set_awaited(std::ptrdiff_t number_of_tasks) noexcept;
+		inline cool::async_task_result<return_Ty>& add_awaited(std::size_t number_of_tasks) noexcept;
+		inline bool sub_awaited(std::size_t number_of_tasks) noexcept; // returns true iff notified
+		inline bool set_awaited(std::ptrdiff_t number_of_tasks) noexcept; // returns true iff notified
 		inline std::ptrdiff_t get_awaited() const noexcept;
 		inline cool::_async_task_result_proxy<return_Ty> to(std::size_t offset) noexcept;
-		inline bool decr_awaited_and_notify() noexcept; // returns true iff notified
+		inline bool decr_awaited() noexcept; // returns true iff notified
 		inline cool::async_task_result<return_Ty>& notify() noexcept;
 		inline cool::async_task_result<return_Ty>& finish() noexcept;
 		inline bool finished() const noexcept;
@@ -687,7 +687,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
+					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -755,7 +755,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
+					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -818,7 +818,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
+					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -888,7 +888,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
+					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -952,7 +952,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					target_ref.decr_awaited_and_notify();
+					target_ref.decr_awaited();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -1024,7 +1024,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					target_ref.decr_awaited_and_notify();
+					target_ref.decr_awaited();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -1091,7 +1091,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					target_ref.decr_awaited_and_notify();
+					target_ref.decr_awaited();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -1165,7 +1165,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 					);
 
-					target_ref.decr_awaited_and_notify();
+					target_ref.decr_awaited();
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 				}
@@ -1592,7 +1592,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									function_ptr, std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
+								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -1652,7 +1652,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									function_ptr, std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
+								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -1746,10 +1746,10 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
 
 								cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
-									m_function_ptr, std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
+									function_ptr, std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
+								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -1811,7 +1811,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									function_ptr, std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited_and_notify();
+								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -1909,7 +1909,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									function_ptr, std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								target_ref.decr_awaited_and_notify();
+								target_ref.decr_awaited();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -1973,7 +1973,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									function_ptr, std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								target_ref.decr_awaited_and_notify();
+								target_ref.decr_awaited();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -2074,7 +2074,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									function_ptr, std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								target_ref.decr_awaited_and_notify();
+								target_ref.decr_awaited();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -2140,7 +2140,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 									function_ptr, std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 
-								target_ref.decr_awaited_and_notify();
+								target_ref.decr_awaited();
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 							}
@@ -2533,22 +2533,41 @@ inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 
 // async_task_end detail
 
-inline cool::async_task_end& cool::async_task_end::add_awaited(std::ptrdiff_t number_of_tasks) noexcept
+inline cool::async_task_end& cool::async_task_end::add_awaited(std::size_t number_of_tasks) noexcept
 {
-	m_tasks_awaited.fetch_add(number_of_tasks, std::memory_order_seq_cst);
+	m_tasks_awaited.fetch_add(static_cast<std::ptrdiff_t>(number_of_tasks), std::memory_order_seq_cst);
 	return *this;
 }
 
-inline cool::async_task_end& cool::async_task_end::sub_awaited(std::ptrdiff_t number_of_tasks) noexcept
+inline bool cool::async_task_end::sub_awaited(std::size_t number_of_tasks) noexcept
 {
-	m_tasks_awaited.fetch_sub(number_of_tasks, std::memory_order_seq_cst);
-	return *this;
+	std::ptrdiff_t _number_of_tasks = static_cast<std::ptrdiff_t>(number_of_tasks);
+	std::ptrdiff_t prev = m_tasks_awaited.fetch_sub(_number_of_tasks, std::memory_order_seq_cst);
+	if ((prev > 0) && (prev - _number_of_tasks <= 0))
+	{
+		std::lock_guard<std::mutex> lock(m_finish_mutex);
+		m_finish_condition_var.notify_all();
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
-inline cool::async_task_end& cool::async_task_end::set_awaited(std::ptrdiff_t number_of_tasks) noexcept
+inline bool cool::async_task_end::set_awaited(std::ptrdiff_t number_of_tasks) noexcept
 {
-	m_tasks_awaited.store(number_of_tasks, std::memory_order_seq_cst);
-	return *this;
+	std::ptrdiff_t prev = m_tasks_awaited.exchange(number_of_tasks, std::memory_order_seq_cst);
+	if ((prev > 0) && (number_of_tasks <= 0))
+	{
+		std::lock_guard<std::mutex> lock(m_finish_mutex);
+		m_finish_condition_var.notify_all();
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 inline std::ptrdiff_t cool::async_task_end::get_awaited() const noexcept
@@ -2556,7 +2575,7 @@ inline std::ptrdiff_t cool::async_task_end::get_awaited() const noexcept
 	return m_tasks_awaited.load(std::memory_order_seq_cst);
 }
 
-inline bool cool::async_task_end::decr_awaited_and_notify() noexcept
+inline bool cool::async_task_end::decr_awaited() noexcept
 {
 	if (m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 	{
@@ -2618,24 +2637,43 @@ inline cool::async_task_result<return_Ty>::async_task_result(return_Ty* storage_
 }
 
 template <class return_Ty>
-inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::add_awaited(std::ptrdiff_t number_of_tasks) noexcept
+inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::add_awaited(std::size_t number_of_tasks) noexcept
 {
 	m_tasks_awaited.fetch_add(number_of_tasks, std::memory_order_seq_cst);
 	return *this;
 }
 
 template <class return_Ty>
-inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::sub_awaited(std::ptrdiff_t number_of_tasks) noexcept
+inline bool cool::async_task_result<return_Ty>::sub_awaited(std::size_t number_of_tasks) noexcept
 {
-	m_tasks_awaited.fetch_sub(number_of_tasks, std::memory_order_seq_cst);
-	return *this;
+	std::ptrdiff_t _number_of_tasks = static_cast<std::ptrdiff_t>(number_of_tasks);
+	std::ptrdiff_t prev = m_tasks_awaited.fetch_sub(_number_of_tasks, std::memory_order_seq_cst);
+	if ((prev > 0) && (prev - _number_of_tasks <= 0))
+	{
+		std::lock_guard<std::mutex> lock(m_finish_mutex);
+		m_finish_condition_var.notify_all();
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 template <class return_Ty>
-inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::set_awaited(std::ptrdiff_t number_of_tasks) noexcept
+inline bool cool::async_task_result<return_Ty>::set_awaited(std::ptrdiff_t number_of_tasks) noexcept
 {
-	m_tasks_awaited.store(number_of_tasks, std::memory_order_seq_cst);
-	return *this;
+	std::ptrdiff_t prev = m_tasks_awaited.exchange(number_of_tasks, std::memory_order_seq_cst);
+	if ((prev > 0) && (number_of_tasks <= 0))
+	{
+		std::lock_guard<std::mutex> lock(m_finish_mutex);
+		m_finish_condition_var.notify_all();
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 template <class return_Ty>
@@ -2651,7 +2689,7 @@ inline cool::_async_task_result_proxy<return_Ty> cool::async_task_result<return_
 }
 
 template <class return_Ty>
-inline bool cool::async_task_result<return_Ty>::decr_awaited_and_notify() noexcept
+inline bool cool::async_task_result<return_Ty>::decr_awaited() noexcept
 {
 	if (m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 	{
