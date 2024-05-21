@@ -525,7 +525,7 @@ namespace cool
 			inline cm_const_iterator(const Ty* ptr, std::size_t j) noexcept;
 
 			inline const Ty& operator*() const noexcept;
-			inline const Ty& operator->() const noexcept;
+			inline const Ty* operator->() const noexcept;
 
 			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator& operator--() noexcept;
 			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator& operator++() noexcept;
@@ -564,7 +564,7 @@ namespace cool
 			inline rm_const_iterator(const Ty* ptr, std::size_t i) noexcept : m_data_ptr(ptr), m_i(i), m_j(0) {}
 
 			inline const Ty& operator*() const noexcept;
-			inline const Ty& operator->() const noexcept;
+			inline const Ty* operator->() const noexcept;
 
 			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator& operator--() noexcept;
 			inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator& operator++() noexcept;
@@ -776,7 +776,7 @@ namespace cool
 			inline cm_iterator(Ty* ptr, std::size_t j) noexcept;
 
 			inline Ty& operator*() const noexcept;
-			inline Ty& operator->() const noexcept;
+			inline Ty* operator->() const noexcept;
 
 			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator& operator--() noexcept;
 			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator& operator++() noexcept;
@@ -815,7 +815,7 @@ namespace cool
 			inline rm_iterator(Ty* ptr, std::size_t i) noexcept : m_data_ptr(ptr), m_i(i), m_j(0) {}
 
 			inline Ty& operator*() const noexcept;
-			inline Ty& operator->() const noexcept;
+			inline Ty* operator->() const noexcept;
 
 			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator& operator--() noexcept;
 			inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator& operator++() noexcept;
@@ -3512,7 +3512,7 @@ inline const Ty& cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _a
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
-inline const Ty& cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator::operator->() const noexcept
+inline const Ty* cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator::operator->() const noexcept
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 
@@ -3705,7 +3705,7 @@ inline const Ty& cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _a
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
-inline const Ty& cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator::operator->() const noexcept
+inline const Ty* cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator::operator->() const noexcept
 {
 	return m_data_ptr + m_i + _rows_padded * m_j;
 }
@@ -5598,7 +5598,7 @@ inline Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matri
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
-inline Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator::operator->() const noexcept
+inline Ty* cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator::operator->() const noexcept
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 
@@ -5791,7 +5791,7 @@ inline Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matri
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
-inline Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator::operator->() const noexcept
+inline Ty* cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator::operator->() const noexcept
 {
 	return m_data_ptr + m_i + _rows_padded * m_j;
 }
