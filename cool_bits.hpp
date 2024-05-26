@@ -3205,7 +3205,7 @@ inline bool cool::bits<bit_count, word_Ty>::_less_cmp(ptr_Ty1 lhs_ptr, ptr_Ty2 r
 		test_neq |= (lhs_word ^ rhs_word);
 	}
 
-	return (test_less == static_cast<word_Ty>(0)) && (test_less != static_cast<word_Ty>(0));
+	return (test_less == static_cast<word_Ty>(0)) && (test_neq != static_cast<word_Ty>(0));
 }
 
 // cmp

@@ -1976,12 +1976,12 @@ inline std::size_t cool::template_rotation3d<Ty>::axis_count() const noexcept
 	constexpr std::size_t limit3 = cool::rotation_type_as_index(cool::rotation_type::XYZ);
 	constexpr std::size_t limit5 = cool::rotation_type_as_index(cool::rotation_type::AA);
 
-	std::size_t index = cool::rotation_type_as_index(m_rotation_type);
+	std::size_t _index = cool::rotation_type_as_index(m_rotation_type);
 
-	return (index >= limit5) ? 1
-		: static_cast<std::size_t>(index >= limit1)
-		+ static_cast<std::size_t>(index >= limit2)
-		+ static_cast<std::size_t>(index >= limit3);
+	return (_index >= limit5) ? 1
+		: static_cast<std::size_t>(_index >= limit1)
+		+ static_cast<std::size_t>(_index >= limit2)
+		+ static_cast<std::size_t>(_index >= limit3);
 }
 
 template <class Ty>
