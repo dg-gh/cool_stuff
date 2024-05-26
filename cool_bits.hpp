@@ -31,7 +31,6 @@
 #include <climits>
 #include <initializer_list>
 #include <type_traits>
-#include <iterator>
 #include <new>
 
 
@@ -128,7 +127,6 @@ namespace cool
 	public:
 
 		using word_type = word_Ty;
-		using iterator_category = std::forward_iterator_tag;
 
 		static_assert(std::is_integral<word_type>::value && std::is_unsigned<word_type>::value,
 			"cool::bits<bit_count, word_type> requirement : word_type must be integral and unsigned");
@@ -491,7 +489,6 @@ namespace cool
 	public:
 
 		using word_type = word_Ty;
-		using iterator_category = std::forward_iterator_tag;
 
 		static constexpr inline std::size_t size() noexcept;
 
@@ -635,7 +632,6 @@ namespace cool
 	public:
 
 		using word_type = word_Ty;
-		using iterator_category = std::forward_iterator_tag;
 
 		static constexpr inline std::size_t size() noexcept;
 
@@ -2275,27 +2271,30 @@ inline typename cool::bits<bit_count, word_Ty>::iterator& cool::bits<bit_count, 
 
 			while (m_word_index < end_word_index)
 			{
-				if (end_mask_needed) {
+				if (end_mask_needed)
+				{
 					constexpr std::size_t entire_words_size = word_size * word_capacity;
 					constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 
 					m_data = (m_word_index < entire_words_size) ? *m_data_ptr : *m_data_ptr & mask;
 				}
-				else {
+				else
+				{
 					m_data = *m_data_ptr;
 				}
 
 				if (m_data != static_cast<word_Ty>(0))
 				{
-					if (cast_upward) {
+					if (cast_upward)
+					{
 						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
 					}
-					else {
+					else
+					{
 						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 					}
 
-					m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ?
-						m_data >>= m_index_p1 : 0;
+					m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ? m_data >> m_index_p1 : 0;
 
 					return *this;
 				}
@@ -2310,12 +2309,16 @@ inline typename cool::bits<bit_count, word_Ty>::iterator& cool::bits<bit_count, 
 	else
 	{
 		std::size_t index_offset;
-		if (cast_upward) {
+
+		if (cast_upward)
+		{
 			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data))) - 1) + 1;
 		}
-		else {
+		else
+		{
 			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 		}
+
 		m_index_p1 += index_offset;
 		m_data >>= index_offset;
 	}
@@ -2326,69 +2329,8 @@ inline typename cool::bits<bit_count, word_Ty>::iterator& cool::bits<bit_count, 
 template <std::size_t bit_count, class word_Ty>
 inline typename cool::bits<bit_count, word_Ty>::iterator cool::bits<bit_count, word_Ty>::iterator::operator++(int) noexcept
 {
-	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
-	constexpr bool end_mask_needed = bit_count % word_size != 0;
-	constexpr bool multi_word = bit_count > word_size;
-
 	cool::bits<bit_count, word_Ty>::iterator ret = *this;
-
-	if (m_data == static_cast<word_Ty>(0))
-	{
-		m_data_ptr++;
-
-		if (multi_word)
-		{
-			constexpr std::size_t end_word_index = word_count * word_size;
-
-			m_word_index += cool::bits<bit_count, word_Ty>::word_size;
-
-			while (m_word_index < end_word_index)
-			{
-				if (end_mask_needed) {
-					constexpr std::size_t entire_words_size = word_size * word_capacity;
-					constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
-
-					m_data = (m_word_index < entire_words_size) ? *m_data_ptr : *m_data_ptr & mask;
-				}
-				else {
-					m_data = *m_data_ptr;
-				}
-
-				if (m_data != static_cast<word_Ty>(0))
-				{
-					if (cast_upward) {
-						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
-					}
-					else {
-						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
-					}
-
-					m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ?
-						m_data >>= m_index_p1 : 0;
-
-					return ret;
-				}
-				else
-				{
-					m_data_ptr++;
-					m_word_index += cool::bits<bit_count, word_Ty>::word_size;
-				}
-			}
-		}
-	}
-	else
-	{
-		std::size_t index_offset;
-		if (cast_upward) {
-			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data))) - 1) + 1;
-		}
-		else {
-			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
-		}
-		m_index_p1 += index_offset;
-		m_data >>= index_offset;
-	}
-
+	this->operator++();
 	return ret;
 }
 
@@ -2427,25 +2369,28 @@ inline cool::bits<bit_count, word_Ty>::iterator::iterator(const word_Ty* data_pt
 
 	if (one_word)
 	{
-		if (end_mask_needed) {
+		if (end_mask_needed)
+		{
 			constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 			m_data = *m_data_ptr & mask;
 		}
-		else {
+		else
+		{
 			m_data = *m_data_ptr;
 		}
 
 		if (m_data != static_cast<word_Ty>(0))
 		{
-			if (cast_upward) {
+			if (cast_upward)
+			{
 				m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
 			}
-			else {
+			else
+			{
 				m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 			}
 
-			m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ?
-				m_data >>= m_index_p1 : 0;
+			m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ? m_data >> m_index_p1 : 0;
 		}
 		else
 		{
@@ -2458,27 +2403,30 @@ inline cool::bits<bit_count, word_Ty>::iterator::iterator(const word_Ty* data_pt
 
 		while (m_word_index < end_word_index)
 		{
-			if (end_mask_needed) {
+			if (end_mask_needed)
+			{
 				constexpr std::size_t entire_words_size = word_size * word_capacity;
 				constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 
 				m_data = (m_word_index < entire_words_size) ? *m_data_ptr : *m_data_ptr & mask;
 			}
-			else {
+			else
+			{
 				m_data = *m_data_ptr;
 			}
 
 			if (m_data != static_cast<word_Ty>(0))
 			{
-				if (cast_upward) {
+				if (cast_upward)
+				{
 					m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
 				}
-				else {
+				else
+				{
 					m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 				}
 
-				m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ?
-					m_data >>= m_index_p1 : 0;
+				m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ? m_data >> m_index_p1 : 0;
 
 				break;
 			}
@@ -2521,28 +2469,31 @@ inline typename cool::bits<bit_count, word_Ty>::v_iterator& cool::bits<bit_count
 
 			while (m_word_index < end_word_index)
 			{
-				if (end_mask_needed) {
+				if (end_mask_needed)
+				{
 					constexpr std::size_t entire_words_size = word_size * word_capacity;
 					constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 
 					word_Ty temp = *m_data_ptr;
 					m_data = (m_word_index < entire_words_size) ? temp : temp & mask;
 				}
-				else {
+				else
+				{
 					m_data = *m_data_ptr;
 				}
 
 				if (m_data != static_cast<word_Ty>(0))
 				{
-					if (cast_upward) {
+					if (cast_upward)
+					{
 						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
 					}
-					else {
+					else
+					{
 						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 					}
 
-					m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ?
-						m_data >>= m_index_p1 : 0;
+					m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ? m_data >> m_index_p1 : 0;
 
 					return *this;
 				}
@@ -2557,12 +2508,16 @@ inline typename cool::bits<bit_count, word_Ty>::v_iterator& cool::bits<bit_count
 	else
 	{
 		std::size_t index_offset;
-		if (cast_upward) {
+
+		if (cast_upward)
+		{
 			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data))) - 1) + 1;
 		}
-		else {
+		else
+		{
 			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 		}
+
 		m_index_p1 += index_offset;
 		m_data >>= index_offset;
 	}
@@ -2573,70 +2528,8 @@ inline typename cool::bits<bit_count, word_Ty>::v_iterator& cool::bits<bit_count
 template <std::size_t bit_count, class word_Ty>
 inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::bits<bit_count, word_Ty>::v_iterator::operator++(int) noexcept
 {
-	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
-	constexpr bool end_mask_needed = bit_count % word_size != 0;
-	constexpr bool multi_word = bit_count > word_size;
-
 	cool::bits<bit_count, word_Ty>::v_iterator ret = *this;
-
-	if (m_data == static_cast<word_Ty>(0))
-	{
-		m_data_ptr++;
-
-		if (multi_word)
-		{
-			constexpr std::size_t end_word_index = word_count * word_size;
-
-			m_word_index += cool::bits<bit_count, word_Ty>::word_size;
-
-			while (m_word_index < end_word_index)
-			{
-				if (end_mask_needed) {
-					constexpr std::size_t entire_words_size = word_size * word_capacity;
-					constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
-
-					word_Ty temp = *m_data_ptr;
-					m_data = (m_word_index < entire_words_size) ? temp : temp & mask;
-				}
-				else {
-					m_data = *m_data_ptr;
-				}
-
-				if (m_data != static_cast<word_Ty>(0))
-				{
-					if (cast_upward) {
-						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
-					}
-					else {
-						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
-					}
-
-					m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ?
-						m_data >>= m_index_p1 : 0;
-
-					return ret;
-				}
-				else
-				{
-					m_data_ptr++;
-					m_word_index += cool::bits<bit_count, word_Ty>::word_size;
-				}
-			}
-		}
-	}
-	else
-	{
-		std::size_t index_offset;
-		if (cast_upward) {
-			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data))) - 1) + 1;
-		}
-		else {
-			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
-		}
-		m_index_p1 += index_offset;
-		m_data >>= index_offset;
-	}
-
+	this->operator++();
 	return ret;
 }
 
@@ -2675,23 +2568,28 @@ inline cool::bits<bit_count, word_Ty>::v_iterator::v_iterator(const volatile wor
 
 	if (one_word)
 	{
-		if (end_mask_needed) {
+		if (end_mask_needed)
+		{
 			constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 			m_data = *m_data_ptr & mask;
 		}
-		else {
+		else
+		{
 			m_data = *m_data_ptr;
 		}
 
 		if (m_data != static_cast<word_Ty>(0))
 		{
-			if (cast_upward) {
+			if (cast_upward)
+			{
 				m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
 			}
-			else {
+			else
+			{
 				m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 			}
-			m_data >>= m_index_p1;
+
+			m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ? m_data >> m_index_p1 : 0;
 		}
 		else
 		{
@@ -2704,26 +2602,32 @@ inline cool::bits<bit_count, word_Ty>::v_iterator::v_iterator(const volatile wor
 
 		while (m_word_index < end_word_index)
 		{
-			if (end_mask_needed) {
+			if (end_mask_needed)
+			{
 				constexpr std::size_t entire_words_size = word_size * word_capacity;
 				constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
 
 				word_Ty temp = *m_data_ptr;
 				m_data = (m_word_index < entire_words_size) ? temp : temp & mask;
 			}
-			else {
+			else
+			{
 				m_data = *m_data_ptr;
 			}
 
 			if (m_data != static_cast<word_Ty>(0))
 			{
-				if (cast_upward) {
+				if (cast_upward)
+				{
 					m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
 				}
-				else {
+				else
+				{
 					m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 				}
-				m_data >>= m_index_p1;
+
+				m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ? m_data >> m_index_p1 : 0;
+
 				break;
 			}
 			else

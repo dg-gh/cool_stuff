@@ -1457,7 +1457,6 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 {
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 
-	Ty* res_ptr = this->data();
 	const Ty* rhs_ptr = rhs.data();
 
 	if (_contiguous)
