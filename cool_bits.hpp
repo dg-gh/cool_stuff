@@ -31,88 +31,18 @@
 #include <climits>
 #include <initializer_list>
 #include <type_traits>
+#include <utility>
 #include <new>
 
 
 namespace cool
 {
-	template <std::size_t bit_count, class word_Ty = unsigned char> class bits;
-}
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t> class bits;
 
-namespace cool
-{
-	// constexpr constructing functions
-
-	template <std::size_t bit_count, class word_Ty = unsigned char, class ... args_uint_Ty>
-	constexpr inline cool::bits<bit_count, word_Ty> one_bits(args_uint_Ty&& ... bit_offsets) noexcept;
-
-	template <std::size_t bit_count, class word_Ty = unsigned char, class ... args_uint_Ty>
-	constexpr inline cool::bits<bit_count, word_Ty> zero_bits(args_uint_Ty&& ... bit_offsets) noexcept;
-
-	template <std::size_t bit_count, class word_Ty = unsigned char, class uint_Ty1, class uint_Ty2>
-	constexpr inline cool::bits<bit_count, word_Ty> one_bits_range(uint_Ty1 lower, uint_Ty2 higher) noexcept;
-
-	template <std::size_t bit_count, class word_Ty = unsigned char, class uint_Ty1, class uint_Ty2>
-	constexpr inline cool::bits<bit_count, word_Ty> zero_bits_range(uint_Ty1 lower, uint_Ty2 higher) noexcept;
-
-	template <std::size_t bit_count, class word_Ty = unsigned char, class rhs_word_Ty>
-	constexpr inline cool::bits<bit_count, word_Ty> value_in_bits(rhs_word_Ty word_val) noexcept;
-
-	template <std::size_t bit_count, class word_Ty = unsigned char, class uint_Ty, class rhs_word_Ty>
-	constexpr inline cool::bits<bit_count, word_Ty> value_in_bits(rhs_word_Ty word_val, uint_Ty bit_offset) noexcept;
-
-	template <std::size_t bit_count, class word_Ty = unsigned char, class uint_Ty1, class uint_Ty2, class rhs_word_Ty>
-	constexpr inline cool::bits<bit_count, word_Ty> value_in_bits(rhs_word_Ty word_val, uint_Ty1 bit_offset, uint_Ty2 word_offset) noexcept;
-
+	template <std::size_t bit_count, class word_Ty, class arg_Ty> class _vbits_proxy;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty> class _cvbits_proxy;
 	template <std::size_t bit_count, class ptr_Ty1, class ptr_Ty2> class _masked_proxy;
 
-	template <std::size_t bit_count, class word_Ty = unsigned char>
-	inline cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>
-		masked(const cool::bits<bit_count, word_Ty>& rhs, const cool::bits<bit_count, word_Ty>& mask) noexcept;
-}
-
-namespace cool
-{
-	// _vbits_proxy, _cvbits_proxy, masked
-
-	template <std::size_t bit_count, class word_Ty> class _vbits_proxy;
-	template <std::size_t bit_count, class word_Ty> class _cvbits_proxy;
-
-	template <std::size_t bit_count, class word_Ty = unsigned char>
-	inline cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>
-		masked(const cool::bits<bit_count, word_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty>& mask) noexcept;
-
-	template <std::size_t bit_count, class word_Ty = unsigned char>
-	inline cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>
-		masked(const cool::bits<bit_count, word_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty>& mask) noexcept;
-
-	template <std::size_t bit_count, class word_Ty = unsigned char>
-	inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>
-		masked(const cool::_vbits_proxy<bit_count, word_Ty>& rhs, const cool::bits<bit_count, word_Ty>& mask) noexcept;
-
-	template <std::size_t bit_count, class word_Ty = unsigned char>
-	inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
-		masked(const cool::_vbits_proxy<bit_count, word_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty>& mask) noexcept;
-
-	template <std::size_t bit_count, class word_Ty = unsigned char>
-	inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
-		masked(const cool::_vbits_proxy<bit_count, word_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty>& mask) noexcept;
-
-	template <std::size_t bit_count, class word_Ty = unsigned char>
-	inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>
-		masked(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs, const cool::bits<bit_count, word_Ty>& mask) noexcept;
-
-	template <std::size_t bit_count, class word_Ty = unsigned char>
-	inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
-		masked(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty>& mask) noexcept;
-
-	template <std::size_t bit_count, class word_Ty = unsigned char>
-	inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
-		masked(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty>& mask) noexcept;
-}
-
-namespace cool
-{
 #ifndef xCOOL_NO_INIT_ENUM
 #define xCOOL_NO_INIT_ENUM
 	enum no_init_t { no_init };
@@ -121,18 +51,19 @@ namespace cool
 
 	// bits
 
-	template <std::size_t bit_count, class word_Ty> class bits
+	template <std::size_t bit_count, class word_Ty, class arg_Ty> class bits
 	{
 
 	public:
 
 		using word_type = word_Ty;
+		using arg_type = arg_Ty;
 
 		static_assert(std::is_integral<word_type>::value && std::is_unsigned<word_type>::value,
-			"cool::bits<bit_count, word_type> requirement : word_type must be integral and unsigned");
+			"cool::bits<bit_count, word_type, arg_type> requirement : word_type must be integral and unsigned");
 
 		static_assert(bit_count != 0,
-			"cool::bits<bit_count, word_type> requirement : bit_count must be non-zero");
+			"cool::bits<bit_count, word_type, arg_type> requirement : bit_count must be non-zero");
 
 		static constexpr inline std::size_t size() noexcept;
 
@@ -146,24 +77,24 @@ namespace cool
 
 		bits() noexcept = default;
 		inline bits(cool::no_init_t) noexcept {};
-		constexpr bits(const cool::bits<bit_count, word_Ty>&) noexcept = default;
-		inline cool::bits<bit_count, word_Ty>& operator=(const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-		bits(cool::bits<bit_count, word_Ty>&&) noexcept = default;
-		inline cool::bits<bit_count, word_Ty>& operator=(cool::bits<bit_count, word_Ty>&& rhs) noexcept;
+		constexpr bits(const cool::bits<bit_count, word_Ty, arg_Ty>&) noexcept = default;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		bits(cool::bits<bit_count, word_Ty, arg_Ty>&&) noexcept = default;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator=(cool::bits<bit_count, word_Ty, arg_Ty>&& rhs) noexcept;
 		~bits() = default;
 
 		constexpr inline bits(bool val) noexcept;
-		inline cool::bits<bit_count, word_Ty>& operator=(bool val) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator=(bool val) noexcept;
 		constexpr inline bits(std::initializer_list<bool> lst) noexcept;
-		inline cool::bits<bit_count, word_Ty>& operator=(std::initializer_list<bool> lst) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator=(std::initializer_list<bool> lst) noexcept;
 
-		inline cool::bits<bit_count, word_Ty>& operator=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::bits<bit_count, word_Ty>& operator=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
 
-		inline cool::bits<bit_count, word_Ty>& operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>& rhs) noexcept;
-		inline cool::bits<bit_count, word_Ty>& operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>& rhs) noexcept;
-		inline cool::bits<bit_count, word_Ty>& operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>& rhs) noexcept;
-		inline cool::bits<bit_count, word_Ty>& operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>& rhs) noexcept;
 
 		// misc
 
@@ -176,95 +107,151 @@ namespace cool
 		class vbit_proxy;
 
 		template <class uint_Ty> constexpr inline bool operator[](uint_Ty bit_offset) const noexcept;
-		template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty>::bit_proxy operator[](uint_Ty bit_offset) noexcept;
+		template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy operator[](uint_Ty bit_offset) noexcept;
 
 		template <class uint_Ty> constexpr inline bool bit(uint_Ty bit_offset) const noexcept;
-		template <class uint_Ty1, class uint_Ty2> inline bool bit(uint_Ty1 bit_offset, uint_Ty2 additional_byte_offset) const noexcept;
-		template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty>::bit_proxy bit(uint_Ty bit_offset) noexcept;
-		template <class uint_Ty1, class uint_Ty2> inline typename cool::bits<bit_count, word_Ty>::bit_proxy bit(uint_Ty1 bit_offset, uint_Ty2 additional_byte_offset) noexcept;
+		template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy bit(uint_Ty bit_offset) noexcept;
 
 		template <class uint_Ty> inline bool vbit(uint_Ty bit_offset) const volatile noexcept;
-		template <class uint_Ty1, class uint_Ty2> inline bool vbit(uint_Ty1 bit_offset, uint_Ty2 additional_byte_offset) const volatile noexcept;
-		template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty>::vbit_proxy vbit(uint_Ty bit_offset) volatile noexcept;
-		template <class uint_Ty1, class uint_Ty2> inline typename cool::bits<bit_count, word_Ty>::vbit_proxy vbit(uint_Ty1 bit_offset, uint_Ty2 additional_byte_offset) volatile noexcept;
+		template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy vbit(uint_Ty bit_offset) volatile noexcept;
+
+		// word level accessors
+
+		inline word_Ty& word(std::size_t word_offset) noexcept;
+		inline const word_Ty& word(std::size_t word_offset) const noexcept;
+
+		inline volatile word_Ty& vword(std::size_t word_offset) volatile noexcept;
+		inline const volatile word_Ty& vword(std::size_t word_offset) const volatile noexcept;
+
+		// constexpr constructing functions
+
+		template <class ... args_uint_Ty>
+		static constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> one_bits(args_uint_Ty ... bit_offsets) noexcept;
+		template <class ... args_uint_Ty>
+		static constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> zero_bits(args_uint_Ty ... bit_offsets) noexcept;
+		template <class uint_Ty1, class uint_Ty2>
+		static constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> one_bits_range(uint_Ty1 lower, uint_Ty2 higher) noexcept;
+		template <class uint_Ty1, class uint_Ty2>
+		static constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> zero_bits_range(uint_Ty1 lower, uint_Ty2 higher) noexcept;
+
+		// masked
+
+		static inline cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>
+			masked(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs, const cool::bits<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+		static inline cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>
+			masked(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+		static inline cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>
+			masked(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+		static inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>
+			masked(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::bits<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+		static inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+			masked(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+		static inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+			masked(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+		static inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>
+			masked(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::bits<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+		static inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+			masked(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+		static inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+			masked(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+		// reinterpret address (should be called only at fixed addresses without other existing objects aliasing)
+		// address must be a multiple of alignof(word_Ty)
+
+		template <class uintptr_Ty>
+		static inline cool::bits<bit_count, word_Ty, arg_Ty>& bits_at(uintptr_Ty mem_address) noexcept;
+		template <class uintptr_Ty>
+		static inline const cool::bits<bit_count, word_Ty, arg_Ty>& const_bits_at(uintptr_Ty mem_address) noexcept;
+		template <class uintptr_Ty>
+		static inline volatile cool::bits<bit_count, word_Ty, arg_Ty>& volatile_bits_at(uintptr_Ty mem_address) noexcept;
+		template <class uintptr_Ty>
+		static inline const volatile cool::bits<bit_count, word_Ty, arg_Ty>& const_volatile_bits_at(uintptr_Ty mem_address) noexcept;
 
 		// iterators
 
 		class iterator;
 		class v_iterator;
 
-		inline typename cool::bits<bit_count, word_Ty>::iterator begin() const noexcept;
-		inline typename cool::bits<bit_count, word_Ty>::iterator end() const noexcept;
-		inline typename cool::bits<bit_count, word_Ty>::iterator cbegin() const noexcept;
-		inline typename cool::bits<bit_count, word_Ty>::iterator cend() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator begin() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator end() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator cbegin() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator cend() const noexcept;
 
 		// op assign
 
-		inline cool::bits<bit_count, word_Ty>& operator&=(const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::bits<bit_count, word_Ty>& operator|=(const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::bits<bit_count, word_Ty>& operator^=(const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::bits<bit_count, word_Ty>& flip() noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator&=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator|=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator^=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& flip() noexcept;
 
-		inline cool::bits<bit_count, word_Ty>& operator&=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::bits<bit_count, word_Ty>& operator|=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::bits<bit_count, word_Ty>& operator^=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator&=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator|=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator^=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
 
-		inline cool::bits<bit_count, word_Ty>& operator&=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::bits<bit_count, word_Ty>& operator|=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::bits<bit_count, word_Ty>& operator^=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator&=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator|=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator^=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
 
 		// op
 
-		constexpr inline cool::bits<bit_count, word_Ty> operator&(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		constexpr inline cool::bits<bit_count, word_Ty> operator|(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		constexpr inline cool::bits<bit_count, word_Ty> operator^(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		constexpr inline cool::bits<bit_count, word_Ty> operator~() const noexcept;
+		constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> operator~() const noexcept;
 
-		constexpr inline cool::bits<bit_count, word_Ty> operator&(bool rhs) const noexcept;
-		constexpr inline cool::bits<bit_count, word_Ty> operator|(bool rhs) const noexcept;
-		constexpr inline cool::bits<bit_count, word_Ty> operator^(bool rhs) const noexcept;
+		constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(bool rhs) const noexcept;
+		constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(bool rhs) const noexcept;
+		constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(bool rhs) const noexcept;
 
-		inline cool::bits<bit_count, word_Ty> operator&(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator|(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator^(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
-		inline cool::bits<bit_count, word_Ty> operator&(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator|(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator^(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
 		// cmp
 
-		constexpr inline bool operator==(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		constexpr inline bool operator!=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
+		constexpr inline bool operator==(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		constexpr inline bool operator!=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 		constexpr inline bool operator==(bool rhs) const noexcept;
 		constexpr inline bool operator!=(bool rhs) const noexcept;
-		inline bool operator==(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator!=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator==(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator!=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator==(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator!=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator==(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator!=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
-		constexpr inline bool operator<=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		constexpr inline bool operator>=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
+		constexpr inline bool operator<=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		constexpr inline bool operator>=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 		constexpr inline bool operator<=(bool rhs) const noexcept;
 		constexpr inline bool operator>=(bool rhs) const noexcept;
-		inline bool operator<=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator<=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator<=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator<=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
-		constexpr inline bool operator<(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		constexpr inline bool operator>(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
+		constexpr inline bool operator<(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		constexpr inline bool operator>(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 		constexpr inline bool operator<(bool rhs) const noexcept;
 		constexpr inline bool operator>(bool rhs) const noexcept;
-		inline bool operator<(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator<(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator<(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator<(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
 		// volatile access
 
-		inline cool::_vbits_proxy<bit_count, word_Ty> v() volatile noexcept;
-		inline cool::_cvbits_proxy<bit_count, word_Ty> v() const volatile noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty> v() volatile noexcept;
+		inline cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty> v() const volatile noexcept;
 
 		// proxy for bit level access
 
@@ -273,24 +260,24 @@ namespace cool
 
 		public:
 
-			inline typename cool::bits<bit_count, word_Ty>::bit_proxy& operator=(bool val) noexcept;
-			inline typename cool::bits<bit_count, word_Ty>::bit_proxy& operator&=(bool val) noexcept;
-			inline typename cool::bits<bit_count, word_Ty>::bit_proxy& operator|=(bool val) noexcept;
-			inline typename cool::bits<bit_count, word_Ty>::bit_proxy& operator^=(bool val) noexcept;
-			inline typename cool::bits<bit_count, word_Ty>::bit_proxy& flip() noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& operator=(bool val) noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& operator&=(bool val) noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& operator|=(bool val) noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& operator^=(bool val) noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& flip() noexcept;
 			inline operator bool() const noexcept;
 
 			bit_proxy() = delete;
-			inline typename cool::bits<bit_count, word_Ty>::bit_proxy& operator=(const typename cool::bits<bit_count, word_Ty>::bit_proxy& rhs) noexcept;
-			inline typename cool::bits<bit_count, word_Ty>::bit_proxy& operator=(typename cool::bits<bit_count, word_Ty>::bit_proxy&& rhs) noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& operator=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& rhs) noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& operator=(typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy&& rhs) noexcept;
 			~bit_proxy() = default;
 
 		private:
 
-			template <std::size_t bit_count2, class word_Ty2> friend class bits;
+			template <std::size_t bit_count2, class word_Ty2, class arg_Ty2> friend class bits;
 
-			bit_proxy(const typename cool::bits<bit_count, word_Ty>::bit_proxy&) noexcept = default;
-			bit_proxy(typename cool::bits<bit_count, word_Ty>::bit_proxy&&) noexcept = default;
+			bit_proxy(const typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy&) noexcept = default;
+			bit_proxy(typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy&&) noexcept = default;
 			inline bit_proxy(word_Ty* data_ptr, word_Ty mask) noexcept;
 
 			word_Ty* m_data_ptr;
@@ -302,24 +289,24 @@ namespace cool
 
 		public:
 
-			inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& operator=(bool val) noexcept;
-			inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& operator&=(bool val) noexcept;
-			inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& operator|=(bool val) noexcept;
-			inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& operator^=(bool val) noexcept;
-			inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& flip() noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& operator=(bool val) noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& operator&=(bool val) noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& operator|=(bool val) noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& operator^=(bool val) noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& flip() noexcept;
 			inline operator bool() const noexcept;
 
 			vbit_proxy() = delete;
-			inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& operator=(const typename cool::bits<bit_count, word_Ty>::vbit_proxy& rhs) noexcept;
-			inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& operator=(typename cool::bits<bit_count, word_Ty>::vbit_proxy&& rhs) noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& operator=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& rhs) noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& operator=(typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy&& rhs) noexcept;
 			~vbit_proxy() = default;
 
 		private:
 
-			template <std::size_t bit_count2, class word_Ty2> friend class bits;
+			template <std::size_t bit_count2, class word_Ty2, class arg_Ty2> friend class bits;
 
-			vbit_proxy(const typename cool::bits<bit_count, word_Ty>::vbit_proxy&) noexcept = default;
-			vbit_proxy(typename cool::bits<bit_count, word_Ty>::vbit_proxy&&) noexcept = default;
+			vbit_proxy(const typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy&) noexcept = default;
+			vbit_proxy(typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy&&) noexcept = default;
 			inline vbit_proxy(volatile word_Ty* data_ptr, word_Ty mask) noexcept;
 
 			volatile word_Ty* m_data_ptr;
@@ -332,26 +319,26 @@ namespace cool
 		public:
 
 			iterator() = delete;
-			iterator(const typename cool::bits<bit_count, word_Ty>::iterator&) noexcept = default;
-			typename cool::bits<bit_count, word_Ty>::iterator& operator=(const typename cool::bits<bit_count, word_Ty>::iterator&) noexcept = default;
-			iterator(typename cool::bits<bit_count, word_Ty>::iterator&&) noexcept = default;
-			typename cool::bits<bit_count, word_Ty>::iterator& operator=(typename cool::bits<bit_count, word_Ty>::iterator&&) noexcept = default;
+			iterator(const typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator&) noexcept = default;
+			typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& operator=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator&) noexcept = default;
+			iterator(typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator&&) noexcept = default;
+			typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& operator=(typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator&&) noexcept = default;
 			~iterator() = default;
 
-			inline std::size_t operator*() const noexcept;
-			inline typename cool::bits<bit_count, word_Ty>::iterator& operator++() noexcept;
-			inline typename cool::bits<bit_count, word_Ty>::iterator operator++(int) noexcept;
+			inline arg_Ty operator*() const noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& operator++() noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator operator++(int) noexcept;
 
-			inline bool operator==(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept;
-			inline bool operator!=(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept;
-			inline bool operator<=(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept;
-			inline bool operator>=(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept;
-			inline bool operator<(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept;
-			inline bool operator>(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept;
+			inline bool operator==(const typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& rhs) const noexcept;
+			inline bool operator!=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& rhs) const noexcept;
+			inline bool operator<=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& rhs) const noexcept;
+			inline bool operator>=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& rhs) const noexcept;
+			inline bool operator<(const typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& rhs) const noexcept;
+			inline bool operator>(const typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& rhs) const noexcept;
 
 		private:
 
-			template <std::size_t bit_count2, class word_Ty2> friend class bits;
+			template <std::size_t bit_count2, class word_Ty2, class arg_Ty2> friend class bits;
 
 			inline iterator(const word_Ty* data_ptr) noexcept;
 			inline iterator(const word_Ty* data_ptr, std::size_t end_word) noexcept;
@@ -368,33 +355,33 @@ namespace cool
 		public:
 
 			v_iterator() = delete;
-			v_iterator(const typename cool::bits<bit_count, word_Ty>::v_iterator&) noexcept = default;
-			typename cool::bits<bit_count, word_Ty>::v_iterator& operator=(const typename cool::bits<bit_count, word_Ty>::v_iterator&) noexcept = default;
-			v_iterator(typename cool::bits<bit_count, word_Ty>::v_iterator&&) noexcept = default;
-			typename cool::bits<bit_count, word_Ty>::v_iterator& operator=(typename cool::bits<bit_count, word_Ty>::v_iterator&&) noexcept = default;
+			v_iterator(const typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator&) noexcept = default;
+			typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& operator=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator&) noexcept = default;
+			v_iterator(typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator&&) noexcept = default;
+			typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& operator=(typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator&&) noexcept = default;
 			~v_iterator() = default;
 
-			inline std::size_t operator*() const noexcept;
-			inline typename cool::bits<bit_count, word_Ty>::v_iterator& operator++() noexcept;
-			inline typename cool::bits<bit_count, word_Ty>::v_iterator operator++(int) noexcept;
+			inline arg_Ty operator*() const noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& operator++() noexcept;
+			inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator operator++(int) noexcept;
 
-			inline bool operator==(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept;
-			inline bool operator!=(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept;
-			inline bool operator<=(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept;
-			inline bool operator>=(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept;
-			inline bool operator<(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept;
-			inline bool operator>(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept;
+			inline bool operator==(const typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& rhs) const noexcept;
+			inline bool operator!=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& rhs) const noexcept;
+			inline bool operator<=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& rhs) const noexcept;
+			inline bool operator>=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& rhs) const noexcept;
+			inline bool operator<(const typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& rhs) const noexcept;
+			inline bool operator>(const typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& rhs) const noexcept;
 
 		private:
 
-			template <std::size_t bit_count2, class word_Ty2> friend class cool::_vbits_proxy;
-			template <std::size_t bit_count2, class word_Ty2> friend class cool::_cvbits_proxy;
+			template <std::size_t bit_count2, class word_Ty2, class arg_Ty2> friend class cool::_vbits_proxy;
+			template <std::size_t bit_count2, class word_Ty2, class arg_Ty2> friend class cool::_cvbits_proxy;
 
 			inline v_iterator(const volatile word_Ty* data_ptr) noexcept;
 			inline v_iterator(const volatile word_Ty* data_ptr, std::size_t end_word) noexcept;
 
-			static constexpr std::size_t end_word_index = cool::bits<bit_count, word_Ty>::word_count
-				* cool::bits<bit_count, word_Ty>::word_size;
+			static constexpr std::size_t end_word_index = cool::bits<bit_count, word_Ty, arg_Ty>::word_count
+				* cool::bits<bit_count, word_Ty, arg_Ty>::word_size;
 
 			const volatile word_Ty* m_data_ptr;
 			std::size_t m_word_index;
@@ -404,49 +391,8 @@ namespace cool
 
 	private:
 
-		template <std::size_t bit_count2, class word_Ty2, class ... args_uint_Ty>
-		friend constexpr inline cool::bits<bit_count2, word_Ty2> cool::one_bits(args_uint_Ty&& ... bit_offsets) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2, class ... args_uint_Ty>
-		friend constexpr inline cool::bits<bit_count2, word_Ty2> cool::zero_bits(args_uint_Ty&& ... bit_offsets) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2, class uint_Ty1, class uint_Ty2>
-		friend constexpr inline cool::bits<bit_count2, word_Ty2> cool::one_bits_range(uint_Ty1 lower, uint_Ty2 higher) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2, class uint_Ty1, class uint_Ty2>
-		friend constexpr inline cool::bits<bit_count2, word_Ty2> cool::zero_bits_range(uint_Ty1 lower, uint_Ty2 higher) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2, class rhs_word_Ty>
-		friend constexpr inline cool::bits<bit_count2, word_Ty2> cool::value_in_bits(rhs_word_Ty word_val) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2, class uint_Ty, class rhs_word_Ty>
-		friend constexpr inline cool::bits<bit_count2, word_Ty2> cool::value_in_bits(rhs_word_Ty word_val, uint_Ty bit_offset) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2, class uint_Ty1, class uint_Ty2, class rhs_word_Ty>
-		friend constexpr inline cool::bits<bit_count2, word_Ty2> cool::value_in_bits(rhs_word_Ty word_val, uint_Ty1 bit_offset, uint_Ty2 word_offset) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2> friend class cool::_vbits_proxy;
-		template <std::size_t bit_count2, class word_Ty2> friend class cool::_cvbits_proxy;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const word_Ty2*, const word_Ty2*> cool::masked(
-			const cool::bits<bit_count2, word_Ty2>& rhs, const cool::bits<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::bits<bit_count2, word_Ty2>& rhs, const cool::_vbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::bits<bit_count2, word_Ty2>& rhs, const cool::_cvbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const word_Ty2*> cool::masked(
-			const cool::_vbits_proxy<bit_count2, word_Ty2>& rhs, const cool::bits<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const word_Ty2*> cool::masked(
-			const cool::_cvbits_proxy<bit_count2, word_Ty2>& rhs, const cool::bits<bit_count2, word_Ty2>& mask) noexcept;
+		template <std::size_t bit_count2, class word_Ty2, class arg_Ty2> friend class cool::_vbits_proxy;
+		template <std::size_t bit_count2, class word_Ty2, class arg_Ty2> friend class cool::_cvbits_proxy;
 
 		word_Ty m_field[word_count];
 
@@ -481,9 +427,12 @@ namespace cool
 		template <class ptr_Ty> static inline bool _not_equal_bool_cmp(ptr_Ty lhs_ptr, bool rhs) noexcept;
 		template <class ptr_Ty1, class ptr_Ty2> static inline bool _less_or_equal_cmp(ptr_Ty1 data_ptr, ptr_Ty2 rhs_ptr) noexcept;
 		template <class ptr_Ty1, class ptr_Ty2> static inline bool _less_cmp(ptr_Ty1 data_ptr, ptr_Ty2 rhs_ptr) noexcept;
+
+		template <class Ty> static constexpr inline bool _one_bits_type_check(Ty arg) noexcept;
+		template <class Ty> static constexpr inline bool _zero_bits_type_check(Ty arg) noexcept;
 	};
 
-	template <std::size_t bit_count, class word_Ty> class _vbits_proxy
+	template <std::size_t bit_count, class word_Ty, class arg_Ty> class _vbits_proxy
 	{
 
 	public:
@@ -502,15 +451,15 @@ namespace cool
 
 		// assign
 
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator=(const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator=(bool val) noexcept;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator=(std::initializer_list<bool> lst) noexcept;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator=(bool val) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator=(std::initializer_list<bool> lst) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
 
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>& rhs) noexcept;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>& rhs) noexcept;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>& rhs) noexcept;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>& rhs) noexcept;
 
 		// misc
 
@@ -519,114 +468,94 @@ namespace cool
 
 		// iterators
 
-		inline typename cool::bits<bit_count, word_Ty>::v_iterator begin() const noexcept;
-		inline typename cool::bits<bit_count, word_Ty>::v_iterator end() const noexcept;
-		inline typename cool::bits<bit_count, word_Ty>::v_iterator cbegin() const noexcept;
-		inline typename cool::bits<bit_count, word_Ty>::v_iterator cend() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator begin() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator end() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator cbegin() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator cend() const noexcept;
 
 		// op assign
 
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator&=(const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator|=(const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator^=(const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& flip() noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator&=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator|=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator^=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& flip() noexcept;
 
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator&=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator|=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator^=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator&=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator|=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator^=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
 
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator&=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator|=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator^=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator&=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator|=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator^=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
 
 		// op
 
-		inline cool::bits<bit_count, word_Ty> operator&(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator|(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator^(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator~() const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator~() const noexcept;
 
-		inline cool::bits<bit_count, word_Ty> operator&(bool rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator|(bool rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator^(bool rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(bool rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(bool rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(bool rhs) const noexcept;
 
-		inline cool::bits<bit_count, word_Ty> operator&(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator|(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator^(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
-		inline cool::bits<bit_count, word_Ty> operator&(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator|(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator^(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
 		// cmp
 
-		inline bool operator==(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator!=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator==(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator!=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 		inline bool operator==(bool rhs) const noexcept;
 		inline bool operator!=(bool rhs) const noexcept;
-		inline bool operator==(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator!=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator==(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator!=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator==(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator!=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator==(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator!=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
-		inline bool operator<=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator<=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 		inline bool operator<=(bool rhs) const noexcept;
 		inline bool operator>=(bool rhs) const noexcept;
-		inline bool operator<=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator<=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator<=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator<=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
-		inline bool operator<(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator<(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 		inline bool operator<(bool rhs) const noexcept;
 		inline bool operator>(bool rhs) const noexcept;
-		inline bool operator<(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator<(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator<(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator<(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
 		// spec
 
 		_vbits_proxy() = delete;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-		inline cool::_vbits_proxy<bit_count, word_Ty>& operator=(cool::_vbits_proxy<bit_count, word_Ty>&& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+		inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& operator=(cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>&& rhs) noexcept;
 		~_vbits_proxy() = default;
 
 	private:
 
-		_vbits_proxy(const cool::_vbits_proxy<bit_count, word_Ty>&) noexcept = default;
-		_vbits_proxy(cool::_vbits_proxy<bit_count, word_Ty>&&) noexcept = default;
+		_vbits_proxy(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>&) noexcept = default;
+		_vbits_proxy(cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>&&) noexcept = default;
 		inline _vbits_proxy(volatile word_Ty* data_ptr) noexcept;
 
-		template <std::size_t bit_count2, class word_Ty2> friend class cool::bits;
-		template <std::size_t bit_count2, class word_Ty2> friend class cool::_cvbits_proxy;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::bits<bit_count2, word_Ty2>& rhs, const cool::_vbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const word_Ty2*> cool::masked(
-			const cool::_vbits_proxy<bit_count2, word_Ty2>& rhs, const cool::bits<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::_vbits_proxy<bit_count2, word_Ty2>& rhs, const cool::_vbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::_vbits_proxy<bit_count2, word_Ty2>& rhs, const cool::_cvbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::_cvbits_proxy<bit_count2, word_Ty2>& rhs, const cool::_vbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
+		template <std::size_t bit_count2, class word_Ty2, class arg_Ty2> friend class cool::bits;
+		template <std::size_t bit_count2, class word_Ty2, class arg_Ty2> friend class cool::_cvbits_proxy;
 
 		volatile word_Ty* m_data_ptr;
 	};
 
-	template <std::size_t bit_count, class word_Ty> class _cvbits_proxy
+	template <std::size_t bit_count, class word_Ty, class arg_Ty> class _cvbits_proxy
 	{
 
 	public:
@@ -650,94 +579,71 @@ namespace cool
 
 		// iterators
 
-		inline typename cool::bits<bit_count, word_Ty>::v_iterator begin() const noexcept;
-		inline typename cool::bits<bit_count, word_Ty>::v_iterator end() const noexcept;
-		inline typename cool::bits<bit_count, word_Ty>::v_iterator cbegin() const noexcept;
-		inline typename cool::bits<bit_count, word_Ty>::v_iterator cend() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator begin() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator end() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator cbegin() const noexcept;
+		inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator cend() const noexcept;
 
 		// op
 
-		inline cool::bits<bit_count, word_Ty> operator&(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator|(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator^(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator~() const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator~() const noexcept;
 
-		inline cool::bits<bit_count, word_Ty> operator&(bool rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator|(bool rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator^(bool rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(bool rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(bool rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(bool rhs) const noexcept;
 
-		inline cool::bits<bit_count, word_Ty> operator&(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator|(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator^(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
-		inline cool::bits<bit_count, word_Ty> operator&(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator|(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline cool::bits<bit_count, word_Ty> operator^(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
 		// cmp
 
-		inline bool operator==(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator!=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator==(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator!=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 		inline bool operator==(bool rhs) const noexcept;
 		inline bool operator!=(bool rhs) const noexcept;
-		inline bool operator==(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator!=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator==(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator!=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator==(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator!=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator==(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator!=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
-		inline bool operator<=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator<=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 		inline bool operator<=(bool rhs) const noexcept;
 		inline bool operator>=(bool rhs) const noexcept;
-		inline bool operator<=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator<=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator<=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator<=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
-		inline bool operator<(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>(const cool::bits<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator<(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 		inline bool operator<(bool rhs) const noexcept;
 		inline bool operator>(bool rhs) const noexcept;
-		inline bool operator<(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator<(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
-		inline bool operator>(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept;
+		inline bool operator<(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator<(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
+		inline bool operator>(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept;
 
 		// spec
 
 		_cvbits_proxy() = delete;
-		inline cool::_cvbits_proxy<bit_count, word_Ty>& operator=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) = delete;
-		inline cool::_cvbits_proxy<bit_count, word_Ty>& operator=(cool::_cvbits_proxy<bit_count, word_Ty>&& rhs) = delete;
+		inline cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& operator=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) = delete;
+		inline cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& operator=(cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>&& rhs) = delete;
 		~_cvbits_proxy() = default;
 
 	private:
 
-		_cvbits_proxy(const cool::_cvbits_proxy<bit_count, word_Ty>&) noexcept = default;
-		_cvbits_proxy(cool::_cvbits_proxy<bit_count, word_Ty>&&) noexcept = default;
+		_cvbits_proxy(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>&) noexcept = default;
+		_cvbits_proxy(cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>&&) noexcept = default;
 		inline _cvbits_proxy(const volatile word_Ty* data_ptr) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2> friend class cool::bits;
-		template <std::size_t bit_count2, class word_Ty2> friend class cool::_vbits_proxy;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::bits<bit_count2, word_Ty2>& rhs, const cool::_cvbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::_vbits_proxy<bit_count2, word_Ty2>& rhs, const cool::_cvbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const word_Ty2*> cool::masked(
-			const cool::_cvbits_proxy<bit_count2, word_Ty2>& rhs, const cool::bits<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::_cvbits_proxy<bit_count2, word_Ty2>& rhs, const cool::_vbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::_cvbits_proxy<bit_count2, word_Ty2>& rhs, const cool::_cvbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
 
 		const volatile word_Ty* m_data_ptr;
 	};
@@ -759,45 +665,9 @@ namespace cool
 
 		inline _masked_proxy(ptr_Ty1 rhs_ptr, ptr_Ty2 mask_ptr) noexcept;
 
-		template <std::size_t bit_count2, class word_Ty2> friend class cool::bits;
-		template <std::size_t bit_count2, class word_Ty2> friend class cool::_vbits_proxy;
-		template <std::size_t bit_count2, class word_Ty2> friend class cool::_cvbits_proxy;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const word_Ty2*, const word_Ty2*> cool::masked(
-			const cool::bits<bit_count2, word_Ty2>& rhs, const cool::bits<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::bits<bit_count2, word_Ty2>& rhs, const cool::_vbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::bits<bit_count2, word_Ty2>& rhs, const cool::_cvbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const word_Ty2*> cool::masked(
-			const cool::_vbits_proxy<bit_count2, word_Ty2>& rhs, const cool::bits<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::_vbits_proxy<bit_count2, word_Ty2>& rhs, const cool::_vbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::_vbits_proxy<bit_count2, word_Ty2>& rhs, const cool::_cvbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const word_Ty2*> cool::masked(
-			const cool::_cvbits_proxy<bit_count2, word_Ty2>& rhs, const cool::bits<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::_cvbits_proxy<bit_count2, word_Ty2>& rhs, const cool::_vbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
-
-		template <std::size_t bit_count2, class word_Ty2>
-		friend inline cool::_masked_proxy<bit_count2, const volatile word_Ty2*, const volatile word_Ty2*> cool::masked(
-			const cool::_cvbits_proxy<bit_count2, word_Ty2>& rhs, const cool::_cvbits_proxy<bit_count2, word_Ty2>& mask) noexcept;
+		template <std::size_t bit_count2, class word_Ty2, class arg_Ty2> friend class cool::bits;
+		template <std::size_t bit_count2, class word_Ty2, class arg_Ty2> friend class cool::_vbits_proxy;
+		template <std::size_t bit_count2, class word_Ty2, class arg_Ty2> friend class cool::_cvbits_proxy;
 
 		ptr_Ty1 m_rhs_ptr;
 		ptr_Ty2 m_mask_ptr;
@@ -806,69 +676,121 @@ namespace cool
 
 namespace cool
 {
-	// cmp
+	// constexpr constructing functions
 
-	template <std::size_t bit_count, class word_Ty>
-	constexpr inline bool operator==(bool lhs, const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	constexpr inline bool operator!=(bool lhs, const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	inline bool operator==(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	inline bool operator!=(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	inline bool operator==(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	inline bool operator!=(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t, class ... args_uint_Ty>
+	constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> one_bits(args_uint_Ty ... bit_offsets) noexcept;
 
-	template <std::size_t bit_count, class word_Ty>
-	constexpr inline bool operator<=(bool lhs, const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	constexpr inline bool operator>=(bool lhs, const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	inline bool operator<=(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	inline bool operator>=(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	inline bool operator<=(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	inline bool operator>=(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t, class ... args_uint_Ty>
+	constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> zero_bits(args_uint_Ty ... bit_offsets) noexcept;
 
-	// op
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t, class uint_Ty1, class uint_Ty2>
+	constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> one_bits_range(uint_Ty1 lower, uint_Ty2 higher) noexcept;
 
-	template <std::size_t bit_count, class word_Ty>
-	constexpr inline cool::bits<bit_count, word_Ty> operator&(bool lhs, const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	constexpr inline cool::bits<bit_count, word_Ty> operator|(bool lhs, const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	constexpr inline cool::bits<bit_count, word_Ty> operator^(bool lhs, const cool::bits<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	inline cool::bits<bit_count, word_Ty> operator&(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	inline cool::bits<bit_count, word_Ty> operator|(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	inline cool::bits<bit_count, word_Ty> operator^(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	inline cool::bits<bit_count, word_Ty> operator&(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	inline cool::bits<bit_count, word_Ty> operator|(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
-	template <std::size_t bit_count, class word_Ty>
-	inline cool::bits<bit_count, word_Ty> operator^(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t, class uint_Ty1, class uint_Ty2>
+	constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> zero_bits_range(uint_Ty1 lower, uint_Ty2 higher) noexcept;
+
+	// masked
+
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t>
+	inline cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>
+		masked(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs, const cool::bits<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t>
+	inline cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>
+		masked(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t>
+	inline cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>
+		masked(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t>
+	inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>
+		masked(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::bits<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t>
+	inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+		masked(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t>
+	inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+		masked(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t>
+	inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>
+		masked(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::bits<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t>
+	inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+		masked(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept;
+
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t>
+	inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+		masked(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept;
 
 	// reinterpret address (should be called only at fixed addresses without other existing objects aliasing)
 	// address must be a multiple of alignof(word_Ty)
 
-	template <std::size_t bit_count, class word_Ty = unsigned char, class uintptr_Ty>
-	inline cool::bits<bit_count, word_Ty>& bits_at(uintptr_Ty mem_address) noexcept;
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty, class uintptr_Ty>
+	inline cool::bits<bit_count, word_Ty, arg_Ty>& bits_at(uintptr_Ty mem_address) noexcept;
 
-	template <std::size_t bit_count, class word_Ty = unsigned char, class uintptr_Ty>
-	inline const cool::bits<bit_count, word_Ty>& const_bits_at(uintptr_Ty mem_address) noexcept;
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty, class uintptr_Ty>
+	inline const cool::bits<bit_count, word_Ty, arg_Ty>& const_bits_at(uintptr_Ty mem_address) noexcept;
 
-	template <std::size_t bit_count, class word_Ty = unsigned char, class uintptr_Ty>
-	inline volatile cool::bits<bit_count, word_Ty>& volatile_bits_at(uintptr_Ty mem_address) noexcept;
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty, class uintptr_Ty>
+	inline volatile cool::bits<bit_count, word_Ty, arg_Ty>& volatile_bits_at(uintptr_Ty mem_address) noexcept;
 
-	template <std::size_t bit_count, class word_Ty = unsigned char, class uintptr_Ty>
-	inline const volatile cool::bits<bit_count, word_Ty>& const_volatile_bits_at(uintptr_Ty mem_address) noexcept;
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty, class uintptr_Ty>
+	inline const volatile cool::bits<bit_count, word_Ty, arg_Ty>& const_volatile_bits_at(uintptr_Ty mem_address) noexcept;
+
+	// cmp
+
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	constexpr inline bool operator==(bool lhs, const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	constexpr inline bool operator!=(bool lhs, const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	inline bool operator==(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	inline bool operator!=(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	inline bool operator==(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	inline bool operator!=(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	constexpr inline bool operator<=(bool lhs, const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	constexpr inline bool operator>=(bool lhs, const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	inline bool operator<=(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	inline bool operator>=(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	inline bool operator<=(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	inline bool operator>=(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+
+	// op
+
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(bool lhs, const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(bool lhs, const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(bool lhs, const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	inline cool::bits<bit_count, word_Ty, arg_Ty> operator&(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	inline cool::bits<bit_count, word_Ty, arg_Ty> operator|(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
+	template <std::size_t bit_count, class word_Ty, class arg_Ty>
+	inline cool::bits<bit_count, word_Ty, arg_Ty> operator^(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
 }
 
 
@@ -876,26 +798,24 @@ namespace cool
 
 // bits
 
-template <std::size_t bit_count, class word_Ty>
-constexpr inline std::size_t cool::bits<bit_count, word_Ty>::size() noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline std::size_t cool::bits<bit_count, word_Ty, arg_Ty>::size() noexcept
 {
 	return bit_count;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	_assign_op(static_cast<word_Ty*>(m_field), static_cast<const word_Ty*>(rhs.m_field)); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator=(cool::bits<bit_count, word_Ty>&& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator=(cool::bits<bit_count, word_Ty, arg_Ty>&& rhs) noexcept {
 	_assign_op(static_cast<word_Ty*>(m_field), static_cast<word_Ty*>(rhs.m_field)); return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty>::bits(bool val) noexcept : m_field{ static_cast<word_Ty>(0) }
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty>::bits(bool val) noexcept : m_field{ static_cast<word_Ty>(0) }
 {
-	constexpr std::size_t word_count = (bit_count + ((word_size - (bit_count % word_size)) % word_size)) / word_size;
-
 	word_Ty word_val = val ? static_cast<word_Ty>(-1) : 0;
 	for (std::size_t n = 0; n < word_count; n++)
 	{
@@ -903,16 +823,16 @@ constexpr inline cool::bits<bit_count, word_Ty>::bits(bool val) noexcept : m_fie
 	}
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator=(bool val) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator=(bool val) noexcept
 {
 	_assign_bool_op(static_cast<word_Ty*>(m_field), val);
 
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty>::bits(std::initializer_list<bool> lst) noexcept : m_field{ static_cast<word_Ty>(0) }
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty>::bits(std::initializer_list<bool> lst) noexcept : m_field{ static_cast<word_Ty>(0) }
 {
 	const bool* ptr = lst.begin();
 	for (std::size_t n = 0; n < word_capacity; n++)
@@ -939,41 +859,41 @@ constexpr inline cool::bits<bit_count, word_Ty>::bits(std::initializer_list<bool
 		m_field[word_count_m1] = val;
 	}
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator=(std::initializer_list<bool> lst) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator=(std::initializer_list<bool> lst) noexcept {
 	_assign_lst_op(static_cast<word_Ty*>(m_field), lst); return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	_assign_op(static_cast<word_Ty*>(m_field), rhs.m_data_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	_assign_op(static_cast<word_Ty*>(m_field), rhs.m_data_ptr); return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>& rhs) noexcept {
 	_assign_masked_op(m_field, rhs.m_rhs_ptr, rhs.m_mask_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>& rhs) noexcept {
 	_assign_masked_op(m_field, rhs.m_rhs_ptr, rhs.m_mask_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>& rhs) noexcept {
 	_assign_masked_op(m_field, rhs.m_rhs_ptr, rhs.m_mask_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>& rhs) noexcept {
 	_assign_masked_op(m_field, rhs.m_rhs_ptr, rhs.m_mask_ptr); return *this;
 }
 
 // bits misc
 
-template <std::size_t bit_count, class word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty>::operator word_Ty() const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty>::operator word_Ty() const noexcept
 {
 	static_assert(bit_count <= word_size, "cool::bits<bit_count, word_type> operator word_type requirement : word_count must be equal to one");
 
@@ -989,8 +909,8 @@ constexpr inline cool::bits<bit_count, word_Ty>::operator word_Ty() const noexce
 	}
 }
 
-template <std::size_t bit_count, class word_Ty>
-constexpr inline std::size_t cool::bits<bit_count, word_Ty>::count() const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline std::size_t cool::bits<bit_count, word_Ty, arg_Ty>::count() const noexcept
 {
 	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
 
@@ -1028,9 +948,12 @@ constexpr inline std::size_t cool::bits<bit_count, word_Ty>::count() const noexc
 
 // bit level accessors
 
-template <std::size_t bit_count, class word_Ty>
-template <class uint_Ty> constexpr inline bool cool::bits<bit_count, word_Ty>::operator[](uint_Ty bit_offset) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+template <class uint_Ty> constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator[](uint_Ty bit_offset) const noexcept
 {
+	static_assert(std::is_same<uint_Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
+		"cool::bits<bit_count, word_type, arg_type>::operator[] : incorrect argument type");
+
 	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
 
 	if (no_word_offset)
@@ -1045,28 +968,34 @@ template <class uint_Ty> constexpr inline bool cool::bits<bit_count, word_Ty>::o
 	}
 }
 
-template <std::size_t bit_count, class word_Ty>
-template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty>::bit_proxy cool::bits<bit_count, word_Ty>::operator[](uint_Ty bit_offset) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy cool::bits<bit_count, word_Ty, arg_Ty>::operator[](uint_Ty bit_offset) noexcept
 {
+	static_assert(std::is_same<uint_Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
+		"cool::bits<bit_count, word_type, arg_type>::operator[] : incorrect argument type");
+
 	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
 
 	if (no_word_offset)
 	{
 		word_Ty* data_ptr = static_cast<word_Ty*>(m_field);
 		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << static_cast<std::size_t>(bit_offset));
-		return typename cool::bits<bit_count, word_Ty>::bit_proxy(data_ptr, mask);
+		return typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy(data_ptr, mask);
 	}
 	else
 	{
 		word_Ty* data_ptr = static_cast<word_Ty*>(m_field) + static_cast<std::size_t>(bit_offset) / word_size;
 		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (static_cast<std::size_t>(bit_offset) % word_size));
-		return typename cool::bits<bit_count, word_Ty>::bit_proxy(data_ptr, mask);
+		return typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy(data_ptr, mask);
 	}
 }
 
-template <std::size_t bit_count, class word_Ty>
-template <class uint_Ty> constexpr inline bool cool::bits<bit_count, word_Ty>::bit(uint_Ty bit_offset) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+template <class uint_Ty> constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::bit(uint_Ty bit_offset) const noexcept
 {
+	static_assert(std::is_same<uint_Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
+		"cool::bits<bit_count, word_type, arg_type>::bit : incorrect argument type");
+
 	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
 
 	if (no_word_offset)
@@ -1081,68 +1010,34 @@ template <class uint_Ty> constexpr inline bool cool::bits<bit_count, word_Ty>::b
 	}
 }
 
-template <std::size_t bit_count, class word_Ty>
-template <class uint_Ty1, class uint_Ty2> inline bool cool::bits<bit_count, word_Ty>::bit(uint_Ty1 bit_offset, uint_Ty2 additional_byte_offset) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy cool::bits<bit_count, word_Ty, arg_Ty>::bit(uint_Ty bit_offset) noexcept
 {
-	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
+	static_assert(std::is_same<uint_Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
+		"cool::bits<bit_count, word_type, arg_type>::bit : incorrect argument type");
 
-	if (no_word_offset)
-	{
-		std::size_t new_bit_offset = static_cast<std::size_t>(bit_offset) + CHAR_BIT * static_cast<std::size_t>(additional_byte_offset);
-		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << new_bit_offset);
-		return (m_field[0] & mask) != static_cast<word_Ty>(0);
-	}
-	else
-	{
-		std::size_t new_bit_offset = static_cast<std::size_t>(bit_offset) + CHAR_BIT * static_cast<std::size_t>(additional_byte_offset);
-		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (new_bit_offset % word_size));
-		return (m_field[new_bit_offset / word_size] & mask) != static_cast<word_Ty>(0);
-	}
-}
-
-template <std::size_t bit_count, class word_Ty>
-template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty>::bit_proxy cool::bits<bit_count, word_Ty>::bit(uint_Ty bit_offset) noexcept
-{
 	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
 
 	if (no_word_offset)
 	{
 		word_Ty* data_ptr = static_cast<word_Ty*>(m_field);
 		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << static_cast<std::size_t>(bit_offset));
-		return typename cool::bits<bit_count, word_Ty>::bit_proxy(data_ptr, mask);
+		return typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy(data_ptr, mask);
 	}
 	else
 	{
 		word_Ty* data_ptr = static_cast<word_Ty*>(m_field) + static_cast<std::size_t>(bit_offset) / word_size;
 		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (static_cast<std::size_t>(bit_offset) % word_size));
-		return typename cool::bits<bit_count, word_Ty>::bit_proxy(data_ptr, mask);
+		return typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy(data_ptr, mask);
 	}
 }
 
-template <std::size_t bit_count, class word_Ty>
-template <class uint_Ty1, class uint_Ty2> inline typename cool::bits<bit_count, word_Ty>::bit_proxy cool::bits<bit_count, word_Ty>::bit(uint_Ty1 bit_offset, uint_Ty2 additional_byte_offset) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+template <class uint_Ty> inline bool cool::bits<bit_count, word_Ty, arg_Ty>::vbit(uint_Ty bit_offset) const volatile noexcept
 {
-	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
+	static_assert(std::is_same<uint_Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
+		"cool::bits<bit_count, word_type, arg_type>::vbit : incorrect argument type");
 
-	if (no_word_offset)
-	{
-		std::size_t new_bit_offset = static_cast<std::size_t>(bit_offset) + CHAR_BIT * static_cast<std::size_t>(additional_byte_offset);
-		word_Ty* data_ptr = static_cast<word_Ty*>(m_field);
-		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << new_bit_offset);
-		return typename cool::bits<bit_count, word_Ty>::bit_proxy(data_ptr, mask);
-	}
-	else
-	{
-		std::size_t new_bit_offset = static_cast<std::size_t>(bit_offset) + CHAR_BIT * static_cast<std::size_t>(additional_byte_offset);
-		word_Ty* data_ptr = static_cast<word_Ty*>(m_field) + new_bit_offset / word_size;
-		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (new_bit_offset % word_size));
-		return typename cool::bits<bit_count, word_Ty>::bit_proxy(data_ptr, mask);
-	}
-}
-
-template <std::size_t bit_count, class word_Ty>
-template <class uint_Ty> inline bool cool::bits<bit_count, word_Ty>::vbit(uint_Ty bit_offset) const volatile noexcept
-{
 	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
 
 	if (no_word_offset)
@@ -1157,163 +1052,465 @@ template <class uint_Ty> inline bool cool::bits<bit_count, word_Ty>::vbit(uint_T
 	}
 }
 
-template <std::size_t bit_count, class word_Ty>
-template <class uint_Ty1, class uint_Ty2> inline bool cool::bits<bit_count, word_Ty>::vbit(uint_Ty1 bit_offset, uint_Ty2 additional_byte_offset) const volatile noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy cool::bits<bit_count, word_Ty, arg_Ty>::vbit(uint_Ty bit_offset) volatile noexcept
 {
-	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
+	static_assert(std::is_same<uint_Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
+		"cool::bits<bit_count, word_type, arg_type>::vbit : incorrect argument type");
 
-	if (no_word_offset)
-	{
-		std::size_t new_bit_offset = static_cast<std::size_t>(bit_offset) + CHAR_BIT * static_cast<std::size_t>(additional_byte_offset);
-		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << new_bit_offset);
-		return (*static_cast<const volatile word_Ty*>(m_field) & mask) != static_cast<word_Ty>(0);
-	}
-	else
-	{
-		std::size_t new_bit_offset = static_cast<std::size_t>(bit_offset) + CHAR_BIT * static_cast<std::size_t>(additional_byte_offset);
-		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (new_bit_offset % word_size));
-		return (*(static_cast<const volatile word_Ty*>(m_field) + new_bit_offset / word_size) & mask) != static_cast<word_Ty>(0);
-	}
-}
-
-template <std::size_t bit_count, class word_Ty>
-template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty>::vbit_proxy cool::bits<bit_count, word_Ty>::vbit(uint_Ty bit_offset) volatile noexcept
-{
 	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
 
 	if (no_word_offset)
 	{
 		volatile word_Ty* data_ptr = static_cast<volatile word_Ty*>(m_field);
 		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (static_cast<std::size_t>(bit_offset) % word_size));
-		return typename cool::bits<bit_count, word_Ty>::vbit_proxy(data_ptr, mask);
+		return typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy(data_ptr, mask);
 	}
 	else
 	{
 		volatile word_Ty* data_ptr = static_cast<volatile word_Ty*>(m_field) + static_cast<std::size_t>(bit_offset) / word_size;
 		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (static_cast<std::size_t>(bit_offset) % word_size));
-		return typename cool::bits<bit_count, word_Ty>::vbit_proxy(data_ptr, mask);
+		return typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy(data_ptr, mask);
 	}
 }
 
-template <std::size_t bit_count, class word_Ty>
-template <class uint_Ty1, class uint_Ty2> inline typename cool::bits<bit_count, word_Ty>::vbit_proxy cool::bits<bit_count, word_Ty>::vbit(uint_Ty1 bit_offset, uint_Ty2 additional_byte_offset) volatile noexcept
-{
-	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
+// word level accessors
 
-	if (no_word_offset)
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline word_Ty& cool::bits<bit_count, word_Ty, arg_Ty>::word(std::size_t word_offset) noexcept
+{
+	return m_field[word_offset];
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline const word_Ty& cool::bits<bit_count, word_Ty, arg_Ty>::word(std::size_t word_offset) const noexcept
+{
+	return m_field[word_offset];
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline volatile word_Ty& cool::bits<bit_count, word_Ty, arg_Ty>::vword(std::size_t word_offset) volatile noexcept
+{
+	return m_field[word_offset];
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline const volatile word_Ty& cool::bits<bit_count, word_Ty, arg_Ty>::vword(std::size_t word_offset) const volatile noexcept
+{
+	return m_field[word_offset];
+}
+
+// constexpr constructing functions
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ... args_uint_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::one_bits(args_uint_Ty ... bit_offsets) noexcept
+{
+	constexpr std::size_t arg_count = sizeof...(args_uint_Ty);
+
+	cool::bits<bit_count, word_Ty, arg_Ty> ret = false;
+	std::size_t bit_offsets_converted[arg_count] = { static_cast<std::size_t>(bit_offsets)... };
+
+	for (std::size_t n = 0; n < arg_count; n++)
 	{
-		std::size_t new_bit_offset = static_cast<std::size_t>(bit_offset) + CHAR_BIT * static_cast<std::size_t>(additional_byte_offset);
-		volatile word_Ty* data_ptr = static_cast<volatile word_Ty*>(m_field);
-		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (new_bit_offset % word_size));
-		return typename cool::bits<bit_count, word_Ty>::vbit_proxy(data_ptr, mask);
+		ret.m_field[bit_offsets_converted[n] / cool::bits<bit_count, word_Ty, arg_Ty>::word_size]
+			|= static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_offsets_converted[n]
+				% cool::bits<bit_count, word_Ty, arg_Ty>::word_size));
 	}
-	else
+
+	return ret;
+
+	bool _discard[arg_count] = { _one_bits_type_check(bit_offsets)... };
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ... args_uint_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::zero_bits(args_uint_Ty ... bit_offsets) noexcept
+{
+	cool::bits<bit_count, word_Ty, arg_Ty> ret = true;
+
+	constexpr std::size_t arg_count = sizeof...(args_uint_Ty);
+	std::size_t bit_offsets_converted[arg_count] = { static_cast<std::size_t>(bit_offsets)... };
+
+	for (std::size_t n = 0; n < arg_count; n++)
 	{
-		std::size_t new_bit_offset = static_cast<std::size_t>(bit_offset) + CHAR_BIT * static_cast<std::size_t>(additional_byte_offset);
-		volatile word_Ty* data_ptr = static_cast<volatile word_Ty*>(m_field) + new_bit_offset / word_size;
-		word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (new_bit_offset % word_size));
-		return typename cool::bits<bit_count, word_Ty>::vbit_proxy(data_ptr, mask);
+		ret.m_field[bit_offsets_converted[n] / cool::bits<bit_count, word_Ty, arg_Ty>::word_size]
+			&= ~static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_offsets_converted[n]
+				% cool::bits<bit_count, word_Ty, arg_Ty>::word_size));
 	}
+
+	return ret;
+
+	bool _discard[arg_count] = { _zero_bits_type_check(bit_offsets)... };
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uint_Ty1, class uint_Ty2>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::one_bits_range(uint_Ty1 lower, uint_Ty2 higher) noexcept
+{
+	static_assert(std::is_same<uint_Ty1, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
+		"cool::bits<bit_count, word_type, arg_type>::one_bits_range(...) : incorrect argument type");
+
+	static_assert(std::is_same<uint_Ty2, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
+		"cool::bits<bit_count, word_type, arg_type>::one_bits_range(...) : incorrect argument type");
+
+	cool::bits<bit_count, word_Ty, arg_Ty> ret = false;
+
+	if (static_cast<std::size_t>(lower) < static_cast<std::size_t>(higher))
+	{
+		std::size_t lower_word = static_cast<std::size_t>(lower) / cool::bits<bit_count, word_Ty, arg_Ty>::word_size;
+		ret.m_field[lower_word] = ~((static_cast<word_Ty>(1) << (static_cast<std::size_t>(lower)
+			% cool::bits<bit_count, word_Ty, arg_Ty>::word_size)) - 1);
+
+		std::size_t higher_word = (static_cast<std::size_t>(higher) - 1) / cool::bits<bit_count, word_Ty, arg_Ty>::word_size;
+		for (std::size_t n = lower_word + 1; n <= higher_word; n++)
+		{
+			ret.m_field[n] = static_cast<word_Ty>(-1);
+		}
+
+		std::size_t remainder = static_cast<std::size_t>(higher) % cool::bits<bit_count, word_Ty, arg_Ty>::word_size;
+		if (remainder != 0)
+		{
+			ret.m_field[higher_word] &= static_cast<word_Ty>((static_cast<word_Ty>(1) << remainder) - 1);
+		}
+	}
+
+	return ret;
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uint_Ty1, class uint_Ty2>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::zero_bits_range(uint_Ty1 lower, uint_Ty2 higher) noexcept
+{
+	static_assert(std::is_same<uint_Ty1, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
+		"cool::bits<bit_count, word_type, arg_type>::zero_bits_range(...) : incorrect argument type");
+
+	static_assert(std::is_same<uint_Ty2, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
+		"cool::bits<bit_count, word_type, arg_type>::zero_bits_range(...) : incorrect argument type");
+
+	cool::bits<bit_count, word_Ty, arg_Ty> ret = true;
+
+	if (static_cast<std::size_t>(lower) < static_cast<std::size_t>(higher))
+	{
+		std::size_t lower_word = static_cast<std::size_t>(lower) / cool::bits<bit_count, word_Ty, arg_Ty>::word_size;
+		ret.m_field[lower_word] = ((static_cast<word_Ty>(1) << (static_cast<std::size_t>(lower)
+			% cool::bits<bit_count, word_Ty, arg_Ty>::word_size)) - 1);
+
+		std::size_t higher_word = (static_cast<std::size_t>(higher) - 1) / cool::bits<bit_count, word_Ty, arg_Ty>::word_size;
+		for (std::size_t n = lower_word + 1; n <= higher_word; n++)
+		{
+			ret.m_field[n] = static_cast<word_Ty>(0);
+		}
+
+		std::size_t remainder = static_cast<std::size_t>(higher) % cool::bits<bit_count, word_Ty, arg_Ty>::word_size;
+		if (remainder != 0)
+		{
+			ret.m_field[higher_word] |= ~static_cast<word_Ty>((static_cast<word_Ty>(1) << remainder) - 1);
+		}
+	}
+
+	return ret;
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty, class ... args_uint_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::one_bits(args_uint_Ty ... bit_offsets) noexcept
+{
+	return cool::bits<bit_count, word_Ty, arg_Ty>::one_bits(std::forward<args_uint_Ty>(bit_offsets)...);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty, class ... args_uint_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::zero_bits(args_uint_Ty ... bit_offsets) noexcept
+{
+	return cool::bits<bit_count, word_Ty, arg_Ty>::zero_bits(std::forward<args_uint_Ty>(bit_offsets)...);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty, class uint_Ty1, class uint_Ty2>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::one_bits_range(uint_Ty1 lower, uint_Ty2 higher) noexcept
+{
+	return cool::bits<bit_count, word_Ty, arg_Ty>::one_bits_range(lower, higher);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty, class uint_Ty1, class uint_Ty2>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::zero_bits_range(uint_Ty1 lower, uint_Ty2 higher) noexcept
+{
+	return cool::bits<bit_count, word_Ty, arg_Ty>::zero_bits_range(lower, higher);
+}
+
+// masked
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>
+cool::bits<bit_count, word_Ty, arg_Ty>::masked(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs, const cool::bits<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>(static_cast<const word_Ty*>(rhs.m_field), static_cast<const word_Ty*>(mask.m_field));
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>
+cool::bits<bit_count, word_Ty, arg_Ty>::masked(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::_masked_proxy<bit_count, const word_Ty*, volatile const word_Ty*>(
+		static_cast<const word_Ty*>(rhs.m_field), mask.m_data_ptr);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>
+cool::bits<bit_count, word_Ty, arg_Ty>::masked(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::_masked_proxy<bit_count, const word_Ty*, volatile const word_Ty*>(static_cast<const word_Ty*>(rhs.m_field), mask.m_data_ptr);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>
+cool::bits<bit_count, word_Ty, arg_Ty>::masked(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::bits<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>(rhs.m_data_ptr, static_cast<const word_Ty*>(mask.m_field));
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+cool::bits<bit_count, word_Ty, arg_Ty>::masked(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>(rhs.m_data_ptr, mask.m_data_ptr);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+cool::bits<bit_count, word_Ty, arg_Ty>::masked(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>(rhs.m_data_ptr, mask.m_data_ptr);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>
+cool::bits<bit_count, word_Ty, arg_Ty>::masked(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::bits<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>(rhs.m_data_ptr, static_cast<const word_Ty*>(mask.m_field));
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+cool::bits<bit_count, word_Ty, arg_Ty>::masked(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>(rhs.m_data_ptr, mask.m_data_ptr);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+cool::bits<bit_count, word_Ty, arg_Ty>::masked(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>(rhs.m_data_ptr, mask.m_data_ptr);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>
+cool::masked(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs, const cool::bits<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::masked(rhs, mask);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>
+cool::masked(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::masked(rhs, mask);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>
+cool::masked(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::masked(rhs, mask);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>
+cool::masked(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::bits<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::masked(rhs, mask);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+cool::masked(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::masked(rhs, mask);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+cool::masked(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::masked(rhs, mask);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>
+cool::masked(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::bits<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::masked(rhs, mask);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+cool::masked(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::masked(rhs, mask);
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
+cool::masked(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::masked(rhs, mask);
+}
+
+template <std::size_t bit_count, class ptr_Ty1, class ptr_Ty2>
+inline cool::_masked_proxy<bit_count, ptr_Ty1, ptr_Ty2>::_masked_proxy(ptr_Ty1 rhs_ptr, ptr_Ty2 mask_ptr) noexcept
+	: m_rhs_ptr(rhs_ptr), m_mask_ptr(mask_ptr) {}
+
+// reinterpret address
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uintptr_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::bits_at(uintptr_Ty mem_address) noexcept
+{
+	cool::bits<bit_count, word_Ty, arg_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty, arg_Ty>*>(static_cast<std::uintptr_t>(mem_address));
+	new (ptr) cool::bits<bit_count, word_Ty, arg_Ty>(cool::no_init);
+	return *ptr;
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uintptr_Ty>
+inline const cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::const_bits_at(uintptr_Ty mem_address) noexcept
+{
+	cool::bits<bit_count, word_Ty, arg_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty, arg_Ty>*>(static_cast<std::uintptr_t>(mem_address));
+	new (ptr) cool::bits<bit_count, word_Ty, arg_Ty>(cool::no_init);
+	return *ptr;
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uintptr_Ty>
+inline volatile cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::volatile_bits_at(uintptr_Ty mem_address) noexcept
+{
+	cool::bits<bit_count, word_Ty, arg_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty, arg_Ty>*>(static_cast<std::uintptr_t>(mem_address));
+	new (ptr) cool::bits<bit_count, word_Ty, arg_Ty>(cool::no_init);
+	return *ptr;
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uintptr_Ty>
+inline const volatile cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::const_volatile_bits_at(uintptr_Ty mem_address) noexcept
+{
+	cool::bits<bit_count, word_Ty, arg_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty, arg_Ty>*>(static_cast<std::uintptr_t>(mem_address));
+	new (ptr) cool::bits<bit_count, word_Ty, arg_Ty>(cool::no_init);
+	return *ptr;
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty, class uintptr_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits_at(uintptr_Ty mem_address) noexcept
+{
+	cool::bits<bit_count, word_Ty, arg_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty, arg_Ty>*>(static_cast<std::uintptr_t>(mem_address));
+	new (ptr) cool::bits<bit_count, word_Ty, arg_Ty>(cool::no_init);
+	return *ptr;
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty, class uintptr_Ty>
+inline const cool::bits<bit_count, word_Ty, arg_Ty>& cool::const_bits_at(uintptr_Ty mem_address) noexcept
+{
+	cool::bits<bit_count, word_Ty, arg_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty, arg_Ty>*>(static_cast<std::uintptr_t>(mem_address));
+	new (ptr) cool::bits<bit_count, word_Ty, arg_Ty>(cool::no_init);
+	return *ptr;
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty, class uintptr_Ty>
+inline volatile cool::bits<bit_count, word_Ty, arg_Ty>& cool::volatile_bits_at(uintptr_Ty mem_address) noexcept
+{
+	cool::bits<bit_count, word_Ty, arg_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty, arg_Ty>*>(static_cast<std::uintptr_t>(mem_address));
+	new (ptr) cool::bits<bit_count, word_Ty, arg_Ty>(cool::no_init);
+	return *ptr;
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty, class uintptr_Ty>
+inline const volatile cool::bits<bit_count, word_Ty, arg_Ty>& cool::const_volatile_bits_at(uintptr_Ty mem_address) noexcept
+{
+	cool::bits<bit_count, word_Ty, arg_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty, arg_Ty>*>(static_cast<std::uintptr_t>(mem_address));
+	new (ptr) cool::bits<bit_count, word_Ty, arg_Ty>(cool::no_init);
+	return *ptr;
 }
 
 // bits iterators
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::iterator cool::bits<bit_count, word_Ty>::begin() const noexcept {
-	return cool::bits<bit_count, word_Ty>::iterator(static_cast<const word_Ty*>(m_field));
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator cool::bits<bit_count, word_Ty, arg_Ty>::begin() const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::iterator(static_cast<const word_Ty*>(m_field));
 }
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::iterator cool::bits<bit_count, word_Ty>::end() const noexcept {
-	return cool::bits<bit_count, word_Ty>::iterator(static_cast<const word_Ty*>(m_field), word_count);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator cool::bits<bit_count, word_Ty, arg_Ty>::end() const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::iterator(static_cast<const word_Ty*>(m_field), word_count);
 }
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::iterator cool::bits<bit_count, word_Ty>::cbegin() const noexcept {
-	return cool::bits<bit_count, word_Ty>::iterator(static_cast<const word_Ty*>(m_field));
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator cool::bits<bit_count, word_Ty, arg_Ty>::cbegin() const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::iterator(static_cast<const word_Ty*>(m_field));
 }
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::iterator cool::bits<bit_count, word_Ty>::cend() const noexcept {
-	return cool::bits<bit_count, word_Ty>::iterator(static_cast<const word_Ty*>(m_field), word_count);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator cool::bits<bit_count, word_Ty, arg_Ty>::cend() const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::iterator(static_cast<const word_Ty*>(m_field), word_count);
 }
 
 // bits op assign
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator&=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator&=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	_and_assign_op(static_cast<word_Ty*>(m_field), static_cast<const word_Ty*>(rhs.m_field)); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator|=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator|=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	_or_assign_op(static_cast<word_Ty*>(m_field), static_cast<const word_Ty*>(rhs.m_field)); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator^=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator^=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	_xor_assign_op(static_cast<word_Ty*>(m_field), static_cast<const word_Ty*>(rhs.m_field)); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::flip() noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::flip() noexcept {
 	_not_assign_op(static_cast<word_Ty*>(m_field)); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator&=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator&=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	_and_assign_op(static_cast<word_Ty*>(m_field), rhs.m_data_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator|=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator|=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	_or_assign_op(static_cast<word_Ty*>(m_field), rhs.m_data_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator^=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator^=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	_xor_assign_op(static_cast<word_Ty*>(m_field), rhs.m_data_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator&=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator&=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	_and_assign_op(static_cast<word_Ty*>(m_field), rhs.m_data_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator|=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator|=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	_or_assign_op(static_cast<word_Ty*>(m_field), rhs.m_data_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits<bit_count, word_Ty>::operator^=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator^=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	_xor_assign_op(static_cast<word_Ty*>(m_field), rhs.m_data_ptr); return *this;
 }
 
 // bits op
 
-template <std::size_t bit_count, class word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::operator&(const cool::bits<bit_count, word_Ty>& rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::operator&(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept
 {
-	cool::bits<bit_count, word_Ty> ret = false;
+	cool::bits<bit_count, word_Ty, arg_Ty> ret = false;
 	for (std::size_t n = 0; n < word_count; n++)
 	{
 		ret.m_field[n] = m_field[n] & rhs.m_field[n];
 	}
 	return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::operator|(const cool::bits<bit_count, word_Ty>& rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::operator|(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept
 {
-	cool::bits<bit_count, word_Ty> ret = false;
+	cool::bits<bit_count, word_Ty, arg_Ty> ret = false;
 	for (std::size_t n = 0; n < word_count; n++)
 	{
 		ret.m_field[n] = m_field[n] | rhs.m_field[n];
 	}
 	return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::operator^(const cool::bits<bit_count, word_Ty>& rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::operator^(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept
 {
-	cool::bits<bit_count, word_Ty> ret = false;
+	cool::bits<bit_count, word_Ty, arg_Ty> ret = false;
 	for (std::size_t n = 0; n < word_count; n++)
 	{
 		ret.m_field[n] = m_field[n] ^ rhs.m_field[n];
 	}
 	return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::operator~() const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::operator~() const noexcept
 {
-	cool::bits<bit_count, word_Ty> ret = false;
+	cool::bits<bit_count, word_Ty, arg_Ty> ret = false;
 	for (std::size_t n = 0; n < word_count; n++)
 	{
 		ret.m_field[n] = m_field[n] ^ static_cast<word_Ty>(-1);
@@ -1321,48 +1518,48 @@ constexpr inline cool::bits<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::
 	return ret;
 }
 
-template <std::size_t bit_count, class word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::operator&(bool rhs) const noexcept {
-	return rhs ? *this : cool::bits<bit_count, word_Ty>(false);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::operator&(bool rhs) const noexcept {
+	return rhs ? *this : cool::bits<bit_count, word_Ty, arg_Ty>(false);
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::operator|(bool rhs) const noexcept {
-	return rhs ? cool::bits<bit_count, word_Ty>(true) : *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::operator|(bool rhs) const noexcept {
+	return rhs ? cool::bits<bit_count, word_Ty, arg_Ty>(true) : *this;
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::operator^(bool rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::operator^(bool rhs) const noexcept {
 	return rhs ? ~(*this) : *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::operator&(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; _and_op(static_cast<word_Ty*>(ret.m_field), static_cast<const word_Ty*>(m_field), rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::operator&(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; _and_op(static_cast<word_Ty*>(ret.m_field), static_cast<const word_Ty*>(m_field), rhs.m_data_ptr); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::operator|(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; _or_op(static_cast<word_Ty*>(ret.m_field), static_cast<const word_Ty*>(m_field), rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::operator|(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; _or_op(static_cast<word_Ty*>(ret.m_field), static_cast<const word_Ty*>(m_field), rhs.m_data_ptr); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::operator^(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; xow_op(static_cast<word_Ty*>(ret.m_field), static_cast<const word_Ty*>(m_field), rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::operator^(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; xow_op(static_cast<word_Ty*>(ret.m_field), static_cast<const word_Ty*>(m_field), rhs.m_data_ptr); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::operator&(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; _and_op(static_cast<word_Ty*>(ret.m_field), static_cast<const word_Ty*>(m_field), rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::operator&(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; _and_op(static_cast<word_Ty*>(ret.m_field), static_cast<const word_Ty*>(m_field), rhs.m_data_ptr); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::operator|(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; _or_op(static_cast<word_Ty*>(ret.m_field), static_cast<const word_Ty*>(m_field), rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::operator|(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; _or_op(static_cast<word_Ty*>(ret.m_field), static_cast<const word_Ty*>(m_field), rhs.m_data_ptr); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::operator^(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; _xor_op(static_cast<word_Ty*>(ret.m_field), static_cast<const word_Ty*>(m_field), rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::operator^(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; _xor_op(static_cast<word_Ty*>(ret.m_field), static_cast<const word_Ty*>(m_field), rhs.m_data_ptr); return ret;
 }
 
 // bits cmp
 
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::bits<bit_count, word_Ty>::operator==(const cool::bits<bit_count, word_Ty>& rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator==(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept
 {
 	word_Ty test = 0;
 
@@ -1382,8 +1579,8 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator==(const cool::bit
 
 	return test == static_cast<word_Ty>(0);
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::bits<bit_count, word_Ty>::operator!=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator!=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept
 {
 	word_Ty test = 0;
 
@@ -1403,8 +1600,8 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator!=(const cool::bit
 
 	return test != static_cast<word_Ty>(0);
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::bits<bit_count, word_Ty>::operator==(bool rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator==(bool rhs) const noexcept
 {
 	word_Ty test = static_cast<word_Ty>(0);
 	word_Ty rhs_word = rhs ? static_cast<word_Ty>(-1) : 0;
@@ -1425,8 +1622,8 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator==(bool rhs) const
 
 	return test == static_cast<word_Ty>(0);
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::bits<bit_count, word_Ty>::operator!=(bool rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator!=(bool rhs) const noexcept
 {
 	word_Ty test = static_cast<word_Ty>(0);
 	word_Ty rhs_word = rhs ? static_cast<word_Ty>(-1) : 0;
@@ -1447,24 +1644,24 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator!=(bool rhs) const
 
 	return test != static_cast<word_Ty>(0);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::operator==(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator==(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
 	return _equal_cmp(static_cast<const word_Ty*>(m_field), rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::operator!=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator!=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
 	return _not_equal_cmp(static_cast<const word_Ty*>(m_field), rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::operator==(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator==(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
 	return _equal_cmp(static_cast<const word_Ty*>(m_field), rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::operator!=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator!=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
 	return _not_equal_cmp(static_cast<const word_Ty*>(m_field), rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::bits<bit_count, word_Ty>::operator<=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator<=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept
 {
 	word_Ty test = 0;
 
@@ -1484,8 +1681,8 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator<=(const cool::bit
 
 	return test == static_cast<word_Ty>(0);
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::bits<bit_count, word_Ty>::operator>=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator>=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept
 {
 	word_Ty test = 0;
 
@@ -1505,34 +1702,34 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator>=(const cool::bit
 
 	return test == static_cast<word_Ty>(0);
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::bits<bit_count, word_Ty>::operator<=(bool rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator<=(bool rhs) const noexcept
 {
 	return rhs || (*this == false);
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::bits<bit_count, word_Ty>::operator>=(bool rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator>=(bool rhs) const noexcept
 {
 	return !rhs || (*this == true);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::operator<=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator<=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
 	return _less_or_equal_cmp(static_cast<const word_Ty*>(m_field), rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::operator>=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator>=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
 	return _less_or_equal_cmp(rhs.m_data_ptr, static_cast<const word_Ty*>(m_field));
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::operator<=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator<=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
 	return _less_or_equal_cmp(static_cast<const word_Ty*>(m_field), rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::operator>=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator>=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
 	return _less_or_equal_cmp(rhs.m_data_ptr, static_cast<const word_Ty*>(m_field));
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::bits<bit_count, word_Ty>::operator<(const cool::bits<bit_count, word_Ty>& rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator<(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept
 {
 	word_Ty test_less = 0;
 	word_Ty test_neq = 0;
@@ -1555,8 +1752,8 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator<(const cool::bits
 
 	return (test_less == static_cast<word_Ty>(0)) && (test_neq != static_cast<word_Ty>(0));
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::bits<bit_count, word_Ty>::operator>(const cool::bits<bit_count, word_Ty>& rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator>(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept
 {
 	word_Ty test_greater = 0;
 	word_Ty test_neq = 0;
@@ -1579,96 +1776,96 @@ constexpr inline bool cool::bits<bit_count, word_Ty>::operator>(const cool::bits
 
 	return (test_greater == static_cast<word_Ty>(0)) && (test_neq != static_cast<word_Ty>(0));
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::bits<bit_count, word_Ty>::operator<(bool rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator<(bool rhs) const noexcept
 {
 	return rhs && (*this != true);
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::bits<bit_count, word_Ty>::operator>(bool rhs) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator>(bool rhs) const noexcept
 {
 	return !rhs && (*this != false);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::operator<(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator<(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
 	return _less_cmp(static_cast<const word_Ty*>(m_field), rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::operator>(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator>(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
 	return _less_cmp(rhs.m_data_ptr, static_cast<const word_Ty*>(m_field));
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::operator<(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator<(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
 	return _less_cmp(static_cast<const word_Ty*>(m_field), rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::operator>(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator>(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
 	return _less_cmp(rhs.m_data_ptr, static_cast<const word_Ty*>(m_field));
 }
 
 // bits volatile access
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::v() volatile noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::v() volatile noexcept
 {
-	return cool::_vbits_proxy<bit_count, word_Ty>(static_cast<volatile word_Ty*>(m_field));
+	return cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>(static_cast<volatile word_Ty*>(m_field));
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::_cvbits_proxy<bit_count, word_Ty> cool::bits<bit_count, word_Ty>::v() const volatile noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, word_Ty, arg_Ty>::v() const volatile noexcept
 {
-	return cool::_cvbits_proxy<bit_count, word_Ty>(static_cast<const volatile word_Ty*>(m_field));
+	return cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>(static_cast<const volatile word_Ty*>(m_field));
 }
 
 // bit_proxy
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::bit_proxy& cool::bits<bit_count, word_Ty>::bit_proxy::operator=(bool val) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy::operator=(bool val) noexcept
 {
 	word_Ty data_val = *m_data_ptr;
 	*m_data_ptr = val ? data_val | m_mask : data_val & ~m_mask;
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::bit_proxy& cool::bits<bit_count, word_Ty>::bit_proxy::operator&=(bool val) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy::operator&=(bool val) noexcept
 {
 	word_Ty data_val = *m_data_ptr;
 	*m_data_ptr = val ? data_val : data_val & ~m_mask;
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::bit_proxy& cool::bits<bit_count, word_Ty>::bit_proxy::operator|=(bool val) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy::operator|=(bool val) noexcept
 {
 	word_Ty data_val = *m_data_ptr;
 	*m_data_ptr = val ? data_val | m_mask : data_val;
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::bit_proxy& cool::bits<bit_count, word_Ty>::bit_proxy::operator^=(bool val) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy::operator^=(bool val) noexcept
 {
 	word_Ty data_val = *m_data_ptr;
 	*m_data_ptr = val ? data_val ^ m_mask : data_val;
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::bit_proxy& cool::bits<bit_count, word_Ty>::bit_proxy::flip() noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy::flip() noexcept
 {
 	*m_data_ptr ^= m_mask;
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>::bit_proxy::operator bool() const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy::operator bool() const noexcept
 {
 	return (*m_data_ptr & m_mask) != static_cast<word_Ty>(0);
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::bit_proxy& cool::bits<bit_count, word_Ty>::bit_proxy::operator=(const typename cool::bits<bit_count, word_Ty>::bit_proxy& rhs) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy::operator=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& rhs) noexcept
 {
 	bool rhs_val = *rhs.m_data_ptr & rhs.m_mask;
 	word_Ty data_val = *m_data_ptr;
@@ -1676,8 +1873,8 @@ inline typename cool::bits<bit_count, word_Ty>::bit_proxy& cool::bits<bit_count,
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::bit_proxy& cool::bits<bit_count, word_Ty>::bit_proxy::operator=(typename cool::bits<bit_count, word_Ty>::bit_proxy&& rhs) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy& cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy::operator=(typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy&& rhs) noexcept
 {
 	bool rhs_val = *rhs.m_data_ptr & rhs.m_mask;
 	word_Ty data_val = *m_data_ptr;
@@ -1685,59 +1882,59 @@ inline typename cool::bits<bit_count, word_Ty>::bit_proxy& cool::bits<bit_count,
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>::bit_proxy::bit_proxy(word_Ty* data_ptr, word_Ty mask) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy::bit_proxy(word_Ty* data_ptr, word_Ty mask) noexcept
 	: m_data_ptr(data_ptr), m_mask(mask) {}
 
 // vbit_proxy
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& cool::bits<bit_count, word_Ty>::vbit_proxy::operator=(bool val) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy::operator=(bool val) noexcept
 {
 	word_Ty data_val = *m_data_ptr;
 	*m_data_ptr = val ? data_val | m_mask : data_val & ~m_mask;
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& cool::bits<bit_count, word_Ty>::vbit_proxy::operator&=(bool val) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy::operator&=(bool val) noexcept
 {
 	word_Ty data_val = *m_data_ptr;
 	*m_data_ptr = val ? data_val : data_val & ~m_mask;
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& cool::bits<bit_count, word_Ty>::vbit_proxy::operator|=(bool val) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy::operator|=(bool val) noexcept
 {
 	word_Ty data_val = *m_data_ptr;
 	*m_data_ptr = val ? data_val | m_mask : data_val;
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& cool::bits<bit_count, word_Ty>::vbit_proxy::operator^=(bool val) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy::operator^=(bool val) noexcept
 {
 	word_Ty data_val = *m_data_ptr;
 	*m_data_ptr = val ? data_val ^ m_mask : data_val;
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& cool::bits<bit_count, word_Ty>::vbit_proxy::flip() noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy::flip() noexcept
 {
 	*m_data_ptr ^= m_mask;
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>::vbit_proxy::operator bool() const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy::operator bool() const noexcept
 {
 	return (*m_data_ptr & m_mask) != static_cast<word_Ty>(0);
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& cool::bits<bit_count, word_Ty>::vbit_proxy::operator=(const typename cool::bits<bit_count, word_Ty>::vbit_proxy& rhs) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy::operator=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& rhs) noexcept
 {
 	bool rhs_val = *rhs.m_data_ptr & rhs.m_mask;
 	word_Ty data_val = *m_data_ptr;
@@ -1745,8 +1942,8 @@ inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& cool::bits<bit_count
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& cool::bits<bit_count, word_Ty>::vbit_proxy::operator=(typename cool::bits<bit_count, word_Ty>::vbit_proxy&& rhs) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy& cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy::operator=(typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy&& rhs) noexcept
 {
 	bool rhs_val = *rhs.m_data_ptr & rhs.m_mask;
 	word_Ty data_val = *m_data_ptr;
@@ -1754,506 +1951,506 @@ inline typename cool::bits<bit_count, word_Ty>::vbit_proxy& cool::bits<bit_count
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>::vbit_proxy::vbit_proxy(volatile word_Ty* data_ptr, word_Ty mask) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy::vbit_proxy(volatile word_Ty* data_ptr, word_Ty mask) noexcept
 	: m_data_ptr(data_ptr), m_mask(mask) {}
 
 // _vbits_proxy
 
-template <std::size_t bit_count, class word_Ty>
-constexpr inline std::size_t cool::_vbits_proxy<bit_count, word_Ty>::size() noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline std::size_t cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::size() noexcept {
 	return bit_count;
 }
 
 // _vbits_proxy assign
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_assign_op(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_assign_op(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(bool val) noexcept {
-	cool::bits<bit_count, word_Ty>::_assign_bool_op(m_data_ptr, val); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator=(bool val) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_assign_bool_op(m_data_ptr, val); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(std::initializer_list<bool> lst) noexcept {
-	cool::bits<bit_count, word_Ty>::_assign_lst_op(m_data_ptr, lst); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator=(std::initializer_list<bool> lst) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_assign_lst_op(m_data_ptr, lst); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_assign_masked_op(m_data_ptr, rhs.m_rhs_ptr, rhs.m_mask_ptr); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_assign_masked_op(m_data_ptr, rhs.m_rhs_ptr, rhs.m_mask_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_assign_masked_op(m_data_ptr, rhs.m_rhs_ptr, rhs.m_mask_ptr); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_assign_masked_op(m_data_ptr, rhs.m_rhs_ptr, rhs.m_mask_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_assign_masked_op(m_data_ptr, rhs.m_rhs_ptr, rhs.m_mask_ptr); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator=(const cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_assign_masked_op(m_data_ptr, rhs.m_rhs_ptr, rhs.m_mask_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_assign_masked_op(m_data_ptr, rhs.m_rhs_ptr, rhs.m_mask_ptr); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator=(const cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_assign_masked_op(m_data_ptr, rhs.m_rhs_ptr, rhs.m_mask_ptr); return *this;
 }
 
 // _vbits_proxy misc
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>::operator word_Ty() const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator word_Ty() const noexcept {
 	return *m_data_ptr;
 }
-template <std::size_t bit_count, class word_Ty>
-inline std::size_t cool::_vbits_proxy<bit_count, word_Ty>::count() const noexcept {
-	return cool::bits<bit_count, word_Ty>::_count_op(m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline std::size_t cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::count() const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_count_op(m_data_ptr);
 }
 
 // _vbits_proxy iterators
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_vbits_proxy<bit_count, word_Ty>::begin() const noexcept {
-	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::begin() const noexcept {
+	return typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator(m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_vbits_proxy<bit_count, word_Ty>::end() const noexcept {
-	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr, cool::bits<bit_count, word_Ty>::word_count);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::end() const noexcept {
+	return typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator(m_data_ptr, cool::bits<bit_count, word_Ty, arg_Ty>::word_count);
 }
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_vbits_proxy<bit_count, word_Ty>::cbegin() const noexcept {
-	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::cbegin() const noexcept {
+	return typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator(m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_vbits_proxy<bit_count, word_Ty>::cend() const noexcept {
-	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr, cool::bits<bit_count, word_Ty>::word_count);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::cend() const noexcept {
+	return typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator(m_data_ptr, cool::bits<bit_count, word_Ty, arg_Ty>::word_count);
 }
 
 // _vbits_proxy op assign
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator&=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_and_assign_op(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator&=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_and_assign_op(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator|=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_or_assign_op(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator|=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_or_assign_op(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator^=(const cool::bits<bit_count, word_Ty>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_xor_assign_op(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator^=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_xor_assign_op(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::flip() noexcept {
-	cool::bits<bit_count, word_Ty>::_not_assign_op(m_data_ptr); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::flip() noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_not_assign_op(m_data_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator&=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_and_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator&=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_and_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator|=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_or_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator|=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_or_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator^=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_xor_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator^=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_xor_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator&=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_and_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator&=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_and_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator|=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_or_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator|=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_or_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator^=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_xor_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator^=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_xor_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
 
 // _vbits_proxy op
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_vbits_proxy<bit_count, word_Ty>::operator&(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_and_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator&(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_and_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_vbits_proxy<bit_count, word_Ty>::operator|(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_or_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator|(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_or_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_vbits_proxy<bit_count, word_Ty>::operator^(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_xor_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator^(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_xor_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>cool::_vbits_proxy<bit_count, word_Ty>:: operator~() const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_not_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr); return ret;
-}
-
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_vbits_proxy<bit_count, word_Ty>::operator&(bool rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_and_bool_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs); return ret;
-}
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_vbits_proxy<bit_count, word_Ty>::operator|(bool rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_or_bool_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs); return ret;
-}
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_vbits_proxy<bit_count, word_Ty>::operator^(bool rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_xor_bool_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>:: operator~() const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_not_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr); return ret;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_vbits_proxy<bit_count, word_Ty>::operator&(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_and_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator&(bool rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_and_bool_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_vbits_proxy<bit_count, word_Ty>::operator|(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_or_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator|(bool rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_or_bool_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_vbits_proxy<bit_count, word_Ty>::operator^(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_xor_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator^(bool rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_xor_bool_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs); return ret;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_vbits_proxy<bit_count, word_Ty>::operator&(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_and_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator&(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_and_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_vbits_proxy<bit_count, word_Ty>::operator|(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_or_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator|(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_or_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_vbits_proxy<bit_count, word_Ty>::operator^(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_xor_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator^(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_xor_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator&(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_and_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+}
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator|(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_or_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+}
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator^(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_xor_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
 }
 
 // _vbits_proxy cmp
 
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator==(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_equal_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator==(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_equal_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator!=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_not_equal_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator!=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_not_equal_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator==(bool rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_equal_bool_cmp(m_data_ptr, rhs);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator==(bool rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_equal_bool_cmp(m_data_ptr, rhs);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator!=(bool rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_not_equal_bool_cmp(m_data_ptr, rhs);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator!=(bool rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_not_equal_bool_cmp(m_data_ptr, rhs);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator==(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_equal_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator==(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator!=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_not_equal_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator!=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_not_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator==(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_equal_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator==(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator!=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_not_equal_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator!=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_not_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator<=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_or_equal_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(static_cast<const word_Ty*>(rhs.m_field), m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator>=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_or_equal_cmp(static_cast<const word_Ty*>(rhs.m_field), m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<=(bool rhs) const noexcept {
-	return rhs || cool::bits<bit_count, word_Ty>::_equal_bool_cmp(m_data_ptr, false);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator<=(bool rhs) const noexcept {
+	return rhs || cool::bits<bit_count, word_Ty, arg_Ty>::_equal_bool_cmp(m_data_ptr, false);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>=(bool rhs) const noexcept {
-	return !rhs || cool::bits<bit_count, word_Ty>::_equal_bool_cmp(m_data_ptr, true);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator>=(bool rhs) const noexcept {
+	return !rhs || cool::bits<bit_count, word_Ty, arg_Ty>::_equal_bool_cmp(m_data_ptr, true);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator<=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_or_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(rhs.m_data_ptr, m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator>=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_or_equal_cmp(rhs.m_data_ptr, m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator<=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_or_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(rhs.m_data_ptr, m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator>=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_or_equal_cmp(rhs.m_data_ptr, m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator<(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_cmp(static_cast<const word_Ty*>(rhs.m_field), m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator>(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_cmp(static_cast<const word_Ty*>(rhs.m_field), m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<(bool rhs) const noexcept {
-	return rhs && cool::bits<bit_count, word_Ty>::_not_equal_bool_cmp(m_data_ptr, true);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator<(bool rhs) const noexcept {
+	return rhs && cool::bits<bit_count, word_Ty, arg_Ty>::_not_equal_bool_cmp(m_data_ptr, true);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>(bool rhs) const noexcept {
-	return !rhs && cool::bits<bit_count, word_Ty>::_not_equal_bool_cmp(m_data_ptr, false);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator>(bool rhs) const noexcept {
+	return !rhs && cool::bits<bit_count, word_Ty, arg_Ty>::_not_equal_bool_cmp(m_data_ptr, false);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_lesscmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator<(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_lesscmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_cmp(rhs.m_data_ptr, m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator>(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_cmp(rhs.m_data_ptr, m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator<(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator<(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_vbits_proxy<bit_count, word_Ty>::operator>(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_cmp(rhs.m_data_ptr, m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator>(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_cmp(rhs.m_data_ptr, m_data_ptr);
 }
 
 // _vbits_proxy spec
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>& cool::_vbits_proxy<bit_count, word_Ty>::operator=(cool::_vbits_proxy<bit_count, word_Ty>&& rhs) noexcept {
-	cool::bits<bit_count, word_Ty>::_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator=(cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>&& rhs) noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty>::_assign_op(m_data_ptr, rhs.m_data_ptr); return *this;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty>::_vbits_proxy(volatile word_Ty* data_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::_vbits_proxy(volatile word_Ty* data_ptr) noexcept
 	: m_data_ptr(data_ptr) {}
 
 // _cvbits_proxy
 
-template <std::size_t bit_count, class word_Ty>
-constexpr inline std::size_t cool::_cvbits_proxy<bit_count, word_Ty>::size() noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline std::size_t cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::size() noexcept {
 	return bit_count;
 }
 
 // _cvbits_proxy misc
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::_cvbits_proxy<bit_count, word_Ty>::operator word_Ty() const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator word_Ty() const noexcept {
 	return *m_data_ptr;
 }
-template <std::size_t bit_count, class word_Ty>
-inline std::size_t cool::_cvbits_proxy<bit_count, word_Ty>::count() const noexcept {
-	return cool::bits<bit_count, word_Ty>::_count_op(m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline std::size_t cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::count() const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_count_op(m_data_ptr);
 }
 
 // _cvbits_proxy iterators
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_cvbits_proxy<bit_count, word_Ty>::begin() const noexcept {
-	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::begin() const noexcept {
+	return typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator(m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_cvbits_proxy<bit_count, word_Ty>::end() const noexcept {
-	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr, cool::bits<bit_count, word_Ty>::word_count);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::end() const noexcept {
+	return typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator(m_data_ptr, cool::bits<bit_count, word_Ty, arg_Ty>::word_count);
 }
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_cvbits_proxy<bit_count, word_Ty>::cbegin() const noexcept {
-	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::cbegin() const noexcept {
+	return typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator(m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::_cvbits_proxy<bit_count, word_Ty>::cend() const noexcept {
-	return typename cool::bits<bit_count, word_Ty>::v_iterator(m_data_ptr, cool::bits<bit_count, word_Ty>::word_count);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::cend() const noexcept {
+	return typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator(m_data_ptr, cool::bits<bit_count, word_Ty, arg_Ty>::word_count);
 }
 
 // _cvbits_proxy op
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_cvbits_proxy<bit_count, word_Ty>::operator&(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_and_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator&(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_and_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_cvbits_proxy<bit_count, word_Ty>::operator|(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_or_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator|(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_or_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_cvbits_proxy<bit_count, word_Ty>::operator^(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_xor_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator^(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_xor_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, static_cast<const word_Ty*>(rhs.m_field)); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>cool::_cvbits_proxy<bit_count, word_Ty>:: operator~() const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_not_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr); return ret;
-}
-
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_cvbits_proxy<bit_count, word_Ty>::operator&(bool rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_and_bool_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs); return ret;
-}
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_cvbits_proxy<bit_count, word_Ty>::operator|(bool rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_or_bool_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs); return ret;
-}
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_cvbits_proxy<bit_count, word_Ty>::operator^(bool rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_xor_bool_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>:: operator~() const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_not_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr); return ret;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_cvbits_proxy<bit_count, word_Ty>::operator&(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_and_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator&(bool rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_and_bool_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_cvbits_proxy<bit_count, word_Ty>::operator|(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_or_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator|(bool rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_or_bool_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_cvbits_proxy<bit_count, word_Ty>::operator^(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_xor_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator^(bool rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_xor_bool_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs); return ret;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_cvbits_proxy<bit_count, word_Ty>::operator&(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_and_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator&(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_and_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_cvbits_proxy<bit_count, word_Ty>::operator|(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_or_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator|(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_or_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::_cvbits_proxy<bit_count, word_Ty>::operator^(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	cool::bits<bit_count, word_Ty> ret; cool::bits<bit_count, word_Ty>::_xor_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator^(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_xor_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator&(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_and_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+}
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator|(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_or_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
+}
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator^(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	cool::bits<bit_count, word_Ty, arg_Ty> ret; cool::bits<bit_count, word_Ty, arg_Ty>::_xor_op(static_cast<word_Ty*>(ret.m_field), m_data_ptr, rhs.m_data_ptr); return ret;
 }
 
 // _cvbits_proxy cmp
 
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator==(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_equal_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator==(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_equal_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator!=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_not_equal_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator!=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_not_equal_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator==(bool rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_equal_bool_cmp(m_data_ptr, rhs);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator==(bool rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_equal_bool_cmp(m_data_ptr, rhs);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator!=(bool rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_not_equal_bool_cmp(m_data_ptr, rhs);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator!=(bool rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_not_equal_bool_cmp(m_data_ptr, rhs);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator==(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_equal_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator==(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator!=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_not_equal_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator!=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_not_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator==(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_equal_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator==(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator!=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_not_equal_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator!=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_not_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator<=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_or_equal_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>=(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(static_cast<const word_Ty*>(rhs.m_field), m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator>=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_or_equal_cmp(static_cast<const word_Ty*>(rhs.m_field), m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<=(bool rhs) const noexcept {
-	return rhs || cool::bits<bit_count, word_Ty>::_equal_bool_cmp(m_data_ptr, false);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator<=(bool rhs) const noexcept {
+	return rhs || cool::bits<bit_count, word_Ty, arg_Ty>::_equal_bool_cmp(m_data_ptr, false);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>=(bool rhs) const noexcept {
-	return !rhs || cool::bits<bit_count, word_Ty>::_equal_bool_cmp(m_data_ptr, true);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator>=(bool rhs) const noexcept {
+	return !rhs || cool::bits<bit_count, word_Ty, arg_Ty>::_equal_bool_cmp(m_data_ptr, true);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator<=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_or_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>=(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(rhs.m_data_ptr, m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator>=(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_or_equal_cmp(rhs.m_data_ptr, m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator<=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_or_equal_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>=(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(rhs.m_data_ptr, m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator>=(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_or_equal_cmp(rhs.m_data_ptr, m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator<(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_cmp(m_data_ptr, static_cast<const word_Ty*>(rhs.m_field));
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>(const cool::bits<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_cmp(static_cast<const word_Ty*>(rhs.m_field), m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator>(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_cmp(static_cast<const word_Ty*>(rhs.m_field), m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<(bool rhs) const noexcept {
-	return rhs && cool::bits<bit_count, word_Ty>::_not_equal_bool_cmp(m_data_ptr, true);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator<(bool rhs) const noexcept {
+	return rhs && cool::bits<bit_count, word_Ty, arg_Ty>::_not_equal_bool_cmp(m_data_ptr, true);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>(bool rhs) const noexcept {
-	return !rhs && cool::bits<bit_count, word_Ty>::_not_equal_bool_cmp(m_data_ptr, false);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator>(bool rhs) const noexcept {
+	return !rhs && cool::bits<bit_count, word_Ty, arg_Ty>::_not_equal_bool_cmp(m_data_ptr, false);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator<(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>(const cool::_vbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_cmp(rhs.m_data_ptr, m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator>(const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_cmp(rhs.m_data_ptr, m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator<(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_cmp(m_data_ptr, rhs.m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator<(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_cmp(m_data_ptr, rhs.m_data_ptr);
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::_cvbits_proxy<bit_count, word_Ty>::operator>(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) const noexcept {
-	return cool::bits<bit_count, word_Ty>::_less_cmp(rhs.m_data_ptr, m_data_ptr);
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator>(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) const noexcept {
+	return cool::bits<bit_count, word_Ty, arg_Ty>::_less_cmp(rhs.m_data_ptr, m_data_ptr);
 }
 
 // _cvbits_proxy spec
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::_cvbits_proxy<bit_count, word_Ty>::_cvbits_proxy(const volatile word_Ty* data_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::_cvbits_proxy(const volatile word_Ty* data_ptr) noexcept
 	: m_data_ptr(data_ptr) {}
 
 // bits iterator
 
-template <std::size_t bit_count, class word_Ty>
-inline std::size_t cool::bits<bit_count, word_Ty>::iterator::operator*() const noexcept {
-	return m_word_index + m_index_p1 - 1;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline arg_Ty cool::bits<bit_count, word_Ty, arg_Ty>::iterator::operator*() const noexcept {
+	return static_cast<arg_Ty>(m_word_index + m_index_p1 - 1);
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::iterator& cool::bits<bit_count, word_Ty>::iterator::operator++() noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& cool::bits<bit_count, word_Ty, arg_Ty>::iterator::operator++() noexcept
 {
 	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
 	constexpr bool end_mask_needed = bit_count % word_size != 0;
@@ -2267,7 +2464,7 @@ inline typename cool::bits<bit_count, word_Ty>::iterator& cool::bits<bit_count, 
 		{
 			constexpr std::size_t end_word_index = word_count * word_size;
 
-			m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+			m_word_index += cool::bits<bit_count, word_Ty, arg_Ty>::word_size;
 
 			while (m_word_index < end_word_index)
 			{
@@ -2287,21 +2484,21 @@ inline typename cool::bits<bit_count, word_Ty>::iterator& cool::bits<bit_count, 
 				{
 					if (cast_upward)
 					{
-						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
+						m_index_p1 = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
 					}
 					else
 					{
-						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+						m_index_p1 = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 					}
 
-					m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ? m_data >> m_index_p1 : 0;
+					m_data = (m_index_p1 < cool::bits<bit_count, word_Ty, arg_Ty>::word_size) ? m_data >> m_index_p1 : 0;
 
 					return *this;
 				}
 				else
 				{
 					m_data_ptr++;
-					m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+					m_word_index += cool::bits<bit_count, word_Ty, arg_Ty>::word_size;
 				}
 			}
 		}
@@ -2312,11 +2509,11 @@ inline typename cool::bits<bit_count, word_Ty>::iterator& cool::bits<bit_count, 
 
 		if (cast_upward)
 		{
-			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data))) - 1) + 1;
+			index_offset = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data))) - 1) + 1;
 		}
 		else
 		{
-			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+			index_offset = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 		}
 
 		m_index_p1 += index_offset;
@@ -2326,41 +2523,41 @@ inline typename cool::bits<bit_count, word_Ty>::iterator& cool::bits<bit_count, 
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::iterator cool::bits<bit_count, word_Ty>::iterator::operator++(int) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator cool::bits<bit_count, word_Ty, arg_Ty>::iterator::operator++(int) noexcept
 {
-	cool::bits<bit_count, word_Ty>::iterator ret = *this;
+	cool::bits<bit_count, word_Ty, arg_Ty>::iterator ret = *this;
 	this->operator++();
 	return ret;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::iterator::operator==(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::iterator::operator==(const typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& rhs) const noexcept {
 	return m_data_ptr == rhs.m_data_ptr;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::iterator::operator!=(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::iterator::operator!=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& rhs) const noexcept {
 	return m_data_ptr != rhs.m_data_ptr;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::iterator::operator<=(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::iterator::operator<=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& rhs) const noexcept {
 	return m_data_ptr <= rhs.m_data_ptr;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::iterator::operator>=(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::iterator::operator>=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& rhs) const noexcept {
 	return m_data_ptr >= rhs.m_data_ptr;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::iterator::operator<(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::iterator::operator<(const typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& rhs) const noexcept {
 	return m_data_ptr < rhs.m_data_ptr;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::iterator::operator>(const typename cool::bits<bit_count, word_Ty>::iterator& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::iterator::operator>(const typename cool::bits<bit_count, word_Ty, arg_Ty>::iterator& rhs) const noexcept {
 	return m_data_ptr > rhs.m_data_ptr;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>::iterator::iterator(const word_Ty* data_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>::iterator::iterator(const word_Ty* data_ptr) noexcept
 	: m_data_ptr(data_ptr), m_word_index(0)
 {
 	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
@@ -2383,14 +2580,14 @@ inline cool::bits<bit_count, word_Ty>::iterator::iterator(const word_Ty* data_pt
 		{
 			if (cast_upward)
 			{
-				m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
+				m_index_p1 = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
 			}
 			else
 			{
-				m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+				m_index_p1 = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 			}
 
-			m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ? m_data >> m_index_p1 : 0;
+			m_data = (m_index_p1 < cool::bits<bit_count, word_Ty, arg_Ty>::word_size) ? m_data >> m_index_p1 : 0;
 		}
 		else
 		{
@@ -2419,39 +2616,39 @@ inline cool::bits<bit_count, word_Ty>::iterator::iterator(const word_Ty* data_pt
 			{
 				if (cast_upward)
 				{
-					m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
+					m_index_p1 = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
 				}
 				else
 				{
-					m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+					m_index_p1 = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 				}
 
-				m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ? m_data >> m_index_p1 : 0;
+				m_data = (m_index_p1 < cool::bits<bit_count, word_Ty, arg_Ty>::word_size) ? m_data >> m_index_p1 : 0;
 
 				break;
 			}
 			else
 			{
 				m_data_ptr++;
-				m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+				m_word_index += cool::bits<bit_count, word_Ty, arg_Ty>::word_size;
 			}
 		}
 	}
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>::iterator::iterator(const word_Ty* data_ptr, std::size_t end_word) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>::iterator::iterator(const word_Ty* data_ptr, std::size_t end_word) noexcept
 	: m_data_ptr(data_ptr + end_word), m_word_index(0), m_index_p1(0), m_data(0) {}
 
 // bits v_iterator
 
-template <std::size_t bit_count, class word_Ty>
-inline std::size_t cool::bits<bit_count, word_Ty>::v_iterator::operator*() const noexcept {
-	return m_word_index + m_index_p1 - 1;
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline arg_Ty cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator::operator*() const noexcept {
+	return static_cast<arg_Ty>(m_word_index + m_index_p1 - 1);
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::v_iterator& cool::bits<bit_count, word_Ty>::v_iterator::operator++() noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator::operator++() noexcept
 {
 	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
 	constexpr bool end_mask_needed = bit_count % word_size != 0;
@@ -2465,7 +2662,7 @@ inline typename cool::bits<bit_count, word_Ty>::v_iterator& cool::bits<bit_count
 		{
 			constexpr std::size_t end_word_index = word_count * word_size;
 
-			m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+			m_word_index += cool::bits<bit_count, word_Ty, arg_Ty>::word_size;
 
 			while (m_word_index < end_word_index)
 			{
@@ -2486,21 +2683,21 @@ inline typename cool::bits<bit_count, word_Ty>::v_iterator& cool::bits<bit_count
 				{
 					if (cast_upward)
 					{
-						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
+						m_index_p1 = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
 					}
 					else
 					{
-						m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+						m_index_p1 = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 					}
 
-					m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ? m_data >> m_index_p1 : 0;
+					m_data = (m_index_p1 < cool::bits<bit_count, word_Ty, arg_Ty>::word_size) ? m_data >> m_index_p1 : 0;
 
 					return *this;
 				}
 				else
 				{
 					m_data_ptr++;
-					m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+					m_word_index += cool::bits<bit_count, word_Ty, arg_Ty>::word_size;
 				}
 			}
 		}
@@ -2511,11 +2708,11 @@ inline typename cool::bits<bit_count, word_Ty>::v_iterator& cool::bits<bit_count
 
 		if (cast_upward)
 		{
-			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data))) - 1) + 1;
+			index_offset = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data))) - 1) + 1;
 		}
 		else
 		{
-			index_offset = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+			index_offset = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 		}
 
 		m_index_p1 += index_offset;
@@ -2525,41 +2722,41 @@ inline typename cool::bits<bit_count, word_Ty>::v_iterator& cool::bits<bit_count
 	return *this;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline typename cool::bits<bit_count, word_Ty>::v_iterator cool::bits<bit_count, word_Ty>::v_iterator::operator++(int) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator::operator++(int) noexcept
 {
-	cool::bits<bit_count, word_Ty>::v_iterator ret = *this;
+	cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator ret = *this;
 	this->operator++();
 	return ret;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::v_iterator::operator==(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator::operator==(const typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& rhs) const noexcept {
 	return m_data_ptr == rhs.m_data_ptr;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::v_iterator::operator!=(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator::operator!=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& rhs) const noexcept {
 	return m_data_ptr != rhs.m_data_ptr;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::v_iterator::operator<=(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator::operator<=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& rhs) const noexcept {
 	return m_data_ptr <= rhs.m_data_ptr;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::v_iterator::operator>=(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator::operator>=(const typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& rhs) const noexcept {
 	return m_data_ptr >= rhs.m_data_ptr;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::v_iterator::operator<(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator::operator<(const typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& rhs) const noexcept {
 	return m_data_ptr < rhs.m_data_ptr;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::bits<bit_count, word_Ty>::v_iterator::operator>(const typename cool::bits<bit_count, word_Ty>::v_iterator& rhs) const noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator::operator>(const typename cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator& rhs) const noexcept {
 	return m_data_ptr > rhs.m_data_ptr;
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>::v_iterator::v_iterator(const volatile word_Ty* data_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator::v_iterator(const volatile word_Ty* data_ptr) noexcept
 	: m_data_ptr(data_ptr), m_word_index(0)
 {
 	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
@@ -2582,14 +2779,14 @@ inline cool::bits<bit_count, word_Ty>::v_iterator::v_iterator(const volatile wor
 		{
 			if (cast_upward)
 			{
-				m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
+				m_index_p1 = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
 			}
 			else
 			{
-				m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+				m_index_p1 = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 			}
 
-			m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ? m_data >> m_index_p1 : 0;
+			m_data = (m_index_p1 < cool::bits<bit_count, word_Ty, arg_Ty>::word_size) ? m_data >> m_index_p1 : 0;
 		}
 		else
 		{
@@ -2619,34 +2816,34 @@ inline cool::bits<bit_count, word_Ty>::v_iterator::v_iterator(const volatile wor
 			{
 				if (cast_upward)
 				{
-					m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
+					m_index_p1 = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op(static_cast<unsigned int>((m_data & (-m_data)) - 1)) + 1;
 				}
 				else
 				{
-					m_index_p1 = cool::bits<bit_count, word_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
+					m_index_p1 = cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op((m_data & (-m_data)) - 1) + 1;
 				}
 
-				m_data = (m_index_p1 < cool::bits<bit_count, word_Ty>::word_size) ? m_data >> m_index_p1 : 0;
+				m_data = (m_index_p1 < cool::bits<bit_count, word_Ty, arg_Ty>::word_size) ? m_data >> m_index_p1 : 0;
 
 				break;
 			}
 			else
 			{
 				m_data_ptr++;
-				m_word_index += cool::bits<bit_count, word_Ty>::word_size;
+				m_word_index += cool::bits<bit_count, word_Ty, arg_Ty>::word_size;
 			}
 		}
 	}
 }
 
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty>::v_iterator::v_iterator(const volatile word_Ty* data_ptr, std::size_t end_word) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty>::v_iterator::v_iterator(const volatile word_Ty* data_ptr, std::size_t end_word) noexcept
 	: m_data_ptr(data_ptr + end_word), m_word_index(0), m_index_p1(0), m_data(0) {}
 
 // bits subroutines
 
-template <std::size_t bit_count, class word_Ty> template <class word_Ty2>
-inline constexpr word_Ty2 cool::bits<bit_count, word_Ty>::_pcmask_op(word_Ty2 _mask8b) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class word_Ty2>
+inline constexpr word_Ty2 cool::bits<bit_count, word_Ty, arg_Ty>::_pcmask_op(word_Ty2 _mask8b) noexcept
 {
 	constexpr std::size_t n = (sizeof(word_Ty2) * CHAR_BIT) / 8;
 	word_Ty2 ret = 0;
@@ -2659,8 +2856,8 @@ inline constexpr word_Ty2 cool::bits<bit_count, word_Ty>::_pcmask_op(word_Ty2 _m
 	return ret;
 }
 
-template <std::size_t bit_count, class word_Ty> template <class word_Ty2>
-inline constexpr std::size_t cool::bits<bit_count, word_Ty>::_popcount_op(word_Ty2 val) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class word_Ty2>
+inline constexpr std::size_t cool::bits<bit_count, word_Ty, arg_Ty>::_popcount_op(word_Ty2 val) noexcept
 {
 	constexpr word_Ty2 mask01010101 = _pcmask_op(static_cast<word_Ty2>(0b01010101));
 	constexpr word_Ty2 mask00110011 = _pcmask_op(static_cast<word_Ty2>(0b00110011));
@@ -2683,8 +2880,8 @@ inline constexpr std::size_t cool::bits<bit_count, word_Ty>::_popcount_op(word_T
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty>
-inline std::size_t cool::bits<bit_count, word_Ty>::_count_op(ptr_Ty data_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty>
+inline std::size_t cool::bits<bit_count, word_Ty, arg_Ty>::_count_op(ptr_Ty data_ptr) noexcept
 {
 	constexpr bool cast_upward = sizeof(word_Ty) < sizeof(unsigned int);
 
@@ -2719,8 +2916,8 @@ inline std::size_t cool::bits<bit_count, word_Ty>::_count_op(ptr_Ty data_ptr) no
 	return ret;
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty1, class ptr_Ty2>
-inline void cool::bits<bit_count, word_Ty>::_assign_op(ptr_Ty1 data_ptr, ptr_Ty2 rhs_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty1, class ptr_Ty2>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_assign_op(ptr_Ty1 data_ptr, ptr_Ty2 rhs_ptr) noexcept
 {
 	for (std::size_t n = 0; n < word_capacity; n++)
 	{
@@ -2739,8 +2936,8 @@ inline void cool::bits<bit_count, word_Ty>::_assign_op(ptr_Ty1 data_ptr, ptr_Ty2
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty1, class ptr_Ty2, class ptr_Ty3>
-inline void cool::bits<bit_count, word_Ty>::_assign_masked_op(ptr_Ty1 data_ptr, ptr_Ty2 rhs_ptr, ptr_Ty3 mask_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty1, class ptr_Ty2, class ptr_Ty3>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_assign_masked_op(ptr_Ty1 data_ptr, ptr_Ty2 rhs_ptr, ptr_Ty3 mask_ptr) noexcept
 {
 	for (std::size_t n = 0; n < word_capacity; n++)
 	{
@@ -2763,8 +2960,8 @@ inline void cool::bits<bit_count, word_Ty>::_assign_masked_op(ptr_Ty1 data_ptr, 
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty>
-inline void cool::bits<bit_count, word_Ty>::_assign_bool_op(ptr_Ty data_ptr, bool val) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_assign_bool_op(ptr_Ty data_ptr, bool val) noexcept
 {
 	word_Ty word_val = val ? static_cast<word_Ty>(-1) : 0;
 	for (std::size_t n = 0; n < word_capacity; n++)
@@ -2783,8 +2980,8 @@ inline void cool::bits<bit_count, word_Ty>::_assign_bool_op(ptr_Ty data_ptr, boo
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty>
-inline void cool::bits<bit_count, word_Ty>::_assign_lst_op(ptr_Ty data_ptr, std::initializer_list<bool> lst) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_assign_lst_op(ptr_Ty data_ptr, std::initializer_list<bool> lst) noexcept
 {
 	const bool* ptr = lst.begin();
 	for (std::size_t n = 0; n < word_capacity; n++)
@@ -2814,8 +3011,8 @@ inline void cool::bits<bit_count, word_Ty>::_assign_lst_op(ptr_Ty data_ptr, std:
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty1, class ptr_Ty2>
-inline void cool::bits<bit_count, word_Ty>::_and_assign_op(ptr_Ty1 data_ptr, ptr_Ty2 rhs_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty1, class ptr_Ty2>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_and_assign_op(ptr_Ty1 data_ptr, ptr_Ty2 rhs_ptr) noexcept
 {
 	for (std::size_t n = 0; n < word_capacity; n++)
 	{
@@ -2831,8 +3028,8 @@ inline void cool::bits<bit_count, word_Ty>::_and_assign_op(ptr_Ty1 data_ptr, ptr
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty1, class ptr_Ty2>
-inline void cool::bits<bit_count, word_Ty>::_or_assign_op(ptr_Ty1 data_ptr, ptr_Ty2 rhs_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty1, class ptr_Ty2>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_or_assign_op(ptr_Ty1 data_ptr, ptr_Ty2 rhs_ptr) noexcept
 {
 	for (std::size_t n = 0; n < word_capacity; n++)
 	{
@@ -2848,8 +3045,8 @@ inline void cool::bits<bit_count, word_Ty>::_or_assign_op(ptr_Ty1 data_ptr, ptr_
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty1, class ptr_Ty2>
-inline void cool::bits<bit_count, word_Ty>::_xor_assign_op(ptr_Ty1 data_ptr, ptr_Ty2 rhs_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty1, class ptr_Ty2>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_xor_assign_op(ptr_Ty1 data_ptr, ptr_Ty2 rhs_ptr) noexcept
 {
 	for (std::size_t n = 0; n < word_capacity; n++)
 	{
@@ -2865,8 +3062,8 @@ inline void cool::bits<bit_count, word_Ty>::_xor_assign_op(ptr_Ty1 data_ptr, ptr
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty>
-inline void cool::bits<bit_count, word_Ty>::_not_assign_op(ptr_Ty data_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_not_assign_op(ptr_Ty data_ptr) noexcept
 {
 	for (std::size_t n = 0; n < word_capacity; n++)
 	{
@@ -2882,8 +3079,8 @@ inline void cool::bits<bit_count, word_Ty>::_not_assign_op(ptr_Ty data_ptr) noex
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty0, class ptr_Ty1, class ptr_Ty2>
-inline void cool::bits<bit_count, word_Ty>::_and_op(ptr_Ty0 ret_ptr, ptr_Ty1 lhs_ptr, ptr_Ty2 rhs_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty0, class ptr_Ty1, class ptr_Ty2>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_and_op(ptr_Ty0 ret_ptr, ptr_Ty1 lhs_ptr, ptr_Ty2 rhs_ptr) noexcept
 {
 	for (std::size_t n = 0; n < word_count; n++)
 	{
@@ -2891,8 +3088,8 @@ inline void cool::bits<bit_count, word_Ty>::_and_op(ptr_Ty0 ret_ptr, ptr_Ty1 lhs
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty0, class ptr_Ty1, class ptr_Ty2>
-inline void cool::bits<bit_count, word_Ty>::_or_op(ptr_Ty0 ret_ptr, ptr_Ty1 lhs_ptr, ptr_Ty2 rhs_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty0, class ptr_Ty1, class ptr_Ty2>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_or_op(ptr_Ty0 ret_ptr, ptr_Ty1 lhs_ptr, ptr_Ty2 rhs_ptr) noexcept
 {
 	for (std::size_t n = 0; n < word_count; n++)
 	{
@@ -2900,8 +3097,8 @@ inline void cool::bits<bit_count, word_Ty>::_or_op(ptr_Ty0 ret_ptr, ptr_Ty1 lhs_
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty0, class ptr_Ty1, class ptr_Ty2>
-inline void cool::bits<bit_count, word_Ty>::_xor_op(ptr_Ty0 ret_ptr, ptr_Ty1 lhs_ptr, ptr_Ty2 rhs_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty0, class ptr_Ty1, class ptr_Ty2>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_xor_op(ptr_Ty0 ret_ptr, ptr_Ty1 lhs_ptr, ptr_Ty2 rhs_ptr) noexcept
 {
 	for (std::size_t n = 0; n < word_count; n++)
 	{
@@ -2909,8 +3106,8 @@ inline void cool::bits<bit_count, word_Ty>::_xor_op(ptr_Ty0 ret_ptr, ptr_Ty1 lhs
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty1, class ptr_Ty2>
-inline void cool::bits<bit_count, word_Ty>::_and_bool_op(ptr_Ty1 ret_ptr, ptr_Ty2 lhs_ptr, bool rhs) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty1, class ptr_Ty2>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_and_bool_op(ptr_Ty1 ret_ptr, ptr_Ty2 lhs_ptr, bool rhs) noexcept
 {
 	if (rhs)
 	{
@@ -2928,8 +3125,8 @@ inline void cool::bits<bit_count, word_Ty>::_and_bool_op(ptr_Ty1 ret_ptr, ptr_Ty
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty1, class ptr_Ty2>
-inline void cool::bits<bit_count, word_Ty>::_or_bool_op(ptr_Ty1 ret_ptr, ptr_Ty2 lhs_ptr, bool rhs) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty1, class ptr_Ty2>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_or_bool_op(ptr_Ty1 ret_ptr, ptr_Ty2 lhs_ptr, bool rhs) noexcept
 {
 	if (rhs)
 	{
@@ -2947,8 +3144,8 @@ inline void cool::bits<bit_count, word_Ty>::_or_bool_op(ptr_Ty1 ret_ptr, ptr_Ty2
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty1, class ptr_Ty2>
-inline void cool::bits<bit_count, word_Ty>::_xor_bool_op(ptr_Ty1 ret_ptr, ptr_Ty2 lhs_ptr, bool rhs) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty1, class ptr_Ty2>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_xor_bool_op(ptr_Ty1 ret_ptr, ptr_Ty2 lhs_ptr, bool rhs) noexcept
 {
 	if (rhs)
 	{
@@ -2966,8 +3163,8 @@ inline void cool::bits<bit_count, word_Ty>::_xor_bool_op(ptr_Ty1 ret_ptr, ptr_Ty
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty0, class ptr_Ty>
-inline void cool::bits<bit_count, word_Ty>::_not_op(ptr_Ty0 ret_ptr, ptr_Ty ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty0, class ptr_Ty>
+inline void cool::bits<bit_count, word_Ty, arg_Ty>::_not_op(ptr_Ty0 ret_ptr, ptr_Ty ptr) noexcept
 {
 	for (std::size_t n = 0; n < word_count; n++)
 	{
@@ -2975,8 +3172,8 @@ inline void cool::bits<bit_count, word_Ty>::_not_op(ptr_Ty0 ret_ptr, ptr_Ty ptr)
 	}
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty1, class ptr_Ty2>
-inline bool cool::bits<bit_count, word_Ty>::_equal_cmp(ptr_Ty1 lhs_ptr, ptr_Ty2 rhs_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty1, class ptr_Ty2>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::_equal_cmp(ptr_Ty1 lhs_ptr, ptr_Ty2 rhs_ptr) noexcept
 {
 	word_Ty test = 0;
 
@@ -2996,8 +3193,8 @@ inline bool cool::bits<bit_count, word_Ty>::_equal_cmp(ptr_Ty1 lhs_ptr, ptr_Ty2 
 	return test == static_cast<word_Ty>(0);
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty1, class ptr_Ty2>
-inline bool cool::bits<bit_count, word_Ty>::_not_equal_cmp(ptr_Ty1 lhs_ptr, ptr_Ty2 rhs_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty1, class ptr_Ty2>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::_not_equal_cmp(ptr_Ty1 lhs_ptr, ptr_Ty2 rhs_ptr) noexcept
 {
 	word_Ty test = 0;
 
@@ -3017,8 +3214,8 @@ inline bool cool::bits<bit_count, word_Ty>::_not_equal_cmp(ptr_Ty1 lhs_ptr, ptr_
 	return test != static_cast<word_Ty>(0);
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty>
-inline bool cool::bits<bit_count, word_Ty>::_equal_bool_cmp(ptr_Ty lhs_ptr, bool rhs) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::_equal_bool_cmp(ptr_Ty lhs_ptr, bool rhs) noexcept
 {
 	word_Ty test = 0;
 
@@ -3039,8 +3236,8 @@ inline bool cool::bits<bit_count, word_Ty>::_equal_bool_cmp(ptr_Ty lhs_ptr, bool
 	return test == static_cast<word_Ty>(0);
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty>
-inline bool cool::bits<bit_count, word_Ty>::_not_equal_bool_cmp(ptr_Ty lhs_ptr, bool rhs) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::_not_equal_bool_cmp(ptr_Ty lhs_ptr, bool rhs) noexcept
 {
 	word_Ty test = 0;
 
@@ -3061,8 +3258,8 @@ inline bool cool::bits<bit_count, word_Ty>::_not_equal_bool_cmp(ptr_Ty lhs_ptr, 
 	return test != static_cast<word_Ty>(0);
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty1, class ptr_Ty2>
-inline bool cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(ptr_Ty1 lhs_ptr, ptr_Ty2 rhs_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty1, class ptr_Ty2>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::_less_or_equal_cmp(ptr_Ty1 lhs_ptr, ptr_Ty2 rhs_ptr) noexcept
 {
 	word_Ty test = 0;
 
@@ -3084,8 +3281,8 @@ inline bool cool::bits<bit_count, word_Ty>::_less_or_equal_cmp(ptr_Ty1 lhs_ptr, 
 	return test != static_cast<word_Ty>(0);
 }
 
-template <std::size_t bit_count, class word_Ty> template <class ptr_Ty1, class ptr_Ty2>
-inline bool cool::bits<bit_count, word_Ty>::_less_cmp(ptr_Ty1 lhs_ptr, ptr_Ty2 rhs_ptr) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty1, class ptr_Ty2>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::_less_cmp(ptr_Ty1 lhs_ptr, ptr_Ty2 rhs_ptr) noexcept
 {
 	word_Ty test_less = 0;
 	word_Ty test_neq = 0;
@@ -3112,317 +3309,112 @@ inline bool cool::bits<bit_count, word_Ty>::_less_cmp(ptr_Ty1 lhs_ptr, ptr_Ty2 r
 	return (test_less == static_cast<word_Ty>(0)) && (test_neq != static_cast<word_Ty>(0));
 }
 
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::_one_bits_type_check(Ty arg) noexcept
+{
+	static_assert(std::is_same<Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
+		"cool::bits<bit_count, word_type, arg_type>::one_bits(...) : incorrect argument type");
+	return false;
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::_zero_bits_type_check(Ty arg) noexcept
+{
+	static_assert(std::is_same<Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
+		"cool::bits<bit_count, word_type, arg_type>::zero_bits(...) : incorrect argument type");
+	return false;
+}
+
 // cmp
 
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::operator==(bool lhs, const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::operator==(bool lhs, const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs == lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::operator!=(bool lhs, const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::operator!=(bool lhs, const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs != lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::operator==(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::operator==(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs == lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::operator!=(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::operator!=(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs != lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::operator==(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::operator==(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs == lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::operator!=(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::operator!=(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs != lhs;
 }
 
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::operator<=(bool lhs, const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::operator<=(bool lhs, const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs >= lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline bool cool::operator>=(bool lhs, const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline bool cool::operator>=(bool lhs, const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs <= lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::operator<=(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::operator<=(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs >= lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::operator>=(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::operator>=(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs <= lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::operator<=(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::operator<=(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs >= lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-inline bool cool::operator>=(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline bool cool::operator>=(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs <= lhs;
 }
 
 // op
 
-template <std::size_t bit_count, class word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::operator&(bool lhs, const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::operator&(bool lhs, const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs & lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::operator|(bool lhs, const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::operator|(bool lhs, const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs | lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::operator^(bool lhs, const cool::bits<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::operator^(bool lhs, const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs ^ lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::operator&(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::operator&(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs & lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::operator|(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::operator|(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs | lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::operator^(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::operator^(bool lhs, const cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs ^ lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::operator&(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::operator&(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs & lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::operator|(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::operator|(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs | lhs;
 }
-template <std::size_t bit_count, class word_Ty>
-inline cool::bits<bit_count, word_Ty> cool::operator^(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty>& rhs) noexcept {
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline cool::bits<bit_count, word_Ty, arg_Ty> cool::operator^(bool lhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs) noexcept {
 	return rhs ^ lhs;
 }
-
-// constexpr constructing functions
-
-template <std::size_t bit_count, class word_Ty, class ... args_uint_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::one_bits(args_uint_Ty&& ... bit_offsets) noexcept
-{
-	cool::bits<bit_count, word_Ty> ret = false;
-
-	constexpr std::size_t arg_count = sizeof...(args_uint_Ty);
-	std::size_t bit_offsets_converted[arg_count] = { static_cast<std::size_t>(bit_offsets)... };
-
-	for (std::size_t n = 0; n < arg_count; n++)
-	{
-		ret.m_field[bit_offsets_converted[n] / cool::bits<bit_count, word_Ty>::word_size]
-			|= static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_offsets_converted[n]
-				% cool::bits<bit_count, word_Ty>::word_size));
-	}
-
-	return ret;
-}
-
-template <std::size_t bit_count, class word_Ty, class ... args_uint_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::zero_bits(args_uint_Ty&& ... bit_offsets) noexcept
-{
-	cool::bits<bit_count, word_Ty> ret = true;
-
-	constexpr std::size_t arg_count = sizeof...(args_uint_Ty);
-	std::size_t bit_offsets_converted[arg_count] = { static_cast<std::size_t>(bit_offsets)... };
-
-	for (std::size_t n = 0; n < arg_count; n++)
-	{
-		ret.m_field[bit_offsets_converted[n] / cool::bits<bit_count, word_Ty>::word_size]
-			&= ~static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_offsets_converted[n]
-				% cool::bits<bit_count, word_Ty>::word_size));
-	}
-
-	return ret;
-}
-
-template <std::size_t bit_count, class word_Ty, class uint_Ty1, class uint_Ty2>
-constexpr inline cool::bits<bit_count, word_Ty> cool::one_bits_range(uint_Ty1 lower, uint_Ty2 higher) noexcept
-{
-	cool::bits<bit_count, word_Ty> ret = false;
-
-	if (static_cast<std::size_t>(lower) < static_cast<std::size_t>(higher))
-	{
-		std::size_t lower_word = static_cast<std::size_t>(lower) / cool::bits<bit_count, word_Ty>::word_size;
-		ret.m_field[lower_word] = ~((static_cast<word_Ty>(1) << (static_cast<std::size_t>(lower)
-			% cool::bits<bit_count, word_Ty>::word_size)) - 1);
-
-		std::size_t higher_word = (static_cast<std::size_t>(higher) - 1) / cool::bits<bit_count, word_Ty>::word_size;
-		for (std::size_t n = lower_word + 1; n <= higher_word; n++)
-		{
-			ret.m_field[n] = static_cast<word_Ty>(-1);
-		}
-
-		std::size_t remainder = static_cast<std::size_t>(higher) % cool::bits<bit_count, word_Ty>::word_size;
-		if (remainder != 0)
-		{
-			ret.m_field[higher_word] &= static_cast<word_Ty>((static_cast<word_Ty>(1) << remainder) - 1);
-		}
-	}
-
-	return ret;
-}
-
-template <std::size_t bit_count, class word_Ty, class uint_Ty1, class uint_Ty2>
-constexpr inline cool::bits<bit_count, word_Ty> cool::zero_bits_range(uint_Ty1 lower, uint_Ty2 higher) noexcept
-{
-	cool::bits<bit_count, word_Ty> ret = true;
-
-	if (static_cast<std::size_t>(lower) < static_cast<std::size_t>(higher))
-	{
-		std::size_t lower_word = static_cast<std::size_t>(lower) / cool::bits<bit_count, word_Ty>::word_size;
-		ret.m_field[lower_word] = ((static_cast<word_Ty>(1) << (static_cast<std::size_t>(lower)
-			% cool::bits<bit_count, word_Ty>::word_size)) - 1);
-
-		std::size_t higher_word = (static_cast<std::size_t>(higher) - 1) / cool::bits<bit_count, word_Ty>::word_size;
-		for (std::size_t n = lower_word + 1; n <= higher_word; n++)
-		{
-			ret.m_field[n] = static_cast<word_Ty>(0);
-		}
-
-		std::size_t remainder = static_cast<std::size_t>(higher) % cool::bits<bit_count, word_Ty>::word_size;
-		if (remainder != 0)
-		{
-			ret.m_field[higher_word] |= ~static_cast<word_Ty>((static_cast<word_Ty>(1) << remainder) - 1);
-		}
-	}
-
-	return ret;
-}
-
-template <std::size_t bit_count, class word_Ty, class rhs_word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::value_in_bits(rhs_word_Ty word_val) noexcept
-{
-	cool::bits<bit_count, word_Ty> ret = false;
-
-	ret.m_field[0] = static_cast<word_Ty>(word_val);
-
-	return ret;
-}
-
-template <std::size_t bit_count, class word_Ty, class uint_Ty, class rhs_word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::value_in_bits(rhs_word_Ty word_val, uint_Ty bit_offset) noexcept
-{
-	cool::bits<bit_count, word_Ty> ret = false;
-
-	ret.m_field[0] = static_cast<word_Ty>(static_cast<word_Ty>(word_val) << static_cast<std::size_t>(bit_offset));
-
-	return ret;
-}
-
-template <std::size_t bit_count, class word_Ty, class uint_Ty1, class uint_Ty2, class rhs_word_Ty>
-constexpr inline cool::bits<bit_count, word_Ty> cool::value_in_bits(rhs_word_Ty word_val, uint_Ty1 bit_offset, uint_Ty2 word_offset) noexcept
-{
-	cool::bits<bit_count, word_Ty> ret = false;
-
-	ret.m_field[word_offset] = static_cast<word_Ty>(static_cast<word_Ty>(word_val) << static_cast<std::size_t>(bit_offset));
-
-	return ret;
-}
-
-// reinterpret address
-
-template <std::size_t bit_count, class word_Ty, class uintptr_Ty>
-inline cool::bits<bit_count, word_Ty>& cool::bits_at(uintptr_Ty mem_address) noexcept
-{
-	cool::bits<bit_count, word_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty>*>(static_cast<std::uintptr_t>(mem_address));
-	new (ptr) cool::bits<bit_count, word_Ty>(cool::no_init);
-	return *ptr;
-}
-
-template <std::size_t bit_count, class word_Ty, class uintptr_Ty>
-inline const cool::bits<bit_count, word_Ty>& cool::const_bits_at(uintptr_Ty mem_address) noexcept
-{
-	cool::bits<bit_count, word_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty>*>(static_cast<std::uintptr_t>(mem_address));
-	new (ptr) cool::bits<bit_count, word_Ty>(cool::no_init);
-	return *ptr;
-}
-
-template <std::size_t bit_count, class word_Ty, class uintptr_Ty>
-inline volatile cool::bits<bit_count, word_Ty>& cool::volatile_bits_at(uintptr_Ty mem_address) noexcept
-{
-	cool::bits<bit_count, word_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty>*>(static_cast<std::uintptr_t>(mem_address));
-	new (ptr) cool::bits<bit_count, word_Ty>(cool::no_init);
-	return *ptr;
-}
-
-template <std::size_t bit_count, class word_Ty, class uintptr_Ty>
-inline const volatile cool::bits<bit_count, word_Ty>& cool::const_volatile_bits_at(uintptr_Ty mem_address) noexcept
-{
-	cool::bits<bit_count, word_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty>*>(static_cast<std::uintptr_t>(mem_address));
-	new (ptr) cool::bits<bit_count, word_Ty>(cool::no_init);
-	return *ptr;
-}
-
-// masked
-
-template <std::size_t bit_count, class word_Ty>
-inline cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>
-cool::masked(const cool::bits<bit_count, word_Ty>& rhs, const cool::bits<bit_count, word_Ty>& mask) noexcept {
-	return cool::_masked_proxy<bit_count, const word_Ty*, const word_Ty*>(
-		static_cast<const word_Ty*>(rhs.m_field), static_cast<const word_Ty*>(mask.m_field));
-}
-
-template <std::size_t bit_count, class word_Ty>
-inline cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>
-cool::masked(const cool::bits<bit_count, word_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty>& mask) noexcept {
-	return cool::_masked_proxy<bit_count, const word_Ty*, volatile const word_Ty*>(
-		static_cast<const word_Ty*>(rhs.m_field), mask.m_data_ptr);
-}
-
-template <std::size_t bit_count, class word_Ty>
-inline cool::_masked_proxy<bit_count, const word_Ty*, const volatile word_Ty*>
-cool::masked(const cool::bits<bit_count, word_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty>& mask) noexcept {
-	return cool::_masked_proxy<bit_count, const word_Ty*, volatile const word_Ty*>(
-		static_cast<const word_Ty*>(rhs.m_field), mask.m_data_ptr);
-}
-
-template <std::size_t bit_count, class word_Ty>
-inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>
-cool::masked(const cool::_vbits_proxy<bit_count, word_Ty>& rhs, const cool::bits<bit_count, word_Ty>& mask) noexcept {
-	return cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>(
-		rhs.m_data_ptr, static_cast<const word_Ty*>(mask.m_field));
-}
-
-template <std::size_t bit_count, class word_Ty>
-inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
-cool::masked(const cool::_vbits_proxy<bit_count, word_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty>& mask) noexcept {
-	return cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>(rhs.m_data_ptr, mask.m_data_ptr);
-}
-
-template <std::size_t bit_count, class word_Ty>
-inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
-cool::masked(const cool::_vbits_proxy<bit_count, word_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty>& mask) noexcept {
-	return cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>(rhs.m_data_ptr, mask.m_data_ptr);
-}
-
-template <std::size_t bit_count, class word_Ty>
-inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>
-cool::masked(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs, const cool::bits<bit_count, word_Ty>& mask) noexcept {
-	return cool::_masked_proxy<bit_count, const volatile word_Ty*, const word_Ty*>(
-		rhs.m_data_ptr, static_cast<const word_Ty*>(mask.m_field));
-}
-
-template <std::size_t bit_count, class word_Ty>
-inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
-cool::masked(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs, const cool::_vbits_proxy<bit_count, word_Ty>& mask) noexcept {
-	return cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>(rhs.m_data_ptr, mask.m_data_ptr);
-}
-
-template <std::size_t bit_count, class word_Ty>
-inline cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>
-cool::masked(const cool::_cvbits_proxy<bit_count, word_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty>& mask) noexcept {
-	return cool::_masked_proxy<bit_count, const volatile word_Ty*, const volatile word_Ty*>(rhs.m_data_ptr, mask.m_data_ptr);
-}
-
-template <std::size_t bit_count, class ptr_Ty1, class ptr_Ty2>
-inline cool::_masked_proxy<bit_count, ptr_Ty1, ptr_Ty2>::_masked_proxy(ptr_Ty1 rhs_ptr, ptr_Ty2 mask_ptr) noexcept
-	: m_rhs_ptr(rhs_ptr), m_mask_ptr(mask_ptr) {}
 
 #endif // xCOOL_BITS_HPP
 
