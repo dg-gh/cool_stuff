@@ -3278,7 +3278,7 @@ inline bool cool::bits<bit_count, word_Ty, arg_Ty>::_less_or_equal_cmp(ptr_Ty1 l
 		test |= (((*(lhs_ptr + word_capacity) | rhs_word) ^ rhs_word) & end_mask);
 	}
 
-	return test != static_cast<word_Ty>(0);
+	return test == static_cast<word_Ty>(0);
 }
 
 template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty1, class ptr_Ty2>
