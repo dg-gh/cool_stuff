@@ -731,16 +731,16 @@ namespace cool
 	// reinterpret address (should be called only at fixed addresses without other existing objects aliasing)
 	// address must be a multiple of alignof(word_Ty)
 
-	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty, class uintptr_Ty>
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t, class uintptr_Ty>
 	inline cool::bits<bit_count, word_Ty, arg_Ty>& bits_at(uintptr_Ty mem_address) noexcept;
 
-	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty, class uintptr_Ty>
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t, class uintptr_Ty>
 	inline const cool::bits<bit_count, word_Ty, arg_Ty>& const_bits_at(uintptr_Ty mem_address) noexcept;
 
-	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty, class uintptr_Ty>
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t, class uintptr_Ty>
 	inline volatile cool::bits<bit_count, word_Ty, arg_Ty>& volatile_bits_at(uintptr_Ty mem_address) noexcept;
 
-	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty, class uintptr_Ty>
+	template <std::size_t bit_count, class word_Ty = unsigned char, class arg_Ty = std::size_t, class uintptr_Ty>
 	inline const volatile cool::bits<bit_count, word_Ty, arg_Ty>& const_volatile_bits_at(uintptr_Ty mem_address) noexcept;
 
 	// cmp

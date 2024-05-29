@@ -24,7 +24,8 @@
 #endif // COOL_MATRIX_MM_DEFAULT_KERNEL_SPEC_PS
 
 #ifndef COOL_MATRIX_DEFAULT_ALIGN_SPEC
-#define COOL_MATRIX_DEFAULT_ALIGN_SPEC { 8, 16, 32 }
+#define COOL_MATRIX_DEFAULT_ALIGN_SPEC { 0 } // default without alignment
+// #define COOL_MATRIX_DEFAULT_ALIGN_SPEC { 8, 16, 32 } // with alignment
 #endif // COOL_MATRIX_DEFAULT_ALIGN_SPEC
 
 
