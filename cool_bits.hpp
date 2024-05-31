@@ -948,8 +948,8 @@ constexpr inline std::size_t cool::bits<bit_count, word_Ty, arg_Ty>::count() con
 
 // bit level accessors
 
-template <std::size_t bit_count, class word_Ty, class arg_Ty>
-template <class uint_Ty> constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator[](uint_Ty bit_offset) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uint_Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::operator[](uint_Ty bit_offset) const noexcept
 {
 	static_assert(std::is_same<uint_Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
 		"cool::bits<bit_count, word_type, arg_type>::operator[] : incorrect argument type");
@@ -968,8 +968,8 @@ template <class uint_Ty> constexpr inline bool cool::bits<bit_count, word_Ty, ar
 	}
 }
 
-template <std::size_t bit_count, class word_Ty, class arg_Ty>
-template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy cool::bits<bit_count, word_Ty, arg_Ty>::operator[](uint_Ty bit_offset) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uint_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy cool::bits<bit_count, word_Ty, arg_Ty>::operator[](uint_Ty bit_offset) noexcept
 {
 	static_assert(std::is_same<uint_Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
 		"cool::bits<bit_count, word_type, arg_type>::operator[] : incorrect argument type");
@@ -990,8 +990,8 @@ template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty, arg_Ty>:
 	}
 }
 
-template <std::size_t bit_count, class word_Ty, class arg_Ty>
-template <class uint_Ty> constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::bit(uint_Ty bit_offset) const noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uint_Ty>
+constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::bit(uint_Ty bit_offset) const noexcept
 {
 	static_assert(std::is_same<uint_Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
 		"cool::bits<bit_count, word_type, arg_type>::bit : incorrect argument type");
@@ -1010,8 +1010,8 @@ template <class uint_Ty> constexpr inline bool cool::bits<bit_count, word_Ty, ar
 	}
 }
 
-template <std::size_t bit_count, class word_Ty, class arg_Ty>
-template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy cool::bits<bit_count, word_Ty, arg_Ty>::bit(uint_Ty bit_offset) noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uint_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy cool::bits<bit_count, word_Ty, arg_Ty>::bit(uint_Ty bit_offset) noexcept
 {
 	static_assert(std::is_same<uint_Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
 		"cool::bits<bit_count, word_type, arg_type>::bit : incorrect argument type");
@@ -1032,8 +1032,8 @@ template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty, arg_Ty>:
 	}
 }
 
-template <std::size_t bit_count, class word_Ty, class arg_Ty>
-template <class uint_Ty> inline bool cool::bits<bit_count, word_Ty, arg_Ty>::vbit(uint_Ty bit_offset) const volatile noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uint_Ty>
+inline bool cool::bits<bit_count, word_Ty, arg_Ty>::vbit(uint_Ty bit_offset) const volatile noexcept
 {
 	static_assert(std::is_same<uint_Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
 		"cool::bits<bit_count, word_type, arg_type>::vbit : incorrect argument type");
@@ -1052,8 +1052,8 @@ template <class uint_Ty> inline bool cool::bits<bit_count, word_Ty, arg_Ty>::vbi
 	}
 }
 
-template <std::size_t bit_count, class word_Ty, class arg_Ty>
-template <class uint_Ty> inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy cool::bits<bit_count, word_Ty, arg_Ty>::vbit(uint_Ty bit_offset) volatile noexcept
+template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uint_Ty>
+inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy cool::bits<bit_count, word_Ty, arg_Ty>::vbit(uint_Ty bit_offset) volatile noexcept
 {
 	static_assert(std::is_same<uint_Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
 		"cool::bits<bit_count, word_type, arg_type>::vbit : incorrect argument type");
@@ -1119,7 +1119,7 @@ constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, wo
 
 	return ret;
 
-	bool _discard[arg_count] = { _one_bits_type_check(bit_offsets)... };
+	bool _discarded[arg_count] = { _one_bits_type_check(bit_offsets)... };
 }
 
 template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ... args_uint_Ty>
@@ -1139,7 +1139,7 @@ constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, wo
 
 	return ret;
 
-	bool _discard[arg_count] = { _zero_bits_type_check(bit_offsets)... };
+	bool _discarded[arg_count] = { _zero_bits_type_check(bit_offsets)... };
 }
 
 template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uint_Ty1, class uint_Ty2>
@@ -3314,6 +3314,7 @@ constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::_one_bits_type_che
 {
 	static_assert(std::is_same<Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
 		"cool::bits<bit_count, word_type, arg_type>::one_bits(...) : incorrect argument type");
+
 	return false;
 }
 
@@ -3322,6 +3323,7 @@ constexpr inline bool cool::bits<bit_count, word_Ty, arg_Ty>::_zero_bits_type_ch
 {
 	static_assert(std::is_same<Ty, arg_Ty>::value || std::is_same<arg_Ty, std::size_t>::value,
 		"cool::bits<bit_count, word_type, arg_type>::zero_bits(...) : incorrect argument type");
+
 	return false;
 }
 
