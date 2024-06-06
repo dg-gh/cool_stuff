@@ -490,6 +490,8 @@ namespace cool
 		template <class ptr_Ty> static inline bool _not_equal_bool_cmp(ptr_Ty lhs_ptr, bool rhs) noexcept;
 		template <class ptr_Ty1, class ptr_Ty2> static inline bool _less_or_equal_cmp(ptr_Ty1 data_ptr, ptr_Ty2 rhs_ptr) noexcept;
 		template <class ptr_Ty1, class ptr_Ty2> static inline bool _less_cmp(ptr_Ty1 data_ptr, ptr_Ty2 rhs_ptr) noexcept;
+
+		static constexpr inline std::size_t _to_size_t(arg_Ty arg) noexcept;
 	};
 
 	template <std::size_t bit_count, class word_Ty, class arg_Ty> class _vbits_proxy
@@ -1240,7 +1242,7 @@ constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, wo
 	constexpr std::size_t arg_count = sizeof...(args_uint_Ty);
 
 	cool::bits<bit_count, word_Ty, arg_Ty> ret = false;
-	std::size_t bit_offsets_converted[arg_count] = { [](arg_Ty value) -> std::size_t { return static_cast<std::size_t>(value); }(bit_offsets)... };
+	std::size_t bit_offsets_converted[arg_count] = { _to_size_t(bit_offsets)... };
 
 	for (std::size_t n = 0; n < arg_count; n++)
 	{
@@ -1258,7 +1260,7 @@ constexpr inline cool::bits<bit_count, word_Ty, arg_Ty> cool::bits<bit_count, wo
 	constexpr std::size_t arg_count = sizeof...(args_uint_Ty);
 
 	cool::bits<bit_count, word_Ty, arg_Ty> ret = true;
-	std::size_t bit_offsets_converted[arg_count] = { [](arg_Ty value) -> std::size_t { return static_cast<std::size_t>(value); }(bit_offsets)... };
+	std::size_t bit_offsets_converted[arg_count] = { _to_size_t(bit_offsets)... };
 
 	for (std::size_t n = 0; n < arg_count; n++)
 	{
@@ -2237,8 +2239,20 @@ inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>& cool::_vbits_proxy<bit_co
 // _vbits_proxy misc
 
 template <std::size_t bit_count, class word_Ty, class arg_Ty>
-inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator word_Ty() const noexcept {
-	return *m_data_ptr;
+inline cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::operator word_Ty() const noexcept
+{
+	static_assert(word_count <= 1, "cool::bits<bit_count, word_type> operator word_type requirement : word_count must be equal to one");
+
+	constexpr bool no_mask_needed = bit_count == word_size;
+	if (no_mask_needed)
+	{
+		return *m_data_ptr;
+	}
+	else
+	{
+		constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
+		return *m_data_ptr & mask;
+	}
 }
 template <std::size_t bit_count, class word_Ty, class arg_Ty>
 inline std::size_t cool::_vbits_proxy<bit_count, word_Ty, arg_Ty>::count() const noexcept {
@@ -2488,8 +2502,20 @@ constexpr inline std::size_t cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::si
 // _cvbits_proxy misc
 
 template <std::size_t bit_count, class word_Ty, class arg_Ty>
-inline cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator word_Ty() const noexcept {
-	return *m_data_ptr;
+inline cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::operator word_Ty() const noexcept
+{
+	static_assert(word_count <= 1, "cool::bits<bit_count, word_type> operator word_type requirement : word_count must be equal to one");
+
+	constexpr bool no_mask_needed = bit_count == word_size;
+	if (no_mask_needed)
+	{
+		return *m_data_ptr;
+	}
+	else
+	{
+		constexpr word_Ty mask = static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1;
+		return *m_data_ptr & mask;
+	}
 }
 template <std::size_t bit_count, class word_Ty, class arg_Ty>
 inline std::size_t cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>::count() const noexcept {
@@ -3543,6 +3569,12 @@ inline bool cool::bits<bit_count, word_Ty, arg_Ty>::_less_cmp(ptr_Ty1 lhs_ptr, p
 	}
 
 	return (test_less == static_cast<word_Ty>(0)) && (test_neq != static_cast<word_Ty>(0));
+}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+constexpr inline std::size_t cool::bits<bit_count, word_Ty, arg_Ty>::_to_size_t(arg_Ty arg) noexcept
+{
+	return static_cast<std::size_t>(arg);
 }
 
 // cmp
