@@ -46,8 +46,8 @@ namespace cool
 	public:
 
 		using clock_type = clock_Ty;
-		using rep = typename std::chrono::time_point<clock_Ty>::rep;
-		using period = typename std::chrono::time_point<clock_Ty>::period;
+		using rep = typename clock_Ty::time_point::rep;
+		using period = typename clock_Ty::time_point::period;
 
 		time_point() noexcept = default; // does not set time_point to now
 		explicit inline time_point(cool::now_t) noexcept : m_time(clock_Ty::now()) {}
@@ -92,8 +92,8 @@ namespace cool
 	public:
 
 		using clock_type = clock_Ty;
-		using rep = typename std::chrono::time_point<clock_Ty>::rep;
-		using period = typename std::chrono::time_point<clock_Ty>::period;
+		using rep = typename clock_Ty::duration::rep;
+		using period = typename clock_Ty::duration::period;
 
 		class ratio
 		{
@@ -111,13 +111,13 @@ namespace cool
 		};
 
 		duration() noexcept = default;
-		inline constexpr duration(typename std::chrono::time_point<clock_Ty>::rep ticks) noexcept : m_ticks(ticks) {}
+		inline constexpr duration(typename clock_Ty::duration::rep ticks) noexcept : m_ticks(ticks) {}
 		constexpr duration(const cool::duration<clock_Ty>& rhs) noexcept = default;
 		cool::duration<clock_Ty>& operator=(const cool::duration<clock_Ty>& rhs) noexcept = default;
 		~duration() = default;
 
 
-		inline constexpr typename std::chrono::time_point<clock_Ty>::rep get_ticks() const noexcept;
+		inline constexpr typename clock_Ty::duration::rep get_ticks() const noexcept;
 
 		template <class num_Ty, std::intmax_t unit_mod_num = 1, std::intmax_t unit_mod_den = 1>
 		inline constexpr num_Ty get(cool::duration_unit unit = cool::duration_unit::s) const noexcept;
@@ -155,7 +155,7 @@ namespace cool
 	private:
 
 		template <class clock_Ty2> friend class time;
-		typename std::chrono::time_point<clock_Ty>::rep m_ticks;
+		typename clock_Ty::duration::rep m_ticks;
 	};
 }
 
@@ -174,7 +174,7 @@ inline cool::time_point<clock_Ty>& cool::time_point<clock_Ty>::operator-=(cool::
 {
 	using _clock_period = typename clock_Ty::duration::period;
 
-	m_time -= std::chrono::duration<typename std::chrono::time_point<clock_Ty>::rep, _clock_period>(rhs.get_ticks());
+	m_time -= std::chrono::duration<typename clock_Ty::duration::rep, _clock_period>(rhs.get_ticks());
 	return *this;
 }
 
@@ -183,7 +183,7 @@ inline cool::time_point<clock_Ty>& cool::time_point<clock_Ty>::operator+=(cool::
 {
 	using _clock_period = typename clock_Ty::duration::period;
 
-	m_time += std::chrono::duration<typename std::chrono::time_point<clock_Ty>::rep, _clock_period>(rhs.get_ticks());
+	m_time += std::chrono::duration<typename clock_Ty::duration::rep, _clock_period>(rhs.get_ticks());
 	return *this;
 }
 
@@ -193,7 +193,7 @@ inline cool::time_point<clock_Ty> cool::time_point<clock_Ty>::operator-(cool::du
 	using _clock_period = typename clock_Ty::duration::period;
 
 	cool::time_point<clock_Ty> ret(cool::no_init);
-	ret.m_time = m_time - std::chrono::duration<typename std::chrono::time_point<clock_Ty>::rep, _clock_period>(rhs.get_ticks());
+	ret.m_time = m_time - std::chrono::duration<typename clock_Ty::duration::rep, _clock_period>(rhs.get_ticks());
 	return ret;
 }
 
@@ -203,7 +203,7 @@ inline cool::time_point<clock_Ty> cool::time_point<clock_Ty>::operator+(cool::du
 	using _clock_period = typename clock_Ty::duration::period;
 
 	cool::time_point<clock_Ty> ret(cool::no_init);
-	ret.m_time = m_time + std::chrono::duration<typename std::chrono::time_point<clock_Ty>::rep, _clock_period>(rhs.get_ticks());
+	ret.m_time = m_time + std::chrono::duration<typename clock_Ty::duration::rep, _clock_period>(rhs.get_ticks());
 	return ret;
 }
 
@@ -256,12 +256,12 @@ inline constexpr cool::duration<clock_Ty> cool::make_duration(num_Ty time_durati
 	if (std::is_integral<num_Ty>::value)
 	{
 		typename cool::duration<clock_Ty>::ratio _ratio = cool::duration<clock_Ty>::template tick_per_duration_ratio<unit_mod_num, unit_mod_den>(unit);
-		return cool::duration<clock_Ty>(static_cast<typename std::chrono::time_point<clock_Ty>::rep>(
+		return cool::duration<clock_Ty>(static_cast<typename clock_Ty::duration::rep>(
 			(_ratio.num * static_cast<std::intmax_t>(time_duration)) / _ratio.den));
 	}
 	else
 	{
-		return cool::duration<clock_Ty>(static_cast<typename std::chrono::time_point<clock_Ty>::rep>(
+		return cool::duration<clock_Ty>(static_cast<typename clock_Ty::duration::rep>(
 			static_cast<num_Ty>(cool::duration<clock_Ty>::template tick_per_duration<num_Ty, unit_mod_num, unit_mod_den>(unit))
 			* time_duration));
 	}
@@ -276,7 +276,7 @@ inline constexpr cool::duration<clock_Ty> cool::operator*(num_Ty lhs, cool::dura
 	}
 	else
 	{
-		return cool::duration<clock_Ty>(static_cast<typename std::chrono::time_point<clock_Ty>::rep>(lhs * static_cast<num_Ty>(rhs.get_ticks())));
+		return cool::duration<clock_Ty>(static_cast<typename clock_Ty::duration::rep>(lhs * static_cast<num_Ty>(rhs.get_ticks())));
 	}
 }
 
@@ -286,7 +286,7 @@ template <class clock_Ty> inline constexpr cool::duration<clock_Ty> cool::operat
 }
 
 template <class clock_Ty>
-inline constexpr typename std::chrono::time_point<clock_Ty>::rep cool::duration<clock_Ty>::get_ticks() const noexcept
+inline constexpr typename clock_Ty::duration::rep cool::duration<clock_Ty>::get_ticks() const noexcept
 {
 	return m_ticks;
 }
@@ -329,7 +329,7 @@ inline cool::duration<clock_Ty>& cool::duration<clock_Ty>::operator/=(num_Ty rhs
 	}
 	else
 	{
-		m_ticks = static_cast<typename std::chrono::time_point<clock_Ty>::rep>(static_cast<num_Ty>(m_ticks) / rhs);
+		m_ticks = static_cast<typename clock_Ty::duration::rep>(static_cast<num_Ty>(m_ticks) / rhs);
 	}
 
 	return *this;
@@ -363,7 +363,7 @@ inline constexpr cool::duration<clock_Ty> cool::duration<clock_Ty>::operator/(nu
 	}
 	else
 	{
-		return cool::duration<clock_Ty>(static_cast<typename std::chrono::time_point<clock_Ty>::rep>(static_cast<num_Ty>(m_ticks) / rhs));
+		return cool::duration<clock_Ty>(static_cast<typename clock_Ty::duration::rep>(static_cast<num_Ty>(m_ticks) / rhs));
 	}
 }
 
