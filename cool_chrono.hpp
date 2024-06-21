@@ -81,8 +81,8 @@ namespace cool
 	template <class clock_Ty, std::intmax_t unit_mod_num = 1, std::intmax_t unit_mod_den = 1, class num_Ty>
 	inline constexpr cool::duration<clock_Ty> make_duration(num_Ty time_duration, cool::duration_unit unit = cool::duration_unit::s) noexcept;
 
-	template <class int_Ty, class clock_Ty>
-	inline constexpr cool::duration<clock_Ty> operator*(int_Ty lhs, cool::duration<clock_Ty> rhs) noexcept;
+	template <class num_Ty, class clock_Ty>
+	inline constexpr cool::duration<clock_Ty> operator*(num_Ty lhs, cool::duration<clock_Ty> rhs) noexcept;
 
 	template <class clock_Ty> inline constexpr cool::duration<clock_Ty> operator-(cool::duration<clock_Ty> arg) noexcept;
 
@@ -125,11 +125,11 @@ namespace cool
 
 		inline cool::duration<clock_Ty>& operator-=(cool::duration<clock_Ty> rhs) noexcept;
 		inline cool::duration<clock_Ty>& operator+=(cool::duration<clock_Ty> rhs) noexcept;
-		template <class int_Ty> inline cool::duration<clock_Ty>& operator/=(int_Ty rhs) noexcept;
+		template <class num_Ty> inline cool::duration<clock_Ty>& operator/=(num_Ty rhs) noexcept;
 		inline cool::duration<clock_Ty>& operator%=(cool::duration<clock_Ty> rhs) noexcept;
 		inline constexpr cool::duration<clock_Ty> operator-(cool::duration<clock_Ty> rhs) const noexcept;
 		inline constexpr cool::duration<clock_Ty> operator+(cool::duration<clock_Ty> rhs) const noexcept;
-		template <class int_Ty> inline constexpr cool::duration<clock_Ty> operator/(int_Ty rhs) const noexcept;
+		template <class num_Ty> inline constexpr cool::duration<clock_Ty> operator/(num_Ty rhs) const noexcept;
 		inline constexpr cool::duration<clock_Ty> operator%(cool::duration<clock_Ty> rhs) const noexcept;
 
 		inline constexpr bool operator==(cool::duration<clock_Ty> rhs) const noexcept;
@@ -267,12 +267,17 @@ inline constexpr cool::duration<clock_Ty> cool::make_duration(num_Ty time_durati
 	}
 }
 
-template <class int_Ty, class clock_Ty>
-inline constexpr cool::duration<clock_Ty> cool::operator*(int_Ty lhs, cool::duration<clock_Ty> rhs) noexcept
+template <class num_Ty, class clock_Ty>
+inline constexpr cool::duration<clock_Ty> cool::operator*(num_Ty lhs, cool::duration<clock_Ty> rhs) noexcept
 {
-	static_assert(std::is_integral<int_Ty>::value, "operator/(lhs, cool::duration<...> rhs) : left hand side must be integral type");
-
-	return cool::duration<clock_Ty>(lhs * rhs.get_ticks());
+	if (std::is_integral<num_Ty>::value)
+	{
+		return cool::duration<clock_Ty>(lhs * rhs.get_ticks());
+	}
+	else
+	{
+		return cool::duration<clock_Ty>(static_cast<typename std::chrono::time_point<clock_Ty>::rep>(lhs * static_cast<num_Ty>(rhs.get_ticks())));
+	}
 }
 
 template <class clock_Ty> inline constexpr cool::duration<clock_Ty> cool::operator-(cool::duration<clock_Ty> arg) noexcept
@@ -315,12 +320,18 @@ inline cool::duration<clock_Ty>& cool::duration<clock_Ty>::operator+=(cool::dura
 	return *this;
 }
 
-template <class clock_Ty> template <class int_Ty>
-inline cool::duration<clock_Ty>& cool::duration<clock_Ty>::operator/=(int_Ty rhs) noexcept
+template <class clock_Ty> template <class num_Ty>
+inline cool::duration<clock_Ty>& cool::duration<clock_Ty>::operator/=(num_Ty rhs) noexcept
 {
-	static_assert(std::is_integral<int_Ty>::value, "cool::duration<...>::operator/= : right hand side must be integral type");
+	if (std::is_integral<num_Ty>::value)
+	{
+		m_ticks /= rhs;
+	}
+	else
+	{
+		m_ticks = static_cast<typename std::chrono::time_point<clock_Ty>::rep>(static_cast<num_Ty>(m_ticks) / rhs);
+	}
 
-	m_ticks /= rhs;
 	return *this;
 }
 
@@ -343,12 +354,17 @@ inline constexpr cool::duration<clock_Ty> cool::duration<clock_Ty>::operator+(co
 	return cool::duration<clock_Ty>(m_ticks + rhs.m_ticks);
 }
 
-template <class clock_Ty> template <class int_Ty>
-inline constexpr cool::duration<clock_Ty> cool::duration<clock_Ty>::operator/(int_Ty rhs) const noexcept
+template <class clock_Ty> template <class num_Ty>
+inline constexpr cool::duration<clock_Ty> cool::duration<clock_Ty>::operator/(num_Ty rhs) const noexcept
 {
-	static_assert(std::is_integral<int_Ty>::value, "cool::duration<...>::operator/ : right hand side must be integral type");
-
-	return cool::duration<clock_Ty>(m_ticks / rhs);
+	if (std::is_integral<num_Ty>::value)
+	{
+		return cool::duration<clock_Ty>(m_ticks / rhs);
+	}
+	else
+	{
+		return cool::duration<clock_Ty>(static_cast<typename std::chrono::time_point<clock_Ty>::rep>(static_cast<num_Ty>(m_ticks) / rhs));
+	}
 }
 
 template <class clock_Ty>
