@@ -10,11 +10,53 @@
 #include <cstdint>
 #include <type_traits>
 
-#ifndef COOL_DURATION_CUSTOM_UNIT
-#define COOL_DURATION_CUSTOM_UNIT day
-#define COOL_DURATION_CUSTOM_UNIT_NUM 86400
-#define COOL_DURATION_CUSTOM_UNIT_DEN 1
-#endif // COOL_DURATION_CUSTOM_UNIT
+#ifdef COOL_DURATION_CUSTOM_UNIT0
+#ifndef COOL_DURATION_CUSTOM_UNIT0_RATIO
+#define COOL_DURATION_CUSTOM_UNIT0_RATIO 1, 1
+#endif // COOL_DURATION_CUSTOM_UNIT0_RATIO
+#endif // COOL_DURATION_CUSTOM_UNIT0
+
+#ifdef COOL_DURATION_CUSTOM_UNIT1, 1
+#ifndef COOL_DURATION_CUSTOM_UNIT1, 1_RATIO
+#define COOL_DURATION_CUSTOM_UNIT1, 1_RATIO 1, 1
+#endif // COOL_DURATION_CUSTOM_UNIT1, 1_RATIO
+#endif // COOL_DURATION_CUSTOM_UNIT1, 1
+
+#ifdef COOL_DURATION_CUSTOM_UNIT2
+#ifndef COOL_DURATION_CUSTOM_UNIT2_RATIO
+#define COOL_DURATION_CUSTOM_UNIT2_RATIO 1, 1
+#endif // COOL_DURATION_CUSTOM_UNIT2_RATIO
+#endif // COOL_DURATION_CUSTOM_UNIT2
+
+#ifdef COOL_DURATION_CUSTOM_UNIT3
+#ifndef COOL_DURATION_CUSTOM_UNIT3_RATIO
+#define COOL_DURATION_CUSTOM_UNIT3_RATIO 1, 1
+#endif // COOL_DURATION_CUSTOM_UNIT3_RATIO
+#endif // COOL_DURATION_CUSTOM_UNIT3
+
+#ifdef COOL_DURATION_CUSTOM_UNIT4
+#ifndef COOL_DURATION_CUSTOM_UNIT4_RATIO
+#define COOL_DURATION_CUSTOM_UNIT4_RATIO 1, 1
+#endif // COOL_DURATION_CUSTOM_UNIT4_RATIO
+#endif // COOL_DURATION_CUSTOM_UNIT4
+
+#ifdef COOL_DURATION_CUSTOM_UNIT5
+#ifndef COOL_DURATION_CUSTOM_UNIT5_RATIO
+#define COOL_DURATION_CUSTOM_UNIT5_RATIO 1, 1
+#endif // COOL_DURATION_CUSTOM_UNIT5_RATIO
+#endif // COOL_DURATION_CUSTOM_UNIT5
+
+#ifdef COOL_DURATION_CUSTOM_UNIT6
+#ifndef COOL_DURATION_CUSTOM_UNIT6_RATIO
+#define COOL_DURATION_CUSTOM_UNIT6_RATIO 1, 1
+#endif // COOL_DURATION_CUSTOM_UNIT6_RATIO
+#endif // COOL_DURATION_CUSTOM_UNIT6
+
+#ifdef COOL_DURATION_CUSTOM_UNIT7
+#ifndef COOL_DURATION_CUSTOM_UNIT7_RATIO
+#define COOL_DURATION_CUSTOM_UNIT7_RATIO 1, 1
+#endif // COOL_DURATION_CUSTOM_UNIT7_RATIO
+#endif // COOL_DURATION_CUSTOM_UNIT7
 
 
 namespace cool
@@ -23,16 +65,48 @@ namespace cool
 #define xCOOL_DURATION_UNIT_ENUM
 	enum class duration_unit : std::size_t
 	{
-		s = 0,
-		ms = 1,
-		us = 2,
-		ns = 3,
+		s,
+		ms,
+		us,
+		ns,
 
-		min = 4,
-		hour = 5,
-		COOL_DURATION_CUSTOM_UNIT = 6, // day
+		min,
+		hour,
+		day,
 
-		tick = 7
+		tick,
+
+#ifdef COOL_DURATION_CUSTOM_UNIT0
+		COOL_DURATION_CUSTOM_UNIT0,
+#endif // COOL_DURATION_CUSTOM_UNIT0
+
+#ifdef COOL_DURATION_CUSTOM_UNIT1
+		COOL_DURATION_CUSTOM_UNIT1,
+#endif // COOL_DURATION_CUSTOM_UNIT1
+
+#ifdef COOL_DURATION_CUSTOM_UNIT2
+		COOL_DURATION_CUSTOM_UNIT2,
+#endif // COOL_DURATION_CUSTOM_UNIT2
+
+#ifdef COOL_DURATION_CUSTOM_UNIT3
+		COOL_DURATION_CUSTOM_UNIT3,
+#endif // COOL_DURATION_CUSTOM_UNIT3
+
+#ifdef COOL_DURATION_CUSTOM_UNIT4
+		COOL_DURATION_CUSTOM_UNIT4,
+#endif // COOL_DURATION_CUSTOM_UNIT4
+
+#ifdef COOL_DURATION_CUSTOM_UNIT5
+		COOL_DURATION_CUSTOM_UNIT5,
+#endif // COOL_DURATION_CUSTOM_UNIT5
+
+#ifdef COOL_DURATION_CUSTOM_UNIT6
+		COOL_DURATION_CUSTOM_UNIT6,
+#endif // COOL_DURATION_CUSTOM_UNIT6
+
+#ifdef COOL_DURATION_CUSTOM_UNIT7
+		COOL_DURATION_CUSTOM_UNIT7,
+#endif // COOL_DURATION_CUSTOM_UNIT7
 	};
 #endif // xCOOL_DURATION_UNIT_ENUM
 
@@ -443,10 +517,50 @@ inline constexpr num_Ty cool::duration<clock_Ty>::duration_per_tick(cool::durati
 	case cool::duration_unit::ns: return _duration_per_tick<num_Ty, std::ratio<1, 1000000000>, unit_mod_num, unit_mod_den>();
 	case cool::duration_unit::min: return _duration_per_tick<num_Ty, std::ratio<60, 1>, unit_mod_num, unit_mod_den>();
 	case cool::duration_unit::hour: return _duration_per_tick<num_Ty, std::ratio<3600, 1>, unit_mod_num, unit_mod_den>();
-	case cool::duration_unit::day: return _duration_per_tick<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT_NUM, COOL_DURATION_CUSTOM_UNIT_DEN>,
-		unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::day: return _duration_per_tick<num_Ty, std::ratio<86400, 1>, unit_mod_num, unit_mod_den>();
 	case cool::duration_unit::tick: return static_cast<num_Ty>(std::ratio<unit_mod_num, unit_mod_den>::den)
 		/ static_cast<num_Ty>(std::ratio<unit_mod_num, unit_mod_den>::num);
+
+#ifdef COOL_DURATION_CUSTOM_UNIT0
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT0:
+		return _duration_per_tick<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT0_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT0
+
+#ifdef COOL_DURATION_CUSTOM_UNIT1
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT1:
+		return _duration_per_tick<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT1_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT1
+
+#ifdef COOL_DURATION_CUSTOM_UNIT2
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT2:
+		return _duration_per_tick<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT2_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT2
+
+#ifdef COOL_DURATION_CUSTOM_UNIT3
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT3:
+		return _duration_per_tick<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT3_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT3
+
+#ifdef COOL_DURATION_CUSTOM_UNIT4
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT4:
+		return _duration_per_tick<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT4_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT4
+
+#ifdef COOL_DURATION_CUSTOM_UNIT5
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT5:
+		return _duration_per_tick<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT5_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT5
+
+#ifdef COOL_DURATION_CUSTOM_UNIT6
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT6:
+		return _duration_per_tick<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT6_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT6
+
+#ifdef COOL_DURATION_CUSTOM_UNIT7
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT7:
+		return _duration_per_tick<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT7_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT7
+
 	default: return _duration_per_tick<num_Ty, std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
 	}
 }
@@ -462,10 +576,50 @@ inline constexpr typename cool::duration<clock_Ty>::ratio cool::duration<clock_T
 	case cool::duration_unit::ns: return _duration_per_tick_ratio<std::ratio<1, 1000000000>, unit_mod_num, unit_mod_den>();
 	case cool::duration_unit::min: return _duration_per_tick_ratio<std::ratio<60, 1>, unit_mod_num, unit_mod_den>();
 	case cool::duration_unit::hour: return _duration_per_tick_ratio<std::ratio<3600, 1>, unit_mod_num, unit_mod_den>();
-	case cool::duration_unit::day: return _duration_per_tick_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT_NUM, COOL_DURATION_CUSTOM_UNIT_DEN>,
-		unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::day: return _duration_per_tick_ratio<std::ratio<86400, 1>, unit_mod_num, unit_mod_den>();
 	case cool::duration_unit::tick: return typename cool::duration<clock_Ty>::ratio(std::ratio<unit_mod_num, unit_mod_den>::den,
 		std::ratio<unit_mod_num, unit_mod_den>::num);
+
+#ifdef COOL_DURATION_CUSTOM_UNIT0
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT0:
+		return _duration_per_tick_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT0_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT0
+
+#ifdef COOL_DURATION_CUSTOM_UNIT1
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT1:
+		return _duration_per_tick_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT1_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT1
+
+#ifdef COOL_DURATION_CUSTOM_UNIT2
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT2:
+		return _duration_per_tick_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT2_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT2
+
+#ifdef COOL_DURATION_CUSTOM_UNIT3
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT3:
+		return _duration_per_tick_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT3_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT3
+
+#ifdef COOL_DURATION_CUSTOM_UNIT4
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT4:
+		return _duration_per_tick_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT4_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT4
+
+#ifdef COOL_DURATION_CUSTOM_UNIT5
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT5:
+		return _duration_per_tick_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT5_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT5
+
+#ifdef COOL_DURATION_CUSTOM_UNIT6
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT6:
+		return _duration_per_tick_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT6_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT6
+
+#ifdef COOL_DURATION_CUSTOM_UNIT7
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT7:
+		return _duration_per_tick_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT7_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT7
+
 	default: return _duration_per_tick_ratio<std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
 	}
 }
@@ -481,10 +635,50 @@ inline constexpr num_Ty cool::duration<clock_Ty>::tick_per_duration(cool::durati
 	case cool::duration_unit::ns: return _tick_per_duration<num_Ty, std::ratio<1, 1000000000>, unit_mod_num, unit_mod_den>();
 	case cool::duration_unit::min: return _tick_per_duration<num_Ty, std::ratio<60, 1>, unit_mod_num, unit_mod_den>();
 	case cool::duration_unit::hour: return _tick_per_duration<num_Ty, std::ratio<3600, 1>, unit_mod_num, unit_mod_den>();
-	case cool::duration_unit::day: return _tick_per_duration<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT_NUM, COOL_DURATION_CUSTOM_UNIT_DEN>,
-		unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::day: return _tick_per_duration<num_Ty, std::ratio<86400, 1>, unit_mod_num, unit_mod_den>();
 	case cool::duration_unit::tick: return static_cast<num_Ty>(std::ratio<unit_mod_num, unit_mod_den>::num)
 		/ static_cast<num_Ty>(std::ratio<unit_mod_num, unit_mod_den>::den);
+
+#ifdef COOL_DURATION_CUSTOM_UNIT0
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT0:
+		return _tick_per_duration<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT0_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT0
+
+#ifdef COOL_DURATION_CUSTOM_UNIT1
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT1:
+		return _tick_per_duration<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT1_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT1
+
+#ifdef COOL_DURATION_CUSTOM_UNIT2
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT2:
+		return _tick_per_duration<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT2_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT2
+
+#ifdef COOL_DURATION_CUSTOM_UNIT3
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT3:
+		return _tick_per_duration<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT3_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT3
+
+#ifdef COOL_DURATION_CUSTOM_UNIT4
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT4:
+		return _tick_per_duration<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT4_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT4
+
+#ifdef COOL_DURATION_CUSTOM_UNIT5
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT5:
+		return _tick_per_duration<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT5_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT5
+
+#ifdef COOL_DURATION_CUSTOM_UNIT6
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT6:
+		return _tick_per_duration<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT6_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT6
+
+#ifdef COOL_DURATION_CUSTOM_UNIT7
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT7:
+		return _tick_per_duration<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT7_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT7
+
 	default: return _tick_per_duration<num_Ty, std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
 	}
 }
@@ -500,10 +694,50 @@ inline constexpr typename cool::duration<clock_Ty>::ratio cool::duration<clock_T
 	case cool::duration_unit::ns: return _tick_per_duration_ratio<std::ratio<1, 1000000000>, unit_mod_num, unit_mod_den>();
 	case cool::duration_unit::min: return _tick_per_duration_ratio<std::ratio<60, 1>, unit_mod_num, unit_mod_den>();
 	case cool::duration_unit::hour: return _tick_per_duration_ratio<std::ratio<3600, 1>, unit_mod_num, unit_mod_den>();
-	case cool::duration_unit::day: return _tick_per_duration_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT_NUM, COOL_DURATION_CUSTOM_UNIT_DEN>,
-		unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::day: return _tick_per_duration_ratio<std::ratio<86400, 1>, unit_mod_num, unit_mod_den>();
 	case cool::duration_unit::tick: return typename cool::duration<clock_Ty>::ratio(std::ratio<unit_mod_num, unit_mod_den>::num,
 		std::ratio<unit_mod_num, unit_mod_den>::den);
+
+#ifdef COOL_DURATION_CUSTOM_UNIT0
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT0:
+		return _tick_per_duration_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT0_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT0
+
+#ifdef COOL_DURATION_CUSTOM_UNIT1
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT1:
+		return _tick_per_duration_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT1_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT1
+
+#ifdef COOL_DURATION_CUSTOM_UNIT2
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT2:
+		return _tick_per_duration_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT2_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT2
+
+#ifdef COOL_DURATION_CUSTOM_UNIT3
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT3:
+		return _tick_per_duration_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT3_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT3
+
+#ifdef COOL_DURATION_CUSTOM_UNIT4
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT4:
+		return _tick_per_duration_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT4_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT4
+
+#ifdef COOL_DURATION_CUSTOM_UNIT5
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT5:
+		return _tick_per_duration_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT5_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT5
+
+#ifdef COOL_DURATION_CUSTOM_UNIT6
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT6:
+		return _tick_per_duration_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT6_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT6
+
+#ifdef COOL_DURATION_CUSTOM_UNIT7
+	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT7:
+		return _tick_per_duration_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT7_RATIO>, unit_mod_num, unit_mod_den>();
+#endif // COOL_DURATION_CUSTOM_UNIT7
+
 	default: return _tick_per_duration_ratio<std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
 	}
 }
