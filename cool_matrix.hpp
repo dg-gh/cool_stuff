@@ -298,7 +298,7 @@ namespace cool
 
 		inline _matrix_array(Ty rhs);
 
-		constexpr inline _matrix_array(std::initializer_list<Ty> rhs);
+		inline constexpr _matrix_array(std::initializer_list<Ty> rhs);
 		inline _matrix_array(cool::cm<Ty> rhs);
 		inline _matrix_array(cool::rm<Ty> rhs);
 
@@ -350,8 +350,8 @@ namespace cool
 		static constexpr std::size_t rows_padded = _rows_padded;
 		static constexpr std::size_t align = _align;
 
-		static constexpr inline std::size_t size() noexcept;
-		static constexpr inline std::size_t size_padded() noexcept;
+		static inline constexpr std::size_t size() noexcept;
+		static inline constexpr std::size_t size_padded() noexcept;
 
 		template <class uint_Ty1, class uint_Ty2> inline const Ty& operator()(uint_Ty1 i, uint_Ty2 j) const noexcept;
 		template <class uint_Ty> inline const Ty& operator[](uint_Ty mem_offset) const noexcept;
@@ -1524,7 +1524,7 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
-constexpr inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_array(std::initializer_list<Ty> rhs) : m_data{}
+inline constexpr cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_array(std::initializer_list<Ty> rhs) : m_data{}
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 
@@ -1608,13 +1608,13 @@ inline const Ty* cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::da
 // const_matrix_interface
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
-constexpr inline std::size_t cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::size() noexcept
+inline constexpr std::size_t cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::size() noexcept
 {
 	return _rows * _cols;
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
-constexpr inline std::size_t cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::size_padded() noexcept
+inline constexpr std::size_t cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::size_padded() noexcept
 {
 	return _rows_padded * _cols;
 }

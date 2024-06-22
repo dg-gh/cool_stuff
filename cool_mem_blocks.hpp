@@ -34,7 +34,7 @@ namespace cool
 			std::size_t _block_count,
 			std::size_t _block_alignment = sizeof(void*)) noexcept;
 
-		static constexpr inline std::size_t eval_data_max_size(
+		static inline constexpr std::size_t eval_data_max_size(
 			std::size_t _block_size,
 			std::size_t _block_count,
 			std::size_t _block_alignment = sizeof(void*)) noexcept;
@@ -45,7 +45,7 @@ namespace cool
 			std::size_t _block_count,
 			std::size_t _block_alignment = sizeof(void*)) noexcept;
 
-		static constexpr inline std::uintptr_t eval_data_address_end(
+		static inline constexpr std::uintptr_t eval_data_address_end(
 			std::uintptr_t data_ptr_address,
 			std::size_t _block_size,
 			std::size_t _block_count,
@@ -117,11 +117,11 @@ namespace cool
 		template <class uint_Ty> inline cool::mem_blocks<bad_alloc_address>& operator[](uint_Ty pool_number) noexcept;
 		template <class uint_Ty> inline const cool::mem_blocks<bad_alloc_address>& operator[](uint_Ty pool_number) const noexcept;
 
-		static constexpr inline std::size_t eval_data_max_size(
+		static inline constexpr std::size_t eval_data_max_size(
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
 			std::size_t block_alignment = sizeof(void*)) noexcept;
-		static constexpr inline std::size_t eval_data_max_size(
+		static inline constexpr std::size_t eval_data_max_size(
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
 			std::initializer_list<std::size_t> block_alignments) noexcept;
@@ -137,12 +137,12 @@ namespace cool
 			std::initializer_list<std::size_t> block_counts,
 			std::initializer_list<std::size_t> block_alignments) noexcept;
 
-		static constexpr inline std::uintptr_t eval_data_address_end(
+		static inline constexpr std::uintptr_t eval_data_address_end(
 			std::uintptr_t data_ptr_address,
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
 			std::size_t block_alignment = sizeof(void*)) noexcept;
-		static constexpr inline std::uintptr_t eval_data_address_end(
+		static inline constexpr std::uintptr_t eval_data_address_end(
 			std::uintptr_t data_ptr_address,
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
@@ -778,7 +778,7 @@ inline void* cool::mem_pools<_pool_count, bad_alloc_address>::eval_data_end(
 }
 
 template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
-constexpr inline std::uintptr_t cool::mem_pools<_pool_count, bad_alloc_address>::eval_data_address_end(
+inline constexpr std::uintptr_t cool::mem_pools<_pool_count, bad_alloc_address>::eval_data_address_end(
 	std::uintptr_t data_ptr_address,
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,
@@ -807,7 +807,7 @@ constexpr inline std::uintptr_t cool::mem_pools<_pool_count, bad_alloc_address>:
 }
 
 template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
-constexpr inline std::uintptr_t cool::mem_pools<_pool_count, bad_alloc_address>::eval_data_address_end(
+inline constexpr std::uintptr_t cool::mem_pools<_pool_count, bad_alloc_address>::eval_data_address_end(
 	std::uintptr_t data_ptr_address,
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,

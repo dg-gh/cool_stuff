@@ -55,14 +55,14 @@ namespace cool
 		// template specializable constexpr functions
 
 		// defaults to static_cast<Ty>(3.141592653589793)
-		template <class Ty, int _func_impl_number> constexpr inline Ty pi() noexcept;
+		template <class Ty, int _func_impl_number> inline constexpr Ty pi() noexcept;
 		// defaults to static_cast<Ty>(3.141592653589793)
 		// should be specialized to return 180 if degrees are used to get correct angles of singular positions
-		template <class Ty, int _func_impl_number> constexpr inline Ty half_turn() noexcept;
+		template <class Ty, int _func_impl_number> inline constexpr Ty half_turn() noexcept;
 		// defaults to static_cast<Ty>(1)
-		template <class Ty, int _func_impl_number> constexpr inline Ty one() noexcept;
+		template <class Ty, int _func_impl_number> inline constexpr Ty one() noexcept;
 		// defaults to static_cast<Ty>(0.5)
-		template <class Ty, int _func_impl_number> constexpr inline Ty half() noexcept;
+		template <class Ty, int _func_impl_number> inline constexpr Ty half() noexcept;
 
 		// expression static_cast<Ty>(0) must yield value considered to be zero for type Ty
 
@@ -71,19 +71,19 @@ namespace cool
 		// if no implementation is specified
 
 		// default deduced from one + one
-		template <class Ty, int _func_impl_number> constexpr inline Ty two() noexcept;
+		template <class Ty, int _func_impl_number> inline constexpr Ty two() noexcept;
 		// default deduced from half * half_turn
-		template <class Ty, int _func_impl_number> constexpr inline Ty quarter_turn() noexcept;
+		template <class Ty, int _func_impl_number> inline constexpr Ty quarter_turn() noexcept;
 		// default deduced from half * half
-		template <class Ty, int _func_impl_number> constexpr inline Ty quarter() noexcept;
+		template <class Ty, int _func_impl_number> inline constexpr Ty quarter() noexcept;
 		// default deduced from to -half_turn
-		template <class Ty, int _func_impl_number> constexpr inline Ty minus_half_turn() noexcept;
+		template <class Ty, int _func_impl_number> inline constexpr Ty minus_half_turn() noexcept;
 		// default deduced from -minus_quarter_turn
-		template <class Ty, int _func_impl_number> constexpr inline Ty minus_quarter_turn() noexcept;
+		template <class Ty, int _func_impl_number> inline constexpr Ty minus_quarter_turn() noexcept;
 		// default deduced from -one
-		template <class Ty, int _func_impl_number> constexpr inline Ty minus_one() noexcept;
+		template <class Ty, int _func_impl_number> inline constexpr Ty minus_one() noexcept;
 		// default deduced from -quarter
-		template <class Ty, int _func_impl_number> constexpr inline Ty minus_quarter() noexcept;
+		template <class Ty, int _func_impl_number> inline constexpr Ty minus_quarter() noexcept;
 		// default deduced from one / sqrt(x)
 		template <class Ty, int _func_impl_number> inline Ty inv_sqrt(Ty x) noexcept;
 	}
@@ -155,7 +155,7 @@ namespace cool
 	// cool::rotation_type::id :
 	// no rotation
 
-	constexpr inline std::uint32_t _rotation_type_val(std::size_t rotation_type_index,
+	inline constexpr std::uint32_t _rotation_type_val(std::size_t rotation_type_index,
 		std::size_t iX, std::size_t iY, std::size_t iZ, std::size_t iSg,
 		std::size_t axis0, std::size_t axis1, std::size_t axis2, std::size_t singular_axis) noexcept
 	{
@@ -203,8 +203,8 @@ namespace cool
 		Q = cool::_rotation_type_val(23, 3, 3, 3, 3, 3, 3, 3, 3),
 	};
 
-	constexpr inline std::size_t rotation_type_as_index(cool::rotation_type _rotation_type) noexcept;
-	constexpr inline cool::rotation_type index_as_rotation_type(std::size_t _index) noexcept;
+	inline constexpr std::size_t rotation_type_as_index(cool::rotation_type _rotation_type) noexcept;
+	inline constexpr cool::rotation_type index_as_rotation_type(std::size_t _index) noexcept;
 
 
 	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
@@ -1184,32 +1184,32 @@ inline Ty cool::rotation_subroutine::sqrt(Ty x) noexcept
 
 
 template <class Ty, int _func_impl_number>
-constexpr inline Ty cool::rotation_subroutine::pi() noexcept
+inline constexpr Ty cool::rotation_subroutine::pi() noexcept
 {
 	return static_cast<Ty>(3.141592653589793);
 }
 
 template <class Ty, int _func_impl_number>
-constexpr inline Ty cool::rotation_subroutine::half_turn() noexcept
+inline constexpr Ty cool::rotation_subroutine::half_turn() noexcept
 {
 	return static_cast<Ty>(3.141592653589793);
 }
 
 template <class Ty, int _func_impl_number>
-constexpr inline Ty cool::rotation_subroutine::one() noexcept
+inline constexpr Ty cool::rotation_subroutine::one() noexcept
 {
 	return static_cast<Ty>(1);
 }
 
 template <class Ty, int _func_impl_number>
-constexpr inline Ty cool::rotation_subroutine::half() noexcept
+inline constexpr Ty cool::rotation_subroutine::half() noexcept
 {
 	return static_cast<Ty>(0.5);
 }
 
 
 template <class Ty, int _func_impl_number>
-constexpr inline Ty cool::rotation_subroutine::two() noexcept
+inline constexpr Ty cool::rotation_subroutine::two() noexcept
 {
 	constexpr Ty ret = cool::rotation_subroutine::one<Ty, _func_impl_number>()
 		+ cool::rotation_subroutine::one<Ty, _func_impl_number>();
@@ -1217,7 +1217,7 @@ constexpr inline Ty cool::rotation_subroutine::two() noexcept
 }
 
 template <class Ty, int _func_impl_number>
-constexpr inline Ty cool::rotation_subroutine::quarter_turn() noexcept
+inline constexpr Ty cool::rotation_subroutine::quarter_turn() noexcept
 {
 	constexpr Ty ret = cool::rotation_subroutine::half<Ty, _func_impl_number>()
 		* cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
@@ -1225,7 +1225,7 @@ constexpr inline Ty cool::rotation_subroutine::quarter_turn() noexcept
 }
 
 template <class Ty, int _func_impl_number>
-constexpr inline Ty cool::rotation_subroutine::quarter() noexcept
+inline constexpr Ty cool::rotation_subroutine::quarter() noexcept
 {
 	constexpr Ty ret = cool::rotation_subroutine::half<Ty, _func_impl_number>()
 		* cool::rotation_subroutine::half<Ty, _func_impl_number>();
@@ -1233,28 +1233,28 @@ constexpr inline Ty cool::rotation_subroutine::quarter() noexcept
 }
 
 template <class Ty, int _func_impl_number>
-constexpr inline Ty cool::rotation_subroutine::minus_half_turn() noexcept
+inline constexpr Ty cool::rotation_subroutine::minus_half_turn() noexcept
 {
 	constexpr Ty ret = -cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
 	return ret;
 }
 
 template <class Ty, int _func_impl_number>
-constexpr inline Ty cool::rotation_subroutine::minus_quarter_turn() noexcept
+inline constexpr Ty cool::rotation_subroutine::minus_quarter_turn() noexcept
 {
 	constexpr Ty ret = -cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>();
 	return ret;
 }
 
 template <class Ty, int _func_impl_number>
-constexpr inline Ty cool::rotation_subroutine::minus_one() noexcept
+inline constexpr Ty cool::rotation_subroutine::minus_one() noexcept
 {
 	constexpr Ty ret = -cool::rotation_subroutine::one<Ty, _func_impl_number>();
 	return ret;
 }
 
 template <class Ty, int _func_impl_number>
-constexpr inline Ty cool::rotation_subroutine::minus_quarter() noexcept
+inline constexpr Ty cool::rotation_subroutine::minus_quarter() noexcept
 {
 	constexpr Ty ret = -cool::rotation_subroutine::quarter<Ty, _func_impl_number>();
 	return ret;
@@ -1911,12 +1911,12 @@ inline cool::rotation_status cool::rotation_quaternion<Ty, _dim_padded, _layout,
 }
 
 
-constexpr inline std::size_t cool::rotation_type_as_index(cool::rotation_type _rotation_type) noexcept
+inline constexpr std::size_t cool::rotation_type_as_index(cool::rotation_type _rotation_type) noexcept
 {
 	return static_cast<std::size_t>(static_cast<std::uint32_t>(_rotation_type) >> 16);
 }
 
-constexpr inline cool::rotation_type cool::index_as_rotation_type(std::size_t _index) noexcept
+inline constexpr cool::rotation_type cool::index_as_rotation_type(std::size_t _index) noexcept
 {
 	switch (_index)
 	{

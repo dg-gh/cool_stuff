@@ -10,6 +10,12 @@
 #include <cstdint>
 #include <type_traits>
 
+#ifndef COOL_DURATION_CUSTOM_UNIT
+#define COOL_DURATION_CUSTOM_UNIT day
+#define COOL_DURATION_CUSTOM_UNIT_NUM 86400
+#define COOL_DURATION_CUSTOM_UNIT_DEN 1
+#endif // COOL_DURATION_CUSTOM_UNIT
+
 
 namespace cool
 {
@@ -23,7 +29,10 @@ namespace cool
 		ns = 3,
 
 		min = 4,
-		hour = 5
+		hour = 5,
+		COOL_DURATION_CUSTOM_UNIT = 6, // day
+
+		tick = 7
 	};
 #endif // xCOOL_DURATION_UNIT_ENUM
 
@@ -141,18 +150,32 @@ namespace cool
 
 
 		template <class num_Ty, std::intmax_t unit_mod_num = 1, std::intmax_t unit_mod_den = 1>
-		static constexpr inline num_Ty duration_per_tick(cool::duration_unit unit) noexcept;
+		static inline constexpr num_Ty duration_per_tick(cool::duration_unit unit) noexcept;
 
 		template <std::intmax_t unit_mod_num = 1, std::intmax_t unit_mod_den = 1>
-		static constexpr inline typename cool::duration<clock_Ty>::ratio duration_per_tick_ratio(cool::duration_unit unit) noexcept;
+		static inline constexpr typename cool::duration<clock_Ty>::ratio duration_per_tick_ratio(cool::duration_unit unit) noexcept;
 
 		template <class num_Ty, std::intmax_t unit_mod_num = 1, std::intmax_t unit_mod_den = 1>
-		static constexpr inline num_Ty tick_per_duration(cool::duration_unit unit) noexcept;
+		static inline constexpr num_Ty tick_per_duration(cool::duration_unit unit) noexcept;
 
 		template <std::intmax_t unit_mod_num = 1, std::intmax_t unit_mod_den = 1>
-		static constexpr inline typename cool::duration<clock_Ty>::ratio tick_per_duration_ratio(cool::duration_unit unit) noexcept;
+		static inline constexpr typename cool::duration<clock_Ty>::ratio tick_per_duration_ratio(cool::duration_unit unit) noexcept;
 
 	private:
+
+		template <std::intmax_t lhs, std::intmax_t rhs> static constexpr inline bool _can_multiply() noexcept;
+
+		template <class num_Ty, class duration_unit_ratio_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
+		static inline constexpr num_Ty _duration_per_tick() noexcept;
+
+		template <class duration_unit_ratio_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
+		static inline constexpr typename cool::duration<clock_Ty>::ratio _duration_per_tick_ratio() noexcept;
+
+		template <class num_Ty, class duration_unit_ratio_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
+		static inline constexpr num_Ty _tick_per_duration() noexcept;
+
+		template <class duration_unit_ratio_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
+		static inline constexpr typename cool::duration<clock_Ty>::ratio _tick_per_duration_ratio() noexcept;
 
 		template <class clock_Ty2> friend class time;
 		typename clock_Ty::duration::rep m_ticks;
@@ -410,263 +433,133 @@ inline constexpr bool cool::duration<clock_Ty>::operator>(cool::duration<clock_T
 }
 
 template <class clock_Ty> template <class num_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
-constexpr inline num_Ty cool::duration<clock_Ty>::duration_per_tick(cool::duration_unit unit) noexcept
+inline constexpr num_Ty cool::duration<clock_Ty>::duration_per_tick(cool::duration_unit unit) noexcept
 {
-	using _clock_period = typename clock_Ty::duration::period;
-
 	switch (unit)
 	{
-
-	case cool::duration_unit::s:
-	{
-		using _ratio_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _clock_period>;
-		return static_cast<num_Ty>(_ratio_modded::num) / static_cast<num_Ty>(_ratio_modded::den);
-		break;
-	}
-
-	case cool::duration_unit::ms:
-	{
-		using _ratio_ms = std::ratio_multiply<std::ratio<1000, 1>, _clock_period>;
-		using _ratio_ms_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_ms>;
-		return static_cast<num_Ty>(_ratio_ms_modded::num) / static_cast<num_Ty>(_ratio_ms_modded::den);
-		break;
-	}
-
-	case cool::duration_unit::us:
-	{
-		using _ratio_us = std::ratio_multiply<std::ratio<1000000, 1>, _clock_period>;
-		using _ratio_us_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_us>;
-		return static_cast<num_Ty>(_ratio_us_modded::num) / static_cast<num_Ty>(_ratio_us_modded::den);
-		break;
-	}
-
-	case cool::duration_unit::ns:
-	{
-		using _ratio_ns = std::ratio_multiply<std::ratio<1000000000, 1>, _clock_period>;
-		using _ratio_ns_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_ns>;
-		return static_cast<num_Ty>(_ratio_ns_modded::num) / static_cast<num_Ty>(_ratio_ns_modded::den);
-		break;
-	}
-
-	case cool::duration_unit::min:
-	{
-		using _ratio_min = std::ratio_multiply<std::ratio<1, 60>, _clock_period>;
-		using _ratio_min_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_min>;
-		return static_cast<num_Ty>(_ratio_min_modded::num) / static_cast<num_Ty>(_ratio_min_modded::den);
-		break;
-	}
-
-	case cool::duration_unit::hour:
-	{
-		using _ratio_hour = std::ratio_multiply<std::ratio<1, 3600>, _clock_period>;
-		using _ratio_hour_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_hour>;
-		return static_cast<num_Ty>(_ratio_hour_modded::num) / static_cast<num_Ty>(_ratio_hour_modded::den);
-		break;
-	}
-
-	default:
-	{
-		using _ratio_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _clock_period>;
-		return static_cast<num_Ty>(_ratio_modded::num) / static_cast<num_Ty>(_ratio_modded::den);
-		break;
-	}
-
+	case cool::duration_unit::s: return _duration_per_tick<num_Ty, std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::ms: return _duration_per_tick<num_Ty, std::ratio<1, 1000>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::us: return _duration_per_tick<num_Ty, std::ratio<1, 1000000>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::ns: return _duration_per_tick<num_Ty, std::ratio<1, 1000000000>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::min: return _duration_per_tick<num_Ty, std::ratio<60, 1>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::hour: return _duration_per_tick<num_Ty, std::ratio<3600, 1>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::day: return _duration_per_tick<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT_NUM, COOL_DURATION_CUSTOM_UNIT_DEN>,
+		unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::tick: return static_cast<num_Ty>(std::ratio<unit_mod_num, unit_mod_den>::den)
+		/ static_cast<num_Ty>(std::ratio<unit_mod_num, unit_mod_den>::num);
+	default: return _duration_per_tick<num_Ty, std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
 	}
 }
 
 template <class clock_Ty> template <std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
-constexpr inline typename cool::duration<clock_Ty>::ratio cool::duration<clock_Ty>::duration_per_tick_ratio(cool::duration_unit unit) noexcept
+inline constexpr typename cool::duration<clock_Ty>::ratio cool::duration<clock_Ty>::duration_per_tick_ratio(cool::duration_unit unit) noexcept
 {
-	using _clock_period = typename clock_Ty::duration::period;
-
 	switch (unit)
 	{
-
-	case cool::duration_unit::s:
-	{
-		using _ratio_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _clock_period>;
-		return typename cool::duration<clock_Ty>::ratio(_ratio_modded::num, _ratio_modded::den);
-		break;
-	}
-
-	case cool::duration_unit::ms:
-	{
-		using _ratio_ms = std::ratio_multiply<std::ratio<1000, 1>, _clock_period>;
-		using _ratio_ms_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_ms>;
-		return typename cool::duration<clock_Ty>::ratio(_ratio_ms_modded::num, _ratio_ms_modded::den);
-		break;
-	}
-
-	case cool::duration_unit::us:
-	{
-		using _ratio_us = std::ratio_multiply<std::ratio<1000000, 1>, _clock_period>;
-		using _ratio_us_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_us>;
-		return typename cool::duration<clock_Ty>::ratio(_ratio_us_modded::num, _ratio_us_modded::den);
-		break;
-	}
-
-	case cool::duration_unit::ns:
-	{
-		using _ratio_ns = std::ratio_multiply<std::ratio<1000000000, 1>, _clock_period>;
-		using _ratio_ns_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_ns>;
-		return typename cool::duration<clock_Ty>::ratio(_ratio_ns_modded::num, _ratio_ns_modded::den);
-		break;
-	}
-
-	case cool::duration_unit::min:
-	{
-		using _ratio_min = std::ratio_multiply<std::ratio<1, 60>, _clock_period>;
-		using _ratio_min_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_min>;
-		return typename cool::duration<clock_Ty>::ratio(_ratio_min_modded::num, _ratio_min_modded::den);
-		break;
-	}
-
-	case cool::duration_unit::hour:
-	{
-		using _ratio_hour = std::ratio_multiply<std::ratio<1, 3600>, _clock_period>;
-		using _ratio_hour_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_hour>;
-		return typename cool::duration<clock_Ty>::ratio(_ratio_hour_modded::num, _ratio_hour_modded::den);
-		break;
-	}
-
-	default:
-	{
-		using _ratio_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _clock_period>;
-		return typename cool::duration<clock_Ty>::ratio(_ratio_modded::num, _ratio_modded::den);
-		break;
-	}
-
+	case cool::duration_unit::s: return _duration_per_tick_ratio<std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::ms: return _duration_per_tick_ratio<std::ratio<1, 1000>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::us: return _duration_per_tick_ratio<std::ratio<1, 1000000>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::ns: return _duration_per_tick_ratio<std::ratio<1, 1000000000>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::min: return _duration_per_tick_ratio<std::ratio<60, 1>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::hour: return _duration_per_tick_ratio<std::ratio<3600, 1>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::day: return _duration_per_tick_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT_NUM, COOL_DURATION_CUSTOM_UNIT_DEN>,
+		unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::tick: return typename cool::duration<clock_Ty>::ratio(std::ratio<unit_mod_num, unit_mod_den>::den,
+		std::ratio<unit_mod_num, unit_mod_den>::num);
+	default: return _duration_per_tick_ratio<std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
 	}
 }
 
 template <class clock_Ty> template <class num_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
-constexpr inline num_Ty cool::duration<clock_Ty>::tick_per_duration(cool::duration_unit unit) noexcept
+inline constexpr num_Ty cool::duration<clock_Ty>::tick_per_duration(cool::duration_unit unit) noexcept
 {
-	using _clock_period = typename clock_Ty::duration::period;
-
 	switch (unit)
 	{
-
-	case cool::duration_unit::s:
-	{
-		using _ratio_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _clock_period>;
-		return static_cast<num_Ty>(_ratio_modded::den) / static_cast<num_Ty>(_ratio_modded::num);
-		break;
-	}
-
-	case cool::duration_unit::ms:
-	{
-		using _ratio_ms = std::ratio_multiply<std::ratio<1000, 1>, _clock_period>;
-		using _ratio_ms_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_ms>;
-		return static_cast<num_Ty>(_ratio_ms_modded::den) / static_cast<num_Ty>(_ratio_ms_modded::num);
-		break;
-	}
-
-	case cool::duration_unit::us:
-	{
-		using _ratio_us = std::ratio_multiply<std::ratio<1000000, 1>, _clock_period>;
-		using _ratio_us_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_us>;
-		return static_cast<num_Ty>(_ratio_us_modded::den) / static_cast<num_Ty>(_ratio_us_modded::num);
-		break;
-	}
-
-	case cool::duration_unit::ns:
-	{
-		using _ratio_ns = std::ratio_multiply<std::ratio<1000000000, 1>, _clock_period>;
-		using _ratio_ns_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_ns>;
-		return static_cast<num_Ty>(_ratio_ns_modded::den) / static_cast<num_Ty>(_ratio_ns_modded::num);
-		break;
-	}
-
-	case cool::duration_unit::min:
-	{
-		using _ratio_min = std::ratio_multiply<std::ratio<1, 60>, _clock_period>;
-		using _ratio_min_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_min>;
-		return static_cast<num_Ty>(_ratio_min_modded::den) / static_cast<num_Ty>(_ratio_min_modded::num);
-		break;
-	}
-
-	case cool::duration_unit::hour:
-	{
-		using _ratio_hour = std::ratio_multiply<std::ratio<1, 3600>, _clock_period>;
-		using _ratio_hour_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_hour>;
-		return static_cast<num_Ty>(_ratio_hour_modded::den) / static_cast<num_Ty>(_ratio_hour_modded::num);
-		break;
-	}
-
-	default:
-	{
-		using _ratio_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _clock_period>;
-		return static_cast<num_Ty>(_ratio_modded::den) / static_cast<num_Ty>(_ratio_modded::num);
-		break;
-	}
-
+	case cool::duration_unit::s: return _tick_per_duration<num_Ty, std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::ms: return _tick_per_duration<num_Ty, std::ratio<1, 1000>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::us: return _tick_per_duration<num_Ty, std::ratio<1, 1000000>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::ns: return _tick_per_duration<num_Ty, std::ratio<1, 1000000000>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::min: return _tick_per_duration<num_Ty, std::ratio<60, 1>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::hour: return _tick_per_duration<num_Ty, std::ratio<3600, 1>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::day: return _tick_per_duration<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT_NUM, COOL_DURATION_CUSTOM_UNIT_DEN>,
+		unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::tick: return static_cast<num_Ty>(std::ratio<unit_mod_num, unit_mod_den>::num)
+		/ static_cast<num_Ty>(std::ratio<unit_mod_num, unit_mod_den>::den);
+	default: return _tick_per_duration<num_Ty, std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
 	}
 }
 
 template <class clock_Ty> template <std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
-constexpr inline typename cool::duration<clock_Ty>::ratio cool::duration<clock_Ty>::tick_per_duration_ratio(cool::duration_unit unit) noexcept
+inline constexpr typename cool::duration<clock_Ty>::ratio cool::duration<clock_Ty>::tick_per_duration_ratio(cool::duration_unit unit) noexcept
 {
-	using _clock_period = typename clock_Ty::duration::period;
-
 	switch (unit)
 	{
-
-	case cool::duration_unit::s:
-	{
-		using _ratio_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _clock_period>;
-		return typename cool::duration<clock_Ty>::ratio(_ratio_modded::den, _ratio_modded::num);
-		break;
+	case cool::duration_unit::s: return _tick_per_duration_ratio<std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::ms: return _tick_per_duration_ratio<std::ratio<1, 1000>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::us: return _tick_per_duration_ratio<std::ratio<1, 1000000>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::ns: return _tick_per_duration_ratio<std::ratio<1, 1000000000>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::min: return _tick_per_duration_ratio<std::ratio<60, 1>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::hour: return _tick_per_duration_ratio<std::ratio<3600, 1>, unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::day: return _tick_per_duration_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT_NUM, COOL_DURATION_CUSTOM_UNIT_DEN>,
+		unit_mod_num, unit_mod_den>();
+	case cool::duration_unit::tick: return typename cool::duration<clock_Ty>::ratio(std::ratio<unit_mod_num, unit_mod_den>::num,
+		std::ratio<unit_mod_num, unit_mod_den>::den);
+	default: return _tick_per_duration_ratio<std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
 	}
+}
 
-	case cool::duration_unit::ms:
-	{
-		using _ratio_ms = std::ratio_multiply<std::ratio<1000, 1>, _clock_period>;
-		using _ratio_ms_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_ms>;
-		return typename cool::duration<clock_Ty>::ratio(_ratio_ms_modded::den, _ratio_ms_modded::num);
-		break;
-	}
+template <class clock_Ty> template <std::intmax_t lhs, std::intmax_t rhs>
+inline constexpr bool cool::duration<clock_Ty>::_can_multiply() noexcept
+{
+	return lhs <= std::numeric_limits<std::intmax_t>::max() / rhs;
+}
 
-	case cool::duration_unit::us:
-	{
-		using _ratio_us = std::ratio_multiply<std::ratio<1000000, 1>, _clock_period>;
-		using _ratio_us_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_us>;
-		return typename cool::duration<clock_Ty>::ratio(_ratio_us_modded::den, _ratio_us_modded::num);
-		break;
-	}
+template <class clock_Ty> template <class num_Ty, class duration_unit_ratio_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
+inline constexpr num_Ty cool::duration<clock_Ty>::_duration_per_tick() noexcept
+{
+	constexpr cool::duration<clock_Ty>::ratio _ratio_inv = _tick_per_duration_ratio<duration_unit_ratio_Ty, unit_mod_num, unit_mod_den>();
+	return (_ratio_inv.num != 0) ?
+		static_cast<num_Ty>(_ratio_inv.den) / static_cast<num_Ty>(_ratio_inv.num)
+		: static_cast<num_Ty>(0);
+}
 
-	case cool::duration_unit::ns:
-	{
-		using _ratio_ns = std::ratio_multiply<std::ratio<1000000000, 1>, _clock_period>;
-		using _ratio_ns_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_ns>;
-		return typename cool::duration<clock_Ty>::ratio(_ratio_ns_modded::den, _ratio_ns_modded::num);
-		break;
-	}
+template <class clock_Ty> template <class duration_unit_ratio_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
+inline constexpr typename cool::duration<clock_Ty>::ratio cool::duration<clock_Ty>::_duration_per_tick_ratio() noexcept
+{
+	constexpr cool::duration<clock_Ty>::ratio _ratio_inv = _tick_per_duration_ratio<duration_unit_ratio_Ty, unit_mod_num, unit_mod_den>();
+	return (_ratio_inv.num != 0) ?
+		typename cool::duration<clock_Ty>::ratio(_ratio_inv.den, _ratio_inv.num)
+		: typename cool::duration<clock_Ty>::ratio(0, 1);
+}
 
-	case cool::duration_unit::min:
-	{
-		using _ratio_min = std::ratio_multiply<std::ratio<1, 60>, _clock_period>;
-		using _ratio_min_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_min>;
-		return typename cool::duration<clock_Ty>::ratio(_ratio_min_modded::den, _ratio_min_modded::num);
-		break;
-	}
+template <class clock_Ty> template <class num_Ty, class duration_unit_ratio_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
+inline constexpr num_Ty cool::duration<clock_Ty>::_tick_per_duration() noexcept
+{
+	constexpr cool::duration<clock_Ty>::ratio _ratio = _tick_per_duration_ratio<duration_unit_ratio_Ty, unit_mod_num, unit_mod_den>();
+	return (_ratio.num != 0) ?
+		static_cast<num_Ty>(_ratio.num) / static_cast<num_Ty>(_ratio.den)
+		: static_cast<num_Ty>(0);
+}
 
-	case cool::duration_unit::hour:
-	{
-		using _ratio_hour = std::ratio_multiply<std::ratio<1, 3600>, _clock_period>;
-		using _ratio_hour_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _ratio_hour>;
-		return typename cool::duration<clock_Ty>::ratio(_ratio_hour_modded::den, _ratio_hour_modded::num);
-		break;
-	}
+template <class clock_Ty> template <class duration_unit_ratio_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
+inline constexpr typename cool::duration<clock_Ty>::ratio cool::duration<clock_Ty>::_tick_per_duration_ratio() noexcept
+{
+	constexpr bool _no_u_overflow = _can_multiply<duration_unit_ratio_Ty::den, clock_Ty::duration::period::num>()
+		&& _can_multiply<duration_unit_ratio_Ty::num, clock_Ty::duration::period::den>();
+	constexpr std::intmax_t unit_num_checked = _no_u_overflow ? duration_unit_ratio_Ty::num : 1;
+	constexpr std::intmax_t unit_den_checked = _no_u_overflow ? duration_unit_ratio_Ty::den : 1;
+	using _ratio_u = std::ratio_multiply<std::ratio<unit_den_checked, unit_num_checked>, typename clock_Ty::duration::period>;
 
-	default:
-	{
-		using _ratio_modded = std::ratio_multiply<std::ratio<unit_mod_den, unit_mod_num>, _clock_period>;
-		return typename cool::duration<clock_Ty>::ratio(_ratio_modded::den, _ratio_modded::num);
-		break;
-	}
+	using unit_mod_simpl = std::ratio<unit_mod_num, unit_mod_den>;
+	constexpr bool _no_mod_overflow = _can_multiply<unit_mod_simpl::den, _ratio_u::num>()
+		&& _can_multiply<unit_mod_simpl::num, _ratio_u::den>();
+	constexpr std::intmax_t unit_mod_num_checked = _no_mod_overflow ? unit_mod_num : 1;
+	constexpr std::intmax_t unit_mod_den_checked = _no_mod_overflow ? unit_mod_den : 1;
+	using _ratio_u_modded = std::ratio_multiply<std::ratio<unit_mod_den_checked, unit_mod_num_checked>, _ratio_u>;
 
-	}
+	return (_no_u_overflow & _no_mod_overflow) ?
+		typename cool::duration<clock_Ty>::ratio(_ratio_u_modded::den, _ratio_u_modded::num) :
+		typename cool::duration<clock_Ty>::ratio(0, 1);
 }
 
 #endif // xCOOL_CHRONO_HPP
