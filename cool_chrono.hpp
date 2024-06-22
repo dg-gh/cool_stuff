@@ -235,6 +235,9 @@ namespace cool
 		template <std::intmax_t unit_mod_num = 1, std::intmax_t unit_mod_den = 1>
 		static inline constexpr typename cool::duration<clock_Ty>::ratio tick_per_duration_ratio(cool::duration_unit unit) noexcept;
 
+		template <std::intmax_t unit_mod_num = 1, std::intmax_t unit_mod_den = 1>
+		static inline constexpr bool valid_unit(cool::duration_unit unit) noexcept;
+
 	private:
 
 		template <std::intmax_t lhs, std::intmax_t rhs> static constexpr inline bool _can_multiply() noexcept;
@@ -740,6 +743,12 @@ inline constexpr typename cool::duration<clock_Ty>::ratio cool::duration<clock_T
 
 	default: return _tick_per_duration_ratio<std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
 	}
+}
+
+template <class clock_Ty> template <std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
+inline constexpr bool cool::duration<clock_Ty>::valid_unit(cool::duration_unit unit) noexcept
+{
+	return tick_per_duration_ratio<unit_mod_num, unit_mod_den>(unit).num != 0;
 }
 
 template <class clock_Ty> template <std::intmax_t lhs, std::intmax_t rhs>
