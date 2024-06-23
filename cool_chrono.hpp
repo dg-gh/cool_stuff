@@ -132,7 +132,7 @@ namespace cool
 		using rep = typename clock_Ty::time_point::rep;
 		using period = typename clock_Ty::time_point::period;
 
-		time_point() noexcept = default; // does not set time_point to now
+		time_point() = default; // does not set time_point to now
 		explicit inline time_point(cool::now_t) noexcept : m_time(clock_Ty::now()) {}
 		explicit inline time_point(cool::no_init_t) noexcept {}
 		time_point(const cool::time_point<clock_Ty>& rhs) noexcept = default;
