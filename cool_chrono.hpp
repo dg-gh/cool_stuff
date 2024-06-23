@@ -61,6 +61,9 @@
 
 namespace cool
 {
+	template <class clock_Ty> class time_point;
+	template <class clock_Ty> class duration;
+
 #ifndef xCOOL_DURATION_UNIT_ENUM
 #define xCOOL_DURATION_UNIT_ENUM
 	enum class duration_unit : std::size_t
@@ -348,6 +351,8 @@ inline bool cool::time_point<clock_Ty>::operator>(cool::time_point<clock_Ty> rhs
 template <class clock_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den, class num_Ty>
 inline constexpr cool::duration<clock_Ty> cool::make_duration(num_Ty time_duration, cool::duration_unit unit) noexcept
 {
+	static_assert(unit_mod_num > 0 && unit_mod_den > 0, "cool::make_duration requirement : unit_mod_num > 0 and unit_mod_den > 0");
+
 	if (std::is_integral<num_Ty>::value)
 	{
 		typename cool::duration<clock_Ty>::ratio _ratio = cool::duration<clock_Ty>::template tick_per_duration_ratio<unit_mod_num, unit_mod_den>(unit);
@@ -507,6 +512,8 @@ inline constexpr bool cool::duration<clock_Ty>::operator>(cool::duration<clock_T
 template <class clock_Ty> template <class num_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
 inline constexpr num_Ty cool::duration<clock_Ty>::duration_per_tick(cool::duration_unit unit) noexcept
 {
+	static_assert(unit_mod_num > 0 && unit_mod_den > 0, "cool::duration<...>::duration_per_tick requirement : unit_mod_num > 0 and unit_mod_den > 0");
+
 	switch (unit)
 	{
 	case cool::duration_unit::s: return _duration_per_tick<num_Ty, std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
@@ -566,6 +573,8 @@ inline constexpr num_Ty cool::duration<clock_Ty>::duration_per_tick(cool::durati
 template <class clock_Ty> template <std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
 inline constexpr typename cool::duration<clock_Ty>::ratio cool::duration<clock_Ty>::duration_per_tick_ratio(cool::duration_unit unit) noexcept
 {
+	static_assert(unit_mod_num > 0 && unit_mod_den > 0, "cool::duration<...>::duration_per_tick_ratio requirement : unit_mod_num > 0 and unit_mod_den > 0");
+
 	switch (unit)
 	{
 	case cool::duration_unit::s: return _duration_per_tick_ratio<std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
@@ -625,6 +634,8 @@ inline constexpr typename cool::duration<clock_Ty>::ratio cool::duration<clock_T
 template <class clock_Ty> template <class num_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
 inline constexpr num_Ty cool::duration<clock_Ty>::tick_per_duration(cool::duration_unit unit) noexcept
 {
+	static_assert(unit_mod_num > 0 && unit_mod_den > 0, "cool::duration<...>::tick_per_duration requirement : unit_mod_num > 0 and unit_mod_den > 0");
+
 	switch (unit)
 	{
 	case cool::duration_unit::s: return _tick_per_duration<num_Ty, std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
@@ -684,6 +695,8 @@ inline constexpr num_Ty cool::duration<clock_Ty>::tick_per_duration(cool::durati
 template <class clock_Ty> template <std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
 inline constexpr typename cool::duration<clock_Ty>::ratio cool::duration<clock_Ty>::tick_per_duration_ratio(cool::duration_unit unit) noexcept
 {
+	static_assert(unit_mod_num > 0 && unit_mod_den > 0, "cool::duration<...>::tick_per_duration_ratio requirement : unit_mod_num > 0 and unit_mod_den > 0");
+
 	switch (unit)
 	{
 	case cool::duration_unit::s: return _tick_per_duration_ratio<std::ratio<1, 1>, unit_mod_num, unit_mod_den>();
@@ -743,6 +756,8 @@ inline constexpr typename cool::duration<clock_Ty>::ratio cool::duration<clock_T
 template <class clock_Ty> template <std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
 inline constexpr bool cool::duration<clock_Ty>::valid_unit(cool::duration_unit unit) noexcept
 {
+	static_assert(unit_mod_num > 0 && unit_mod_den > 0, "cool::duration<...>::valid_unit requirement : unit_mod_num > 0 and unit_mod_den > 0");
+
 	return tick_per_duration_ratio<unit_mod_num, unit_mod_den>(unit).num != 0;
 }
 
