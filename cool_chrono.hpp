@@ -120,9 +120,6 @@ namespace cool
 	enum no_init_t { no_init };
 #endif // xCOOL_NO_INIT_ENUM
 
-	template <class clock_Ty> class time_point;
-	template <class clock_Ty> class duration;
-
 	template <class clock_Ty> class time_point
 	{
 
@@ -156,7 +153,6 @@ namespace cool
 
 	private:
 
-		template <class clock_Ty2> friend class duration;
 		std::chrono::time_point<clock_Ty> m_time;
 	};
 
@@ -254,7 +250,6 @@ namespace cool
 		template <class duration_unit_ratio_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den>
 		static inline constexpr typename cool::duration<clock_Ty>::ratio _tick_per_duration_ratio() noexcept;
 
-		template <class clock_Ty2> friend class time;
 		typename clock_Ty::duration::rep m_ticks;
 	};
 }
