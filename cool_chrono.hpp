@@ -361,9 +361,11 @@ inline constexpr cool::duration<clock_Ty> cool::make_duration(num_Ty time_durati
 	}
 	else
 	{
+		num_Ty rounding_correction = (time_duration < static_cast<num_Ty>(0)) ? static_cast<num_Ty>(-0.5) : static_cast<num_Ty>(0.5);
+
 		return cool::duration<clock_Ty>(static_cast<typename clock_Ty::duration::rep>(
 			static_cast<num_Ty>(cool::duration<clock_Ty>::template tick_per_duration<num_Ty, unit_mod_num, unit_mod_den>(unit))
-			* time_duration));
+			* time_duration + rounding_correction));
 	}
 }
 
