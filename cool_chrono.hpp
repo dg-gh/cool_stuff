@@ -113,16 +113,6 @@ namespace cool
 	};
 #endif // xCOOL_DURATION_UNIT_ENUM
 
-	namespace chrono_subroutine
-	{
-		// template specializable functions
-
-		// defaults to static_cast<Ty>(-0.5)
-		template <class num_Ty> inline constexpr num_Ty rounding_compensation_negative(cool::duration_unit unit) noexcept;
-		// defaults to static_cast<Ty>(0.5)
-		template <class num_Ty> inline constexpr num_Ty rounding_compensation_positive(cool::duration_unit unit) noexcept;
-	}
-
 #ifndef xCOOL_NOW_ENUM
 #define xCOOL_NOW_ENUM
 	enum now_t { now };
@@ -270,18 +260,6 @@ namespace cool
 
 // detail
 
-template <class num_Ty>
-inline constexpr num_Ty cool::chrono_subroutine::rounding_compensation_negative(cool::duration_unit unit) noexcept
-{
-	return static_cast<num_Ty>(-0.5);
-}
-
-template <class num_Ty>
-inline constexpr num_Ty cool::chrono_subroutine::rounding_compensation_positive(cool::duration_unit unit) noexcept
-{
-	return static_cast<num_Ty>(0.5);
-}
-
 template <class clock_Ty>
 inline cool::time_point<clock_Ty>& cool::time_point<clock_Ty>::now() noexcept
 {
@@ -383,22 +361,9 @@ inline constexpr cool::duration<clock_Ty> cool::make_duration(num_Ty time_durati
 	}
 	else
 	{
-		if (chrono_subroutine::rounding_compensation_negative<num_Ty>(unit) == static_cast<num_Ty>(0)
-			&& chrono_subroutine::rounding_compensation_positive<num_Ty>(unit) == static_cast<num_Ty>(0))
-		{
-			return cool::duration<clock_Ty>(static_cast<typename clock_Ty::duration::rep>(
-				static_cast<num_Ty>(cool::duration<clock_Ty>::template tick_per_duration<num_Ty, unit_mod_num, unit_mod_den>(unit))
-				* time_duration));
-		}
-		else
-		{
-			num_Ty rounding_correction = (time_duration < static_cast<num_Ty>(0)) ?
-				chrono_subroutine::rounding_compensation_negative<num_Ty>(unit) : chrono_subroutine::rounding_compensation_positive<num_Ty>(unit);
-
-			return cool::duration<clock_Ty>(static_cast<typename clock_Ty::duration::rep>(
-				static_cast<num_Ty>(cool::duration<clock_Ty>::template tick_per_duration<num_Ty, unit_mod_num, unit_mod_den>(unit))
-				* time_duration + rounding_correction));
-		}
+		return cool::duration<clock_Ty>(static_cast<typename clock_Ty::duration::rep>(
+			static_cast<num_Ty>(cool::duration<clock_Ty>::template tick_per_duration<num_Ty, unit_mod_num, unit_mod_den>(unit))
+			* time_duration));
 	}
 }
 
