@@ -588,7 +588,7 @@ inline constexpr typename cool::duration<clock_Ty>::ratio cool::duration<clock_T
 	case cool::duration_unit::hour: return _duration_per_tick_ratio<std::ratio<3600, 1>, unit_mod_ratio_Ty::num, unit_mod_ratio_Ty::den>();
 	case cool::duration_unit::day: return _duration_per_tick_ratio<std::ratio<86400, 1>, unit_mod_ratio_Ty::num, unit_mod_ratio_Ty::den>();
 	case cool::duration_unit::tick: return typename cool::duration<clock_Ty>::ratio(
-		std::ratio<unit_mod_ratio_Ty::num, unit_mod_ratio_Ty::denn>::den,
+		std::ratio<unit_mod_ratio_Ty::num, unit_mod_ratio_Ty::den>::den,
 		std::ratio<unit_mod_ratio_Ty::num, unit_mod_ratio_Ty::den>::num);
 
 #ifdef COOL_DURATION_CUSTOM_UNIT0
