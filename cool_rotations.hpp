@@ -2712,7 +2712,7 @@ inline cool::rotation_status cool::rotationXYZ<Ty, _dim_padded, _layout, _func_i
 
 	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()* (coeff_temp * coeff_temp);
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
 
 	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
@@ -2790,7 +2790,7 @@ inline cool::rotation_status cool::rotationXZY<Ty, _dim_padded, _layout, _func_i
 
 	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()* (coeff_temp * coeff_temp);
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
 
 	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
@@ -2868,7 +2868,7 @@ inline cool::rotation_status cool::rotationYZX<Ty, _dim_padded, _layout, _func_i
 
 	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()* (coeff_temp * coeff_temp);
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
 
 	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
@@ -2946,7 +2946,7 @@ inline cool::rotation_status cool::rotationYXZ<Ty, _dim_padded, _layout, _func_i
 
 	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()* (coeff_temp * coeff_temp);
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
 
 	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
@@ -3024,7 +3024,7 @@ inline cool::rotation_status cool::rotationZXY<Ty, _dim_padded, _layout, _func_i
 
 	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()* (coeff_temp * coeff_temp);
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
 
 	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
@@ -3102,7 +3102,7 @@ inline cool::rotation_status cool::rotationZYX<Ty, _dim_padded, _layout, _func_i
 
 	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()* (coeff_temp * coeff_temp);
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
 
 	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
@@ -3180,7 +3180,7 @@ inline cool::rotation_status cool::rotationXYX2<Ty, _dim_padded, _layout, _func_
 
 	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()* (coeff_temp * coeff_temp);
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
 
 	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
@@ -3259,7 +3259,7 @@ inline cool::rotation_status cool::rotationXZX2<Ty, _dim_padded, _layout, _func_
 
 	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()* (coeff_temp * coeff_temp);
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
 
 	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
@@ -3338,7 +3338,7 @@ inline cool::rotation_status cool::rotationYZY2<Ty, _dim_padded, _layout, _func_
 
 	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()* (coeff_temp * coeff_temp);
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
 
 	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
@@ -3417,7 +3417,7 @@ inline cool::rotation_status cool::rotationYXY2<Ty, _dim_padded, _layout, _func_
 
 	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()* (coeff_temp * coeff_temp);
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
 
 	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
@@ -3496,7 +3496,7 @@ inline cool::rotation_status cool::rotationZXZ2<Ty, _dim_padded, _layout, _func_
 
 	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()* (coeff_temp * coeff_temp);
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
 
 	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
@@ -3575,7 +3575,7 @@ inline cool::rotation_status cool::rotationZYZ2<Ty, _dim_padded, _layout, _func_
 
 	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()* (coeff_temp * coeff_temp);
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
 
 	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (angle_tol * angle_tol);
 
