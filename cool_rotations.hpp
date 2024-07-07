@@ -1997,7 +1997,7 @@ inline cool::rotation_status cool::direction<Ty, _func_impl_number>::get_angles(
 {
 	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()* (coeff_temp * coeff_temp);
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
 
 	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (altitude_angle_tol * altitude_angle_tol);
 
@@ -2039,7 +2039,7 @@ inline cool::rotation_status cool::direction<Ty, _func_impl_number>::get_angles(
 {
 	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
 		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>()* (coeff_temp * coeff_temp);
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
 
 	Ty direction[3] = { *v3_direction_ptr, *(v3_direction_ptr + 1), *(v3_direction_ptr + 2) };
 
