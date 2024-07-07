@@ -165,7 +165,11 @@ namespace cool
 		inline void delete_threads() noexcept;
 	};
 
+
 	// async_task_end
+
+	// WARNNING: async_task_end object must outlive the threads of threads_sq/threads_mq object that calls
+	// try_async or try_priority_async with it as a target argument
 
 	class async_task_end
 	{
@@ -200,7 +204,11 @@ namespace cool
 		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_mq;
 	};
 
+
 	// async_task_result
+
+	// WARNNING: async_task_result object must outlive the threads of threads_sq/threads_mq object that calls
+	// try_async or try_priority_async with it as a target argument
 
 	template <class return_Ty> class async_task_result
 	{
