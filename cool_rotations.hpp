@@ -116,6 +116,8 @@ namespace cool
 	template <class Ty, std::size_t _dim_padded = 2, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotation2d;
 
+	template <class Ty, int _func_impl_number = 0> class direction2d;
+
 
 	// 3D rotations
 
@@ -130,7 +132,7 @@ namespace cool
 	template <class Ty, std::size_t _dim_padded = 3, cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT,
 		int _func_impl_number = 0> class rotation_quaternion;
 
-	template <class Ty, int _func_impl_number = 0> class direction;
+	template <class Ty, int _func_impl_number = 0> class direction3d;
 
 
 	// class rotation3d with enum class rotation_type
@@ -293,6 +295,43 @@ namespace cool
 	};
 
 
+#ifndef xCOOL_NO_DIRECTION_NORM_ENUM
+#define xCOOL_NO_DIRECTION_NORM_ENUM
+	enum no_direction_norm_t { no_direction_norm };
+#endif // xCOOL_NO_DIRECTION_NORM_ENUM
+
+	template <class Ty, int _func_impl_number> class direction2d
+	{
+
+	public:
+
+		using value_type = Ty;
+		using pointer = Ty*;
+		using const_pointer = const Ty*;
+
+		// v2_front_dir_ptr and v2_lateral_dir_ptr must be orthonormal
+
+		static inline void get_direction(
+			Ty* v2_direction_ptr,
+			Ty angle,
+			const Ty* v2_front_dir_ptr,
+			const Ty* v2_lateral_dir_ptr) noexcept;
+
+		static inline void get_angle(
+			Ty* angle_ptr,
+			const Ty* v2_direction_ptr,
+			const Ty* v2_front_dir_ptr,
+			const Ty* v2_lateral_dir_ptr) noexcept;
+
+		static inline void get_angle(
+			Ty* angle_ptr,
+			const Ty* v2_direction_ptr,
+			const Ty* v2_front_dir_ptr,
+			const Ty* v2_lateral_dir_ptr,
+			cool::no_direction_norm_t) noexcept;
+	};
+
+
 #ifndef xCOOL_NO_AXIS_NORM_ENUM
 #define xCOOL_NO_AXIS_NORM_ENUM
 	enum no_axis_norm_t { no_axis_norm };
@@ -353,12 +392,7 @@ namespace cool
 	};
 
 
-#ifndef xCOOL_NO_DIRECTION_NORM_ENUM
-#define xCOOL_NO_DIRECTION_NORM_ENUM
-	enum no_direction_norm_t { no_direction_norm };
-#endif // xCOOL_NO_DIRECTION_NORM_ENUM
-
-	template <class Ty, int _func_impl_number> class direction
+	template <class Ty, int _func_impl_number> class direction3d
 	{
 
 	public:
@@ -389,7 +423,6 @@ namespace cool
 			const Ty* v3_front_dir_ptr,
 			const Ty* v3_lateral_dir_ptr,
 			const Ty* v3_up_dir_ptr,
-			cool::no_direction_norm_t,
 			Ty altitude_angle_tol = static_cast<Ty>(0),
 			Ty azimuth_angle_if_singular = static_cast<Ty>(0)) noexcept;
 
@@ -399,6 +432,7 @@ namespace cool
 			const Ty* v3_front_dir_ptr,
 			const Ty* v3_lateral_dir_ptr,
 			const Ty* v3_up_dir_ptr,
+			cool::no_direction_norm_t,
 			Ty altitude_angle_tol = static_cast<Ty>(0),
 			Ty azimuth_angle_if_singular = static_cast<Ty>(0)) noexcept;
 	};
@@ -1380,6 +1414,59 @@ inline void cool::rotation2d<Ty, _dim_padded, _layout, _func_impl_number>::get_a
 }
 
 
+template <class Ty, int _func_impl_number>
+inline void cool::direction2d<Ty, _func_impl_number>::get_direction(
+	Ty* v2_direction_ptr,
+	Ty angle,
+	const Ty* v2_front_dir_ptr,
+	const Ty* v2_lateral_dir_ptr) noexcept
+{
+	Ty cosA = cool::rotation_subroutine::cos<Ty, _func_impl_number>(angle);
+	Ty sinA = cool::rotation_subroutine::sin<Ty, _func_impl_number>(angle);
+
+	Ty front_dir[2] = { *v2_front_dir_ptr, *(v2_front_dir_ptr + 1) };
+	Ty lateral_dir[2] = { *v2_lateral_dir_ptr, *(v2_lateral_dir_ptr + 1) };
+
+	*v2_direction_ptr = cosA * front_dir[0] + sinA * lateral_dir[0];
+	*(v2_direction_ptr + 1) = cosA * front_dir[1] + sinA * lateral_dir[1];
+}
+
+template <class Ty, int _func_impl_number>
+inline void cool::direction2d<Ty, _func_impl_number>::get_angle(
+	Ty* angle_ptr,
+	const Ty* v2_direction_ptr,
+	const Ty* v2_front_dir_ptr,
+	const Ty* v2_lateral_dir_ptr) noexcept
+{
+	Ty cosA = *v2_direction_ptr * *v2_front_dir_ptr + *(v2_direction_ptr + 1) * *(v2_front_dir_ptr + 1);
+	Ty sinA = *v2_direction_ptr * *v2_lateral_dir_ptr + *(v2_direction_ptr + 1) * *(v2_lateral_dir_ptr + 1);
+
+	*angle_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>(sinA, cosA);
+}
+
+template <class Ty, int _func_impl_number>
+inline void cool::direction2d<Ty, _func_impl_number>::get_angle(
+	Ty* angle_ptr,
+	const Ty* v2_direction_ptr,
+	const Ty* v2_front_dir_ptr,
+	const Ty* v2_lateral_dir_ptr,
+	cool::no_direction_norm_t) noexcept
+{
+	Ty direction[2] = { *v2_direction_ptr, *(v2_direction_ptr + 1) };
+
+	{
+		Ty s = cool::rotation_subroutine::inv_sqrt<Ty, _func_impl_number>(
+			direction[0] * direction[0] + direction[1] * direction[1]);
+		direction[0] *= s; direction[1] *= s;
+	}
+
+	Ty cosA = direction[0] * *v2_front_dir_ptr + direction[1] * *(v2_front_dir_ptr + 1);
+	Ty sinA = direction[0] * *v2_lateral_dir_ptr + direction[1] * *(v2_lateral_dir_ptr + 1);
+
+	*angle_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>(sinA, cosA);
+}
+
+
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline void cool::rotation_axis_angle<Ty, _dim_padded, _layout, _func_impl_number>::get_matrix(
 	Ty* m3x3_rotation_ptr, const Ty* v3_axis_ptr, Ty angle, Ty norm_tol) noexcept
@@ -1965,7 +2052,7 @@ inline cool::rotation_status cool::rotation_quaternion<Ty, _dim_padded, _layout,
 
 
 template <class Ty, int _func_impl_number>
-inline void cool::direction<Ty, _func_impl_number>::get_direction(
+inline void cool::direction3d<Ty, _func_impl_number>::get_direction(
 	Ty* v3_direction_ptr,
 	const Ty* v2_azimuth_altitude_angles_ptr,
 	const Ty* v3_front_dir_ptr,
@@ -1985,50 +2072,7 @@ inline void cool::direction<Ty, _func_impl_number>::get_direction(
 }
 
 template <class Ty, int _func_impl_number>
-inline cool::rotation_status cool::direction<Ty, _func_impl_number>::get_angles(
-	Ty* v2_azimuth_altitude_angles_ptr,
-	const Ty* v3_direction_ptr,
-	const Ty* v3_front_dir_ptr,
-	const Ty* v3_lateral_dir_ptr,
-	const Ty* v3_up_dir_ptr,
-	cool::no_direction_norm_t,
-	Ty altitude_angle_tol,
-	Ty azimuth_angle_if_singular) noexcept
-{
-	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
-		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
-	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
-
-	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (altitude_angle_tol * altitude_angle_tol);
-
-	Ty sinAL = *v3_direction_ptr * *v3_up_dir_ptr + *(v3_direction_ptr + 1) * *(v3_up_dir_ptr + 1) + *(v3_direction_ptr + 2) * *(v3_up_dir_ptr + 2);
-
-	if (-bound < sinAL && sinAL < bound)
-	{
-		Ty rAL = cool::rotation_subroutine::asin<Ty, _func_impl_number>(sinAL); // rAL
-		Ty cosALinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::cos<Ty, _func_impl_number>(rAL);
-		*v2_azimuth_altitude_angles_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rAZ
-			cosALinv * (*v3_direction_ptr * *v3_lateral_dir_ptr + *(v3_direction_ptr + 1) * *(v3_lateral_dir_ptr + 1) + *(v3_direction_ptr + 2) * *(v3_lateral_dir_ptr + 2)),
-			cosALinv * (*v3_direction_ptr * *v3_front_dir_ptr + *(v3_direction_ptr + 1) * *(v3_front_dir_ptr + 1) + *(v3_direction_ptr + 2) * *(v3_front_dir_ptr + 2))
-		);
-		*(v2_azimuth_altitude_angles_ptr + 1) = rAL;
-
-		return cool::rotation_status::regular;
-	}
-	else
-	{
-		*v2_azimuth_altitude_angles_ptr = azimuth_angle_if_singular; // rAZ
-		*(v2_azimuth_altitude_angles_ptr + 1) = (sinAL < static_cast<Ty>(0)) ? // rAL
-			cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>()
-			: cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>();
-
-		return cool::rotation_status::singular;
-	}
-}
-
-template <class Ty, int _func_impl_number>
-inline cool::rotation_status cool::direction<Ty, _func_impl_number>::get_angles(
+inline cool::rotation_status cool::direction3d<Ty, _func_impl_number>::get_angles(
 	Ty* v2_azimuth_altitude_angles_ptr,
 	const Ty* v3_direction_ptr,
 	const Ty* v3_front_dir_ptr,
@@ -2061,6 +2105,49 @@ inline cool::rotation_status cool::direction<Ty, _func_impl_number>::get_angles(
 		*v2_azimuth_altitude_angles_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rAZ
 			cosALinv * (direction[0] * *v3_lateral_dir_ptr + direction[1] * *(v3_lateral_dir_ptr + 1) + direction[2] * *(v3_lateral_dir_ptr + 2)),
 			cosALinv * (direction[0] * *v3_front_dir_ptr + direction[1] * *(v3_front_dir_ptr + 1) + direction[2] * *(v3_front_dir_ptr + 2))
+		);
+		*(v2_azimuth_altitude_angles_ptr + 1) = rAL;
+
+		return cool::rotation_status::regular;
+	}
+	else
+	{
+		*v2_azimuth_altitude_angles_ptr = azimuth_angle_if_singular; // rAZ
+		*(v2_azimuth_altitude_angles_ptr + 1) = (sinAL < static_cast<Ty>(0)) ? // rAL
+			cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>()
+			: cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>();
+
+		return cool::rotation_status::singular;
+	}
+}
+
+template <class Ty, int _func_impl_number>
+inline cool::rotation_status cool::direction3d<Ty, _func_impl_number>::get_angles(
+	Ty* v2_azimuth_altitude_angles_ptr,
+	const Ty* v3_direction_ptr,
+	const Ty* v3_front_dir_ptr,
+	const Ty* v3_lateral_dir_ptr,
+	const Ty* v3_up_dir_ptr,
+	cool::no_direction_norm_t,
+	Ty altitude_angle_tol,
+	Ty azimuth_angle_if_singular) noexcept
+{
+	constexpr Ty coeff_temp = cool::rotation_subroutine::pi<Ty, _func_impl_number>()
+		/ cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+	constexpr Ty angle_tol_coeff = cool::rotation_subroutine::half<Ty, _func_impl_number>() * (coeff_temp * coeff_temp);
+
+	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (altitude_angle_tol * altitude_angle_tol);
+
+	Ty sinAL = *v3_direction_ptr * *v3_up_dir_ptr + *(v3_direction_ptr + 1) * *(v3_up_dir_ptr + 1) + *(v3_direction_ptr + 2) * *(v3_up_dir_ptr + 2);
+
+	if (-bound < sinAL && sinAL < bound)
+	{
+		Ty rAL = cool::rotation_subroutine::asin<Ty, _func_impl_number>(sinAL); // rAL
+		Ty cosALinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
+			/ cool::rotation_subroutine::cos<Ty, _func_impl_number>(rAL);
+		*v2_azimuth_altitude_angles_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rAZ
+			cosALinv * (*v3_direction_ptr * *v3_lateral_dir_ptr + *(v3_direction_ptr + 1) * *(v3_lateral_dir_ptr + 1) + *(v3_direction_ptr + 2) * *(v3_lateral_dir_ptr + 2)),
+			cosALinv * (*v3_direction_ptr * *v3_front_dir_ptr + *(v3_direction_ptr + 1) * *(v3_front_dir_ptr + 1) + *(v3_direction_ptr + 2) * *(v3_front_dir_ptr + 2))
 		);
 		*(v2_azimuth_altitude_angles_ptr + 1) = rAL;
 
