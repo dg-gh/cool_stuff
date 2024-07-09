@@ -322,13 +322,6 @@ namespace cool
 			const Ty* v2_direction_ptr,
 			const Ty* v2_front_dir_ptr,
 			const Ty* v2_lateral_dir_ptr) noexcept;
-
-		static inline void get_angle(
-			Ty* angle_ptr,
-			const Ty* v2_direction_ptr,
-			const Ty* v2_front_dir_ptr,
-			const Ty* v2_lateral_dir_ptr,
-			cool::no_direction_norm_t) noexcept;
 	};
 
 
@@ -1444,28 +1437,6 @@ inline void cool::direction2d<Ty, _func_impl_number>::get_angle(
 	*angle_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>(sinA, cosA);
 }
 
-template <class Ty, int _func_impl_number>
-inline void cool::direction2d<Ty, _func_impl_number>::get_angle(
-	Ty* angle_ptr,
-	const Ty* v2_direction_ptr,
-	const Ty* v2_front_dir_ptr,
-	const Ty* v2_lateral_dir_ptr,
-	cool::no_direction_norm_t) noexcept
-{
-	Ty direction[2] = { *v2_direction_ptr, *(v2_direction_ptr + 1) };
-
-	{
-		Ty s = cool::rotation_subroutine::inv_sqrt<Ty, _func_impl_number>(
-			direction[0] * direction[0] + direction[1] * direction[1]);
-		direction[0] *= s; direction[1] *= s;
-	}
-
-	Ty cosA = direction[0] * *v2_front_dir_ptr + direction[1] * *(v2_front_dir_ptr + 1);
-	Ty sinA = direction[0] * *v2_lateral_dir_ptr + direction[1] * *(v2_lateral_dir_ptr + 1);
-
-	*angle_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>(sinA, cosA);
-}
-
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline void cool::rotation_axis_angle<Ty, _dim_padded, _layout, _func_impl_number>::get_matrix(
@@ -1734,14 +1705,14 @@ inline cool::rotation_status cool::rotation_axis_angle<Ty, _dim_padded, _layout,
 	}
 	else
 	{
-		Ty axis_way_norm_inv = cool::rotation_subroutine::inv_sqrt<Ty, _func_impl_number>(
-			*v3_axis_way_ptr * *v3_axis_way_ptr
-			+ *(v3_axis_way_ptr + 1) * *(v3_axis_way_ptr + 1)
-			+ *(v3_axis_way_ptr + 2) * *(v3_axis_way_ptr + 2));
+		Ty axis_way[3] = { *v3_axis_way_ptr, *(v3_axis_way_ptr + 1), *(v3_axis_way_ptr + 2) };
 
-		*v3_axis_ptr = axis_way_norm_inv * *v3_axis_way_ptr;
-		*(v3_axis_ptr + 1) = axis_way_norm_inv * *(v3_axis_way_ptr + 1);
-		*(v3_axis_ptr + 2) = axis_way_norm_inv * *(v3_axis_way_ptr + 2);
+		Ty axis_way_norm_inv = cool::rotation_subroutine::inv_sqrt<Ty, _func_impl_number>(
+			axis_way[0] * axis_way[0] + axis_way[1] * axis_way[1] + axis_way[2] * axis_way[2]);
+
+		*v3_axis_ptr = axis_way_norm_inv * axis_way[0];
+		*(v3_axis_ptr + 1) = axis_way_norm_inv * axis_way[1];
+		*(v3_axis_ptr + 2) = axis_way_norm_inv * axis_way[2];
 		*angle_ptr = static_cast<Ty>(0);
 
 		return cool::rotation_status::singular;
@@ -2036,14 +2007,14 @@ inline cool::rotation_status cool::rotation_quaternion<Ty, _dim_padded, _layout,
 	}
 	else
 	{
-		Ty axis_way_norm_inv = cool::rotation_subroutine::inv_sqrt<Ty, _func_impl_number>(
-			*v3_axis_way_ptr * *v3_axis_way_ptr
-			+ *(v3_axis_way_ptr + 1) * *(v3_axis_way_ptr + 1)
-			+ *(v3_axis_way_ptr + 2) * *(v3_axis_way_ptr + 2));
+		Ty axis_way[3] = { *v3_axis_way_ptr, *(v3_axis_way_ptr + 1), *(v3_axis_way_ptr + 2) };
 
-		*v3_axis_ptr = axis_way_norm_inv * *v3_axis_way_ptr;
-		*(v3_axis_ptr + 1) = axis_way_norm_inv * *(v3_axis_way_ptr + 1);
-		*(v3_axis_ptr + 2) = axis_way_norm_inv * *(v3_axis_way_ptr + 2);
+		Ty axis_way_norm_inv = cool::rotation_subroutine::inv_sqrt<Ty, _func_impl_number>(
+			axis_way[0] * axis_way[0] + axis_way[1] * axis_way[1] + axis_way[2] * axis_way[2]);
+
+		*v3_axis_ptr = axis_way_norm_inv * axis_way[0];
+		*(v3_axis_ptr + 1) = axis_way_norm_inv * axis_way[1]
+		*(v3_axis_ptr + 2) = axis_way_norm_inv * axis_way[2];
 		*angle_ptr = static_cast<Ty>(0);
 
 		return cool::rotation_status::singular;
@@ -2066,9 +2037,13 @@ inline void cool::direction3d<Ty, _func_impl_number>::get_direction(
 
 	Ty coord[3] = { cosAZ * cosAL, sinAZ * cosAL, sinAL };
 
-	*v3_direction_ptr = coord[0] * *v3_front_dir_ptr + coord[1] * *v3_lateral_dir_ptr + coord[2] * *v3_up_dir_ptr;
-	*(v3_direction_ptr + 1) = coord[0] * *(v3_front_dir_ptr + 1) + coord[1] * *(v3_lateral_dir_ptr + 1) + coord[2] * *(v3_up_dir_ptr + 1);
-	*(v3_direction_ptr + 2) = coord[0] * *(v3_front_dir_ptr + 2) + coord[1] * *(v3_lateral_dir_ptr + 2) + coord[2] * *(v3_up_dir_ptr + 2);
+	Ty front_dir[3] = { *v3_front_dir_ptr, *(v3_front_dir_ptr + 1), *(v3_front_dir_ptr + 2) };
+	Ty lateral_dir[3] = { *v3_lateral_dir_ptr, *(v3_lateral_dir_ptr + 1), *(v3_lateral_dir_ptr + 2) };
+	Ty up_dir[3] = { *v3_up_dir_ptr, *(v3_up_dir_ptr + 1), *(v3_up_dir_ptr + 2) };
+
+	*v3_direction_ptr = coord[0] * front_dir[0] + coord[1] * lateral_dir[0] + coord[2] * up_dir[0];
+	*(v3_direction_ptr + 1) = coord[0] * front_dir[1] + coord[1] * lateral_dir[1] + coord[2] * up_dir[1];
+	*(v3_direction_ptr + 2) = coord[0] * front_dir[2] + coord[1] * lateral_dir[2] + coord[2] * up_dir[2];
 }
 
 template <class Ty, int _func_impl_number>
