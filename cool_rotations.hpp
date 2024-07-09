@@ -2948,14 +2948,12 @@ inline cool::rotation_status cool::rotationXYZ<Ty, _dim_padded, _layout, _func_i
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i02) && *(m3x3_rotation_ptr + _index_data::i02) < bound)
 	{
 		Ty rY = cool::rotation_subroutine::asin<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i02)); // rY
-		Ty cosYinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::cos<Ty, _func_impl_number>(rY);
 		Ty rZ = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rZ
-			-cosYinv * *(m3x3_rotation_ptr + _index_data::i01),
-			cosYinv * *(m3x3_rotation_ptr + _index_data::i00));
+			-*(m3x3_rotation_ptr + _index_data::i01),
+			*(m3x3_rotation_ptr + _index_data::i00));
 		*v3_rXYZ_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rX
-			-cosYinv * *(m3x3_rotation_ptr + _index_data::i12),
-			cosYinv * *(m3x3_rotation_ptr + _index_data::i22));
+			-*(m3x3_rotation_ptr + _index_data::i12),
+			*(m3x3_rotation_ptr + _index_data::i22));
 		*(v3_rXYZ_ptr + 1) = rY;
 		*(v3_rXYZ_ptr + 2) = rZ;
 
@@ -3026,14 +3024,12 @@ inline cool::rotation_status cool::rotationXZY<Ty, _dim_padded, _layout, _func_i
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i01) && *(m3x3_rotation_ptr + _index_data::i01) < bound)
 	{
 		Ty rZ = -cool::rotation_subroutine::asin<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i01)); // rZ
-		Ty cosZinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::cos<Ty, _func_impl_number>(rZ);
 		Ty rY = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rY
-			cosZinv * *(m3x3_rotation_ptr + _index_data::i02),
-			cosZinv * *(m3x3_rotation_ptr + _index_data::i00));
+			*(m3x3_rotation_ptr + _index_data::i02),
+			*(m3x3_rotation_ptr + _index_data::i00));
 		*v3_rXZY_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rX
-			cosZinv * *(m3x3_rotation_ptr + _index_data::i21),
-			cosZinv * *(m3x3_rotation_ptr + _index_data::i11));
+			*(m3x3_rotation_ptr + _index_data::i21),
+			*(m3x3_rotation_ptr + _index_data::i11));
 		*(v3_rXZY_ptr + 1) = rZ;
 		*(v3_rXZY_ptr + 2) = rY;
 
@@ -3104,14 +3100,12 @@ inline cool::rotation_status cool::rotationYZX<Ty, _dim_padded, _layout, _func_i
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i10) && *(m3x3_rotation_ptr + _index_data::i10) < bound)
 	{
 		Ty rZ = cool::rotation_subroutine::asin<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i10)); // rZ
-		Ty cosZinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::cos<Ty, _func_impl_number>(rZ);
 		Ty rX = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rX
-			-cosZinv * *(m3x3_rotation_ptr + _index_data::i12),
-			cosZinv * *(m3x3_rotation_ptr + _index_data::i11));
+			-*(m3x3_rotation_ptr + _index_data::i12),
+			*(m3x3_rotation_ptr + _index_data::i11));
 		*v3_rYZX_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rY
-			-cosZinv * *(m3x3_rotation_ptr + _index_data::i20),
-			cosZinv * *(m3x3_rotation_ptr + _index_data::i00));
+			-*(m3x3_rotation_ptr + _index_data::i20),
+			*(m3x3_rotation_ptr + _index_data::i00));
 		*(v3_rYZX_ptr + 1) = rZ;
 		*(v3_rYZX_ptr + 2) = rX;
 
@@ -3182,14 +3176,12 @@ inline cool::rotation_status cool::rotationYXZ<Ty, _dim_padded, _layout, _func_i
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i12) && *(m3x3_rotation_ptr + _index_data::i12) < bound)
 	{
 		Ty rX = -cool::rotation_subroutine::asin<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i12)); // rX	
-		Ty cosXinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::cos<Ty, _func_impl_number>(rX);
 		Ty rZ = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rZ
-			cosXinv * *(m3x3_rotation_ptr + _index_data::i10),
-			cosXinv * *(m3x3_rotation_ptr + _index_data::i11));
+			*(m3x3_rotation_ptr + _index_data::i10),
+			*(m3x3_rotation_ptr + _index_data::i11));
 		*v3_rYXZ_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rY
-			cosXinv * *(m3x3_rotation_ptr + _index_data::i02),
-			cosXinv * *(m3x3_rotation_ptr + _index_data::i22));
+			*(m3x3_rotation_ptr + _index_data::i02),
+			*(m3x3_rotation_ptr + _index_data::i22));
 		*(v3_rYXZ_ptr + 1) = rX;
 		*(v3_rYXZ_ptr + 2) = rZ;
 
@@ -3260,14 +3252,12 @@ inline cool::rotation_status cool::rotationZXY<Ty, _dim_padded, _layout, _func_i
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i21) && *(m3x3_rotation_ptr + _index_data::i21) < bound)
 	{
 		Ty rX = cool::rotation_subroutine::asin<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i21)); // rX
-		Ty cosXinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::cos<Ty, _func_impl_number>(rX);
 		Ty rY = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rY
-			-cosXinv * *(m3x3_rotation_ptr + _index_data::i20),
-			cosXinv * *(m3x3_rotation_ptr + _index_data::i22));
+			-*(m3x3_rotation_ptr + _index_data::i20),
+			*(m3x3_rotation_ptr + _index_data::i22));
 		*v3_rZXY_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rZ
-			-cosXinv * *(m3x3_rotation_ptr + _index_data::i01),
-			cosXinv * *(m3x3_rotation_ptr + _index_data::i11));
+			-*(m3x3_rotation_ptr + _index_data::i01),
+			*(m3x3_rotation_ptr + _index_data::i11));
 		*(v3_rZXY_ptr + 1) = rX;
 		*(v3_rZXY_ptr + 2) = rY;
 
@@ -3338,14 +3328,12 @@ inline cool::rotation_status cool::rotationZYX<Ty, _dim_padded, _layout, _func_i
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i20) && *(m3x3_rotation_ptr + _index_data::i20) < bound)
 	{
 		Ty rY = -cool::rotation_subroutine::asin<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i20)); // rY
-		Ty cosYinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::cos<Ty, _func_impl_number>(rY);
 		Ty rX = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rX
-			cosYinv * *(m3x3_rotation_ptr + _index_data::i21),
-			cosYinv * *(m3x3_rotation_ptr + _index_data::i22));
+			*(m3x3_rotation_ptr + _index_data::i21),
+			*(m3x3_rotation_ptr + _index_data::i22));
 		*v3_rZYX_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rZ
-			cosYinv * *(m3x3_rotation_ptr + _index_data::i10),
-			cosYinv * *(m3x3_rotation_ptr + _index_data::i00));
+			*(m3x3_rotation_ptr + _index_data::i10),
+			*(m3x3_rotation_ptr + _index_data::i00));
 		*(v3_rZYX_ptr + 1) = rY;
 		*(v3_rZYX_ptr + 2) = rX;
 
@@ -3415,17 +3403,17 @@ inline cool::rotation_status cool::rotationXYX2<Ty, _dim_padded, _layout, _func_
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i00) && *(m3x3_rotation_ptr + _index_data::i00) < bound)
 	{
-		Ty rY = cool::rotation_subroutine::acos<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i00));
-		rY = (*(m3x3_rotation_ptr + _index_data::i02) < static_cast<Ty>(0)) ? -rY : rY; // rY	
-		Ty sinYinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::sin<Ty, _func_impl_number>(rY);
+		Ty rYabs = cool::rotation_subroutine::acos<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i00)); // rY
+		Ty rYsgn = (*(m3x3_rotation_ptr + _index_data::i02) < static_cast<Ty>(0)) ?
+			cool::rotation_subroutine::minus_one<Ty, _func_impl_number>()
+			: cool::rotation_subroutine::one<Ty, _func_impl_number>();
 		Ty rX2 = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rX2
-			sinYinv * *(m3x3_rotation_ptr + _index_data::i01),
-			sinYinv * *(m3x3_rotation_ptr + _index_data::i02));
+			rYsgn * *(m3x3_rotation_ptr + _index_data::i01),
+			rYsgn * *(m3x3_rotation_ptr + _index_data::i02));
 		*v3_rXYX2_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rX
-			sinYinv * *(m3x3_rotation_ptr + _index_data::i10),
-			-sinYinv * *(m3x3_rotation_ptr + _index_data::i20));
-		*(v3_rXYX2_ptr + 1) = rY;
+			rYsgn * *(m3x3_rotation_ptr + _index_data::i10),
+			-rYsgn * *(m3x3_rotation_ptr + _index_data::i20));
+		*(v3_rXYX2_ptr + 1) = rYsgn * rYabs;
 		*(v3_rXYX2_ptr + 2) = rX2;
 
 		return cool::rotation_status::regular;
@@ -3494,17 +3482,17 @@ inline cool::rotation_status cool::rotationXZX2<Ty, _dim_padded, _layout, _func_
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i00) && *(m3x3_rotation_ptr + _index_data::i00) < bound)
 	{
-		Ty rZ = cool::rotation_subroutine::acos<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i00));
-		rZ = (*(m3x3_rotation_ptr + _index_data::i01) < static_cast<Ty>(0)) ? rZ : -rZ; // rZ
-		Ty sinZinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::sin<Ty, _func_impl_number>(rZ);
+		Ty rZabs = cool::rotation_subroutine::acos<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i00)); // rZ
+		Ty rZsgn = (*(m3x3_rotation_ptr + _index_data::i01) < static_cast<Ty>(0)) ?
+			cool::rotation_subroutine::one<Ty, _func_impl_number>()
+			: cool::rotation_subroutine::minus_one<Ty, _func_impl_number>();
 		Ty rX2 = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rX2
-			sinZinv * *(m3x3_rotation_ptr + _index_data::i02),
-			-sinZinv * *(m3x3_rotation_ptr + _index_data::i01));
+			rZsgn * *(m3x3_rotation_ptr + _index_data::i02),
+			-rZsgn * *(m3x3_rotation_ptr + _index_data::i01));
 		*v3_rXZX2_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rX
-			sinZinv * *(m3x3_rotation_ptr + _index_data::i20),
-			sinZinv * *(m3x3_rotation_ptr + _index_data::i10));
-		*(v3_rXZX2_ptr + 1) = rZ;
+			rZsgn * *(m3x3_rotation_ptr + _index_data::i20),
+			rZsgn * *(m3x3_rotation_ptr + _index_data::i10));
+		*(v3_rXZX2_ptr + 1) = rZsgn * rZabs;
 		*(v3_rXZX2_ptr + 2) = rX2;
 
 		return cool::rotation_status::regular;
@@ -3573,17 +3561,17 @@ inline cool::rotation_status cool::rotationYZY2<Ty, _dim_padded, _layout, _func_
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i11) && *(m3x3_rotation_ptr + _index_data::i11) < bound)
 	{
-		Ty rZ = cool::rotation_subroutine::acos<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i11));
-		rZ = (*(m3x3_rotation_ptr + _index_data::i10) < static_cast<Ty>(0)) ? -rZ : rZ; // rZ
-		Ty sinZinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::sin<Ty, _func_impl_number>(rZ);
+		Ty rZabs = cool::rotation_subroutine::acos<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i11)); // rZ
+		Ty rZsgn = (*(m3x3_rotation_ptr + _index_data::i10) < static_cast<Ty>(0)) ? 
+			cool::rotation_subroutine::minus_one<Ty, _func_impl_number>()
+			: cool::rotation_subroutine::one<Ty, _func_impl_number>();
 		Ty rY2 = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rY2
-			sinZinv * *(m3x3_rotation_ptr + _index_data::i12),
-			sinZinv * *(m3x3_rotation_ptr + _index_data::i10));
+			rZsgn * *(m3x3_rotation_ptr + _index_data::i12),
+			rZsgn * *(m3x3_rotation_ptr + _index_data::i10));
 		*v3_rYZY2_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rY
-			sinZinv * *(m3x3_rotation_ptr + _index_data::i21),
-			-sinZinv * *(m3x3_rotation_ptr + _index_data::i01));
-		*(v3_rYZY2_ptr + 1) = rZ;
+			rZsgn * *(m3x3_rotation_ptr + _index_data::i21),
+			-rZsgn * *(m3x3_rotation_ptr + _index_data::i01));
+		*(v3_rYZY2_ptr + 1) = rZsgn * rZabs;
 		*(v3_rYZY2_ptr + 2) = rY2;
 
 		return cool::rotation_status::regular;
@@ -3652,17 +3640,17 @@ inline cool::rotation_status cool::rotationYXY2<Ty, _dim_padded, _layout, _func_
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i11) && *(m3x3_rotation_ptr + _index_data::i11) < bound)
 	{
-		Ty rX = cool::rotation_subroutine::acos<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i11));
-		rX = (*(m3x3_rotation_ptr + _index_data::i12) < static_cast<Ty>(0)) ? rX : -rX; // rX
-		Ty sinXinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::sin<Ty, _func_impl_number>(rX);
+		Ty rXabs = cool::rotation_subroutine::acos<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i11)); // rX
+		Ty rXsgn = (*(m3x3_rotation_ptr + _index_data::i12) < static_cast<Ty>(0)) ?
+			cool::rotation_subroutine::one<Ty, _func_impl_number>()
+			: cool::rotation_subroutine::minus_one<Ty, _func_impl_number>();
 		Ty rY2 = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rY2
-			sinXinv * *(m3x3_rotation_ptr + _index_data::i10),
-			-sinXinv * *(m3x3_rotation_ptr + _index_data::i12));
+			rXsgn * *(m3x3_rotation_ptr + _index_data::i10),
+			-rXsgn * *(m3x3_rotation_ptr + _index_data::i12));
 		*v3_rYXY2_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rY
-			sinXinv * *(m3x3_rotation_ptr + _index_data::i01),
-			sinXinv * *(m3x3_rotation_ptr + _index_data::i21));
-		*(v3_rYXY2_ptr + 1) = rX;
+			rXsgn * *(m3x3_rotation_ptr + _index_data::i01),
+			rXsgn * *(m3x3_rotation_ptr + _index_data::i21));
+		*(v3_rYXY2_ptr + 1) = rXsgn * rXabs;
 		*(v3_rYXY2_ptr + 2) = rY2;
 
 		return cool::rotation_status::regular;
@@ -3731,17 +3719,17 @@ inline cool::rotation_status cool::rotationZXZ2<Ty, _dim_padded, _layout, _func_
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i22) && *(m3x3_rotation_ptr + _index_data::i22) < bound)
 	{
-		Ty rX = cool::rotation_subroutine::acos<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i22));
-		rX = (*(m3x3_rotation_ptr + _index_data::i21) < static_cast<Ty>(0)) ? -rX : rX; // rX
-		Ty sinXinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::sin<Ty, _func_impl_number>(rX);
+		Ty rXabs = cool::rotation_subroutine::acos<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i22)); // rX
+		Ty rXsgn = (*(m3x3_rotation_ptr + _index_data::i21) < static_cast<Ty>(0)) ?
+			cool::rotation_subroutine::minus_one<Ty, _func_impl_number>()
+			: cool::rotation_subroutine::one<Ty, _func_impl_number>();
 		Ty rZ2 = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rZ2
-			sinXinv * *(m3x3_rotation_ptr + _index_data::i20),
-			sinXinv * *(m3x3_rotation_ptr + _index_data::i21));
+			rXsgn * *(m3x3_rotation_ptr + _index_data::i20),
+			rXsgn * *(m3x3_rotation_ptr + _index_data::i21));
 		*v3_rZXZ2_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rZ
-			sinXinv * *(m3x3_rotation_ptr + _index_data::i02),
-			-sinXinv * *(m3x3_rotation_ptr + _index_data::i12));
-		*(v3_rZXZ2_ptr + 1) = rX;
+			rXsgn * *(m3x3_rotation_ptr + _index_data::i02),
+			-rXsgn * *(m3x3_rotation_ptr + _index_data::i12));
+		*(v3_rZXZ2_ptr + 1) = rXsgn * rXabs;
 		*(v3_rZXZ2_ptr + 2) = rZ2;
 
 		return cool::rotation_status::regular;
@@ -3810,17 +3798,17 @@ inline cool::rotation_status cool::rotationZYZ2<Ty, _dim_padded, _layout, _func_
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i22) && *(m3x3_rotation_ptr + _index_data::i22) < bound)
 	{
-		Ty rY = cool::rotation_subroutine::acos<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i22));
-		rY = (*(m3x3_rotation_ptr + _index_data::i20) < static_cast<Ty>(0)) ? rY : -rY; // rY
-		Ty sinYinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::sin<Ty, _func_impl_number>(rY);
+		Ty rYabs = cool::rotation_subroutine::acos<Ty, _func_impl_number>(*(m3x3_rotation_ptr + _index_data::i22)); // rY
+		Ty rYsgn = (*(m3x3_rotation_ptr + _index_data::i20) < static_cast<Ty>(0)) ?
+			cool::rotation_subroutine::one<Ty, _func_impl_number>()
+			: cool::rotation_subroutine::minus_one<Ty, _func_impl_number>();
 		Ty rZ2 = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rZ2
-			sinYinv * *(m3x3_rotation_ptr + _index_data::i21),
-			-sinYinv * *(m3x3_rotation_ptr + _index_data::i20));
+			rYsgn * *(m3x3_rotation_ptr + _index_data::i21),
+			-rYsgn * *(m3x3_rotation_ptr + _index_data::i20));
 		*v3_rZYZ2_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rZ
-			sinYinv * *(m3x3_rotation_ptr + _index_data::i12),
-			sinYinv * *(m3x3_rotation_ptr + _index_data::i02));
-		*(v3_rZYZ2_ptr + 1) = rY;
+			rYsgn * *(m3x3_rotation_ptr + _index_data::i12),
+			rYsgn * *(m3x3_rotation_ptr + _index_data::i02));
+		*(v3_rZYZ2_ptr + 1) = rYsgn * rYabs;
 		*(v3_rZYZ2_ptr + 2) = rZ2;
 
 		return cool::rotation_status::regular;

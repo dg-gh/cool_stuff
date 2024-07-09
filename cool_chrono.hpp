@@ -68,16 +68,16 @@ namespace cool
 #define xCOOL_DURATION_UNIT_ENUM
 	enum class duration_unit : std::size_t
 	{
-		s,
-		ms,
-		us,
-		ns,
+		s = 0,
+		ms = 1,
+		us = 2,
+		ns = 3,
 
-		min,
-		hour,
-		day,
+		min = 4,
+		hour = 5,
+		day = 6,
 
-		tick,
+		tick = 7,
 
 #ifdef COOL_DURATION_CUSTOM_UNIT0
 		COOL_DURATION_CUSTOM_UNIT0,
