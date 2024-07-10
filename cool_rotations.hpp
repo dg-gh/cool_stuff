@@ -339,6 +339,8 @@ namespace cool
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
 
+		static constexpr cool::rotation_type rotation_type = cool::rotation_type::AA;
+
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
 
@@ -366,6 +368,8 @@ namespace cool
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
+
+		static constexpr cool::rotation_type rotation_type = cool::rotation_type::Q;
 
 		static constexpr std::size_t dim_padded = _dim_padded;
 		static constexpr cool::matrix_layout layout = _layout;
