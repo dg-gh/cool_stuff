@@ -2074,14 +2074,11 @@ inline cool::rotation_status cool::direction3d<Ty, _func_impl_number>::get_angle
 
 	if (-bound < sinAL && sinAL < bound)
 	{
-		Ty rAL = cool::rotation_subroutine::asin<Ty, _func_impl_number>(sinAL); // rAL
-		Ty cosALinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::cos<Ty, _func_impl_number>(rAL);
 		*v2_azimuth_altitude_angles_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rAZ
-			cosALinv * (direction[0] * *v3_lateral_dir_ptr + direction[1] * *(v3_lateral_dir_ptr + 1) + direction[2] * *(v3_lateral_dir_ptr + 2)),
-			cosALinv * (direction[0] * *v3_front_dir_ptr + direction[1] * *(v3_front_dir_ptr + 1) + direction[2] * *(v3_front_dir_ptr + 2))
+			direction[0] * *v3_lateral_dir_ptr + direction[1] * *(v3_lateral_dir_ptr + 1) + direction[2] * *(v3_lateral_dir_ptr + 2),
+			direction[0] * *v3_front_dir_ptr + direction[1] * *(v3_front_dir_ptr + 1) + direction[2] * *(v3_front_dir_ptr + 2)
 		);
-		*(v2_azimuth_altitude_angles_ptr + 1) = rAL;
+		*(v2_azimuth_altitude_angles_ptr + 1) = cool::rotation_subroutine::asin<Ty, _func_impl_number>(sinAL); // rAL
 
 		return cool::rotation_status::regular;
 	}
@@ -2113,18 +2110,18 @@ inline cool::rotation_status cool::direction3d<Ty, _func_impl_number>::get_angle
 
 	Ty bound = cool::rotation_subroutine::one<Ty, _func_impl_number>() - angle_tol_coeff * (altitude_angle_tol * altitude_angle_tol);
 
-	Ty sinAL = *v3_direction_ptr * *v3_up_dir_ptr + *(v3_direction_ptr + 1) * *(v3_up_dir_ptr + 1) + *(v3_direction_ptr + 2) * *(v3_up_dir_ptr + 2);
+	Ty sinAL = *v3_direction_ptr * *v3_up_dir_ptr + *(v3_direction_ptr + 1) * *(v3_up_dir_ptr + 1)
+		+ *(v3_direction_ptr + 2) * *(v3_up_dir_ptr + 2);
 
 	if (-bound < sinAL && sinAL < bound)
 	{
-		Ty rAL = cool::rotation_subroutine::asin<Ty, _func_impl_number>(sinAL); // rAL
-		Ty cosALinv = cool::rotation_subroutine::one<Ty, _func_impl_number>()
-			/ cool::rotation_subroutine::cos<Ty, _func_impl_number>(rAL);
 		*v2_azimuth_altitude_angles_ptr = cool::rotation_subroutine::atan2<Ty, _func_impl_number>( // rAZ
-			cosALinv * (*v3_direction_ptr * *v3_lateral_dir_ptr + *(v3_direction_ptr + 1) * *(v3_lateral_dir_ptr + 1) + *(v3_direction_ptr + 2) * *(v3_lateral_dir_ptr + 2)),
-			cosALinv * (*v3_direction_ptr * *v3_front_dir_ptr + *(v3_direction_ptr + 1) * *(v3_front_dir_ptr + 1) + *(v3_direction_ptr + 2) * *(v3_front_dir_ptr + 2))
+			*v3_direction_ptr * *v3_lateral_dir_ptr + *(v3_direction_ptr + 1) * *(v3_lateral_dir_ptr + 1)
+			+ *(v3_direction_ptr + 2) * *(v3_lateral_dir_ptr + 2),
+			*v3_direction_ptr * *v3_front_dir_ptr + *(v3_direction_ptr + 1) * *(v3_front_dir_ptr + 1)
+			+ *(v3_direction_ptr + 2) * *(v3_front_dir_ptr + 2)
 		);
-		*(v2_azimuth_altitude_angles_ptr + 1) = rAL;
+		*(v2_azimuth_altitude_angles_ptr + 1) = cool::rotation_subroutine::asin<Ty, _func_impl_number>(sinAL); // rAL
 
 		return cool::rotation_status::regular;
 	}
