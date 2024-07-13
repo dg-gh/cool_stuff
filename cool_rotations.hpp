@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cmath>
+#include <cstring>
 
 
 namespace cool
@@ -321,11 +322,12 @@ namespace cool
 		template <std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 		cool::polymorphic_rotation2d<Ty>& operator=(cool::rotation2d<Ty, _dim_padded, _layout, _func_impl_number>) noexcept;
 
-		inline void get_matrix(Ty* m2x2_rotation_ptr, Ty angle) noexcept;
-		inline void get_matrix_inv(Ty* m2x2_rotation_ptr, Ty angle) noexcept;
-		inline void get_angle(Ty* angle_ptr, const Ty* m2x2_rotation_ptr) noexcept;
+		inline void get_matrix(Ty* m2x2_rotation_ptr, Ty angle) const noexcept;
+		inline void get_matrix_inv(Ty* m2x2_rotation_ptr, Ty angle) const noexcept;
+		inline void get_angle(Ty* angle_ptr, const Ty* m2x2_rotation_ptr) const noexcept;
 
-		inline Ty half_turn() noexcept;
+		inline Ty half_turn() const noexcept;
+		inline int func_impl_number() const noexcept;
 
 	private:
 
@@ -380,15 +382,16 @@ namespace cool
 			Ty* v2_direction_ptr,
 			Ty angle,
 			const Ty* v2_front_dir_ptr,
-			const Ty* v2_lateral_dir_ptr) noexcept;
+			const Ty* v2_lateral_dir_ptr) const noexcept;
 
 		inline void get_angle(
 			Ty* angle_ptr,
 			const Ty* v2_direction_ptr,
 			const Ty* v2_front_dir_ptr,
-			const Ty* v2_lateral_dir_ptr) noexcept;
+			const Ty* v2_lateral_dir_ptr) const noexcept;
 
-		inline Ty half_turn() noexcept;
+		inline Ty half_turn() const noexcept;
+		inline int func_impl_number() const noexcept;
 
 	private:
 
@@ -458,7 +461,9 @@ namespace cool
 		inline void get_matrix_inv(Ty* m3x3_rotation_ptr, const Ty* v4_coord_ptr) const noexcept;
 		inline cool::rotation_status get_coord(Ty* v4_coord_ptr, const Ty* m3x3_rotation_ptr,
 			Ty angle_tol = static_cast<Ty>(0), Ty angle_choice_if_singular = static_cast<Ty>(0)) const noexcept;
+
 		inline Ty half_turn() const noexcept;
+		inline int func_impl_number() const noexcept;
 
 	protected:
 
@@ -615,7 +620,7 @@ namespace cool
 			const Ty* angle,
 			const Ty* v3_front_dir_ptr,
 			const Ty* v3_lateral_dir_ptr,
-			const Ty* v3_up_dir_ptr) noexcept;
+			const Ty* v3_up_dir_ptr) const noexcept;
 
 		inline cool::rotation_status get_angles(
 			Ty* angle_ptr,
@@ -624,9 +629,10 @@ namespace cool
 			const Ty* v3_lateral_dir_ptr,
 			const Ty* v3_up_dir_ptr,
 			Ty altitude_angle_tol = static_cast<Ty>(0),
-			Ty azimuth_angle_if_singular = static_cast<Ty>(0)) noexcept;
+			Ty azimuth_angle_if_singular = static_cast<Ty>(0)) const noexcept;
 
-		inline Ty half_turn() noexcept;
+		inline Ty half_turn() const noexcept;
+		inline int func_impl_number() const noexcept;
 
 	private:
 
@@ -1566,6 +1572,51 @@ inline Ty cool::rotation_subroutine::inv_sqrt(Ty x) noexcept
 }
 
 
+inline constexpr std::size_t cool::rotation_type_as_index(cool::rotation_type _rotation_type) noexcept
+{
+	return static_cast<std::size_t>(static_cast<std::uint32_t>(_rotation_type) >> 16);
+}
+
+inline constexpr cool::rotation_type cool::index_as_rotation_type(std::size_t _index) noexcept
+{
+	switch (_index)
+	{
+
+	case 0: return cool::rotation_type::id; break;
+
+	case 1: return cool::rotation_type::X; break;
+	case 2: return cool::rotation_type::Y; break;
+	case 3: return cool::rotation_type::Z; break;
+
+	case 4: return cool::rotation_type::XY; break;
+	case 5: return cool::rotation_type::XZ; break;
+	case 6: return cool::rotation_type::YZ; break;
+	case 7: return cool::rotation_type::YX; break;
+	case 8: return cool::rotation_type::ZX; break;
+	case 9: return cool::rotation_type::ZY; break;
+
+	case 10: return cool::rotation_type::XYZ; break;
+	case 11: return cool::rotation_type::XZY; break;
+	case 12: return cool::rotation_type::YZX; break;
+	case 13: return cool::rotation_type::YXZ; break;
+	case 14: return cool::rotation_type::ZXY; break;
+	case 15: return cool::rotation_type::ZYX; break;
+
+	case 16: return cool::rotation_type::XYX2; break;
+	case 17: return cool::rotation_type::XZX2; break;
+	case 18: return cool::rotation_type::YZY2; break;
+	case 19: return cool::rotation_type::YXY2; break;
+	case 20: return cool::rotation_type::ZXZ2; break;
+	case 21: return cool::rotation_type::ZYZ2; break;
+
+	case 22: return cool::rotation_type::AA; break;
+	case 23: return cool::rotation_type::Q; break;
+
+	default: return cool::rotation_type::id; break;
+	}
+}
+
+
 namespace cool
 {
 	template <std::size_t _dim_padded, cool::matrix_layout _layout, std::size_t _dim_padded_min> class _rotation_matrix_index_data
@@ -1642,9 +1693,14 @@ cool::polymorphic_rotation2d<Ty>::polymorphic_rotation2d(cool::rotation2d<Ty, _d
 		{
 			cool::rotation2d<Ty, _dim_padded, _layout, _func_impl_number>::get_angle(dest_ptr, orig_ptr);
 		}
-		else
+		else if (param == 3)
 		{
 			*dest_ptr = cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+		}
+		else
+		{
+			int impl_number = _func_impl_number;
+			std::memcpy(dest_ptr, &impl_number, sizeof(int));
 		}
 	};
 }
@@ -1666,9 +1722,14 @@ cool::polymorphic_rotation2d<Ty>& cool::polymorphic_rotation2d<Ty>::operator=(co
 		{
 			cool::rotation2d<Ty, _dim_padded, _layout, _func_impl_number>::get_angle(dest_ptr, orig_ptr);
 		}
-		else
+		else if (param == 3)
 		{
 			*dest_ptr = cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+		}
+		else
+		{
+			int impl_number = _func_impl_number;
+			std::memcpy(dest_ptr, &impl_number, sizeof(int));
 		}
 	};
 
@@ -1676,28 +1737,38 @@ cool::polymorphic_rotation2d<Ty>& cool::polymorphic_rotation2d<Ty>::operator=(co
 }
 
 template <class Ty>
-inline void cool::polymorphic_rotation2d<Ty>::get_matrix(Ty* m2x2_rotation_ptr, Ty angle) noexcept
+inline void cool::polymorphic_rotation2d<Ty>::get_matrix(Ty* m2x2_rotation_ptr, Ty angle) const noexcept
 {
 	m_rotation_functions(m2x2_rotation_ptr, &angle, 0);
 }
 
 template <class Ty>
-inline void cool::polymorphic_rotation2d<Ty>::get_matrix_inv(Ty* m2x2_rotation_ptr, Ty angle) noexcept
+inline void cool::polymorphic_rotation2d<Ty>::get_matrix_inv(Ty* m2x2_rotation_ptr, Ty angle) const noexcept
 {
 	m_rotation_functions(m2x2_rotation_ptr, &angle, 1);
 }
 
 template <class Ty>
-inline void cool::polymorphic_rotation2d<Ty>::get_angle(Ty* angle_ptr, const Ty* m2x2_rotation_ptr) noexcept
+inline void cool::polymorphic_rotation2d<Ty>::get_angle(Ty* angle_ptr, const Ty* m2x2_rotation_ptr) const noexcept
 {
 	m_rotation_functions(angle_ptr, m2x2_rotation_ptr, 2);
 }
 
 template <class Ty>
-inline Ty cool::polymorphic_rotation2d<Ty>::half_turn() noexcept
+inline Ty cool::polymorphic_rotation2d<Ty>::half_turn() const noexcept
 {
 	Ty ret;
 	m_rotation_functions(&ret, nullptr, 3);
+	return ret;
+}
+
+template <class Ty>
+inline int cool::polymorphic_rotation2d<Ty>::func_impl_number() const noexcept
+{
+	alignas(alignof(Ty)) unsigned char buf[sizeof(int)];
+	m_rotation_functions(reinterpret_cast<Ty*>(&buf), nullptr, 4);
+	int ret;
+	std::memcpy(&ret, static_cast<unsigned char*>(buf), sizeof(int));
 	return ret;
 }
 
@@ -1746,9 +1817,14 @@ cool::polymorphic_direction2d<Ty>::polymorphic_direction2d(cool::direction2d<Ty,
 		{
 			cool::direction2d<Ty, _func_impl_number>::get_angle(dest_ptr, orig_ptr, v2_front_dir_ptr, v2_lateral_dir_ptr);
 		}
-		else
+		else if (param == 2)
 		{
 			*dest_ptr = cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+		}
+		else
+		{
+			int impl_number = _func_impl_number;
+			std::memcpy(dest_ptr, &impl_number, sizeof(int));
 		}
 	};
 }
@@ -1766,9 +1842,14 @@ cool::polymorphic_direction2d<Ty>& cool::polymorphic_direction2d<Ty>::operator=(
 		{
 			cool::direction2d<Ty, _func_impl_number>::get_angle(dest_ptr, orig_ptr, v2_front_dir_ptr, v2_lateral_dir_ptr);
 		}
-		else
+		else if (param == 2)
 		{
 			*dest_ptr = cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+		}
+		else
+		{
+			int impl_number = _func_impl_number;
+			std::memcpy(dest_ptr, &impl_number, sizeof(int));
 		}
 	};
 
@@ -1780,7 +1861,7 @@ inline void cool::polymorphic_direction2d<Ty>::get_direction(
 	Ty* v2_direction_ptr,
 	Ty angle,
 	const Ty* v2_front_dir_ptr,
-	const Ty* v2_lateral_dir_ptr) noexcept
+	const Ty* v2_lateral_dir_ptr) const noexcept
 {
 	m_direction_functions(v2_direction_ptr, &angle, v2_front_dir_ptr, v2_lateral_dir_ptr, 0);
 }
@@ -1790,16 +1871,26 @@ inline void cool::polymorphic_direction2d<Ty>::get_angle(
 	Ty* angle_ptr,
 	const Ty* v2_direction_ptr,
 	const Ty* v2_front_dir_ptr,
-	const Ty* v2_lateral_dir_ptr) noexcept
+	const Ty* v2_lateral_dir_ptr) const noexcept
 {
 	m_direction_functions(angle_ptr, v2_direction_ptr, v2_front_dir_ptr, v2_lateral_dir_ptr, 1);
 }
 
 template <class Ty>
-inline Ty cool::polymorphic_direction2d<Ty>::half_turn() noexcept
+inline Ty cool::polymorphic_direction2d<Ty>::half_turn() const noexcept
 {
 	Ty ret;
 	m_direction_functions(&ret, nullptr, nullptr, nullptr, 2);
+	return ret;
+}
+
+template <class Ty>
+inline int cool::polymorphic_direction2d<Ty>::func_impl_number() const noexcept
+{
+	alignas(alignof(Ty)) unsigned char buf[sizeof(int)];
+	m_direction_functions(reinterpret_cast<Ty*>(&buf), nullptr, nullptr, nullptr, 3);
+	int ret;
+	std::memcpy(&ret, static_cast<unsigned char*>(buf), sizeof(int));
 	return ret;
 }
 
@@ -1900,9 +1991,15 @@ cool::rotation3d<Ty, _dim_padded, _layout, _func_impl_number>::set_rotation_type
 			{
 				return cool::rotation_axis_angle<Ty, _dim_padded, _layout, _func_impl_number>::get_axis_angle(dest_ptr, dest_ptr + 3, orig_ptr, angle_tol);
 			}
-			else
+			else if (param == 3)
 			{
 				*dest_ptr = cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+				return cool::rotation_status::regular;
+			}
+			else
+			{
+				int impl_number = _func_impl_number;
+				std::memcpy(dest_ptr, &impl_number, sizeof(int));
 				return cool::rotation_status::regular;
 			}
 		};
@@ -1928,9 +2025,15 @@ cool::rotation3d<Ty, _dim_padded, _layout, _func_impl_number>::set_rotation_type
 				cool::rotation_quaternion<Ty, _dim_padded, _layout, _func_impl_number>::get_quaternion_from_matrix(dest_ptr, orig_ptr);
 				return cool::rotation_status::regular;
 			}
-			else
+			else if (param == 3)
 			{
 				*dest_ptr = cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+				return cool::rotation_status::regular;
+			}
+			else
+			{
+				int impl_number = _func_impl_number;
+				std::memcpy(dest_ptr, &impl_number, sizeof(int));
 				return cool::rotation_status::regular;
 			}
 		};
@@ -2011,7 +2114,15 @@ inline cool::rotation_status cool::rotation3d<Ty, _dim_padded, _layout, _func_im
 	}
 	else if (param > 2)
 	{
-		*dest_ptr = cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+		if (param == 3)
+		{
+			*dest_ptr = cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+		}
+		else
+		{
+			int impl_number = _func_impl_number;
+			std::memcpy(dest_ptr, &impl_number, sizeof(int));
+		}
 	}
 
 	return cool::rotation_status::regular;
@@ -2119,6 +2230,16 @@ inline Ty cool::polymorphic_rotation3d<Ty>::half_turn() const noexcept
 {
 	Ty ret;
 	this->m_rotation_functions(&ret, nullptr, static_cast<Ty>(0), static_cast<Ty>(0), 3);
+	return ret;
+}
+
+template <class Ty>
+inline int cool::polymorphic_rotation3d<Ty>::func_impl_number() const noexcept
+{
+	alignas(alignof(Ty)) unsigned char buf[sizeof(int)];
+	this->m_rotation_functions(reinterpret_cast<Ty*>(&buf), nullptr, static_cast<Ty>(0), static_cast<Ty>(0), 4);
+	int ret;
+	std::memcpy(&ret, static_cast<unsigned char*>(buf), sizeof(int));
 	return ret;
 }
 
@@ -2847,9 +2968,15 @@ cool::polymorphic_direction3d<Ty>::polymorphic_direction3d(cool::direction3d<Ty,
 			return cool::direction3d<Ty, _func_impl_number>::get_angles(dest_ptr, orig_ptr, v3_front_dir_ptr, v3_lateral_dir_ptr, v3_up_dir_ptr,
 				altitude_angle_tol, azimuth_angle_if_singular);
 		}
-		else
+		else if (param == 2)
 		{
 			*dest_ptr = cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+			return cool::rotation_status::regular;
+		}
+		else
+		{
+			int impl_number = _func_impl_number;
+			std::memcpy(dest_ptr, &impl_number, sizeof(int));
 			return cool::rotation_status::regular;
 		}
 	};
@@ -2871,9 +2998,15 @@ cool::polymorphic_direction3d<Ty>& cool::polymorphic_direction3d<Ty>::operator=(
 			return cool::direction3d<Ty, _func_impl_number>::get_angles(dest_ptr, orig_ptr, v3_front_dir_ptr, v3_lateral_dir_ptr, v3_up_dir_ptr,
 				altitude_angle_tol, azimuth_angle_if_singular);
 		}
-		else
+		else if (param == 2)
 		{
 			*dest_ptr = cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+			return cool::rotation_status::regular;
+		}
+		else
+		{
+			int impl_number = _func_impl_number;
+			std::memcpy(dest_ptr, &impl_number, sizeof(int));
 			return cool::rotation_status::regular;
 		}
 	};
@@ -2893,7 +3026,7 @@ inline void cool::polymorphic_direction3d<Ty>::get_direction(
 	const Ty* v2_azimuth_altitude_angles_ptr,
 	const Ty* v3_front_dir_ptr,
 	const Ty* v3_lateral_dir_ptr,
-	const Ty* v3_up_dir_ptr) noexcept
+	const Ty* v3_up_dir_ptr) const noexcept
 {
 	m_direction_functions(v3_direction_ptr, v2_azimuth_altitude_angles_ptr,	v3_front_dir_ptr, v3_lateral_dir_ptr, v3_up_dir_ptr,
 		static_cast<Ty>(0), static_cast<Ty>(0), 0);
@@ -2907,63 +3040,28 @@ inline cool::rotation_status cool::polymorphic_direction3d<Ty>::get_angles(
 	const Ty* v3_lateral_dir_ptr,
 	const Ty* v3_up_dir_ptr,
 	Ty altitude_angle_tol,
-	Ty azimuth_angle_if_singular) noexcept
+	Ty azimuth_angle_if_singular) const noexcept
 {
 	return m_direction_functions(v2_azimuth_altitude_angles_ptr, v3_direction_ptr, v3_front_dir_ptr, v3_lateral_dir_ptr, v3_up_dir_ptr,
 		altitude_angle_tol, azimuth_angle_if_singular, 1);
 }
 
 template <class Ty>
-inline Ty cool::polymorphic_direction3d<Ty>::half_turn() noexcept
+inline Ty cool::polymorphic_direction3d<Ty>::half_turn() const noexcept
 {
 	Ty ret;
 	m_direction_functions(&ret, nullptr, nullptr, nullptr, nullptr, static_cast<Ty>(0), static_cast<Ty>(0), 2);
 	return ret;
 }
 
-
-inline constexpr std::size_t cool::rotation_type_as_index(cool::rotation_type _rotation_type) noexcept
+template <class Ty>
+inline int cool::polymorphic_direction3d<Ty>::func_impl_number() const noexcept
 {
-	return static_cast<std::size_t>(static_cast<std::uint32_t>(_rotation_type) >> 16);
-}
-
-inline constexpr cool::rotation_type cool::index_as_rotation_type(std::size_t _index) noexcept
-{
-	switch (_index)
-	{
-
-	case 0: return cool::rotation_type::id; break;
-
-	case 1: return cool::rotation_type::X; break;
-	case 2: return cool::rotation_type::Y; break;
-	case 3: return cool::rotation_type::Z; break;
-
-	case 4: return cool::rotation_type::XY; break;
-	case 5: return cool::rotation_type::XZ; break;
-	case 6: return cool::rotation_type::YZ; break;
-	case 7: return cool::rotation_type::YX; break;
-	case 8: return cool::rotation_type::ZX; break;
-	case 9: return cool::rotation_type::ZY; break;
-
-	case 10: return cool::rotation_type::XYZ; break;
-	case 11: return cool::rotation_type::XZY; break;
-	case 12: return cool::rotation_type::YZX; break;
-	case 13: return cool::rotation_type::YXZ; break;
-	case 14: return cool::rotation_type::ZXY; break;
-	case 15: return cool::rotation_type::ZYX; break;
-
-	case 16: return cool::rotation_type::XYX2; break;
-	case 17: return cool::rotation_type::XZX2; break;
-	case 18: return cool::rotation_type::YZY2; break;
-	case 19: return cool::rotation_type::YXY2; break;
-	case 20: return cool::rotation_type::ZXZ2; break;
-	case 21: return cool::rotation_type::ZYZ2; break;
-
-	case 22: return cool::rotation_type::AA; break;
-	case 23: return cool::rotation_type::Q; break;
-
-	default: return cool::rotation_type::id; break;
-	}
+	alignas(alignof(Ty)) unsigned char buf[sizeof(int)];
+	m_direction_functions(reinterpret_cast<Ty*>(&buf), nullptr, nullptr, nullptr, nullptr, static_cast<Ty>(0), static_cast<Ty>(0), 3);
+	int ret;
+	std::memcpy(&ret, static_cast<unsigned char*>(buf), sizeof(int));
+	return ret;
 }
 
 
@@ -4515,9 +4613,15 @@ inline cool::rotation_status cool::_rotation3d_functions<rotation3d_Ty>::rotatio
 	{
 		return rotation3d_Ty::get_angles(dest_ptr, orig_ptr, angle_tol, angle_choice_if_singular);
 	}
-	else
+	else if (param == 3)
 	{
 		*dest_ptr = rotation3d_Ty::half_turn;
+		return cool::rotation_status::regular;
+	}
+	else
+	{
+		int impl_number = rotation3d_Ty::func_impl_number;
+		std::memcpy(dest_ptr, &impl_number, sizeof(int));
 		return cool::rotation_status::regular;
 	}
 }
