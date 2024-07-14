@@ -8201,24 +8201,40 @@ template <class stream_Ty, class Ty> inline void cool::print_matrix(stream_Ty& o
 {
 	out_stream << ">>>         [ size : " << _rows << " x " << _cols << " ]\n";
 
-	if (_rows_blk == 0) { _rows_blk = _rows; }
+	if (_rows_blk == 0)
+	{
+		_rows_blk = _rows;
+	}
 
-	if (_cols_blk == 0) { _cols_blk = _cols; }
+	bool cols_in_multiple_blk = false;
+
+	if (_cols_blk == 0)
+	{
+		_cols_blk = _cols;
+	}
+	else if (_cols_blk < _cols)
+	{
+		cols_in_multiple_blk = true;
+	}
 
 	for (std::size_t iblk = 0; iblk < _rows; iblk += _rows_blk)
 	{
 		std::size_t imax = (iblk + _rows_blk < _rows) ? iblk + _rows_blk : _rows;
+
 		for (std::size_t jblk = 0; jblk < _cols; jblk += _cols_blk)
 		{
 			std::size_t jmax = (jblk + _cols_blk < _cols) ? jblk + _cols_blk : _cols;
 
 			out_stream << "            ";
 
-			for (std::size_t j = jblk; j < jmax; j++)
+			if (cols_in_multiple_blk || iblk == 0)
 			{
-				out_stream << "col ";
-				out_stream.fill(' '); out_stream.width(_cell_width);
-				out_stream << std::left << j;
+				for (std::size_t j = jblk; j < jmax; j++)
+				{
+					out_stream << "col ";
+					out_stream.fill(' '); out_stream.width(_cell_width);
+					out_stream << std::left << j;
+				}
 			}
 
 			for (std::size_t i = iblk; i < imax; i++)
@@ -8237,8 +8253,21 @@ template <class stream_Ty, class Ty> inline void cool::print_matrix(stream_Ty& o
 				}
 			}
 
-			out_stream << '\n' << std::endl;
+			if (cols_in_multiple_blk)
+			{
+				out_stream << '\n';
+			}
 		}
+
+		if (cols_in_multiple_blk && (iblk + _rows_blk < _rows))
+		{
+			out_stream << '\n';
+		}
+	}
+
+	if (!cols_in_multiple_blk)
+	{
+		out_stream << '\n';
 	}
 }
 
