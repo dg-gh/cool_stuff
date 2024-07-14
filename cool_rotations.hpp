@@ -424,7 +424,7 @@ namespace cool
 		inline cool::rotation3d<Ty, _dim_padded, _layout, _func_impl_number>& operator=(cool::rotation_type new_rotation_type) noexcept;
 		inline cool::rotation3d<Ty, _dim_padded, _layout, _func_impl_number>& set_rotation_type(cool::rotation_type new_rotation_type) noexcept;
 
-		inline Ty singular_angle(std::size_t _pole) const noexcept;
+		inline Ty singular_angle(std::size_t pole) const noexcept;
 
 		inline Ty required_epsilon(Ty angle_tol) noexcept;
 
@@ -2046,24 +2046,24 @@ cool::rotation3d<Ty, _dim_padded, _layout, _func_impl_number>::set_rotation_type
 }
 
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
-inline Ty cool::rotation3d<Ty, _dim_padded, _layout, _func_impl_number>::singular_angle(std::size_t _pole) const noexcept
+inline Ty cool::rotation3d<Ty, _dim_padded, _layout, _func_impl_number>::singular_angle(std::size_t pole) const noexcept
 {
-	constexpr std::uint32_t limit3 = cool::rotation_type_as_index(cool::rotation_type::XYZ);
-	constexpr std::uint32_t limit4 = cool::rotation_type_as_index(cool::rotation_type::XYX2);
-	constexpr std::uint32_t limit5 = cool::rotation_type_as_index(cool::rotation_type::AA);
+	constexpr std::uint32_t limit3 = static_cast<std::uint32_t>(cool::rotation_type::XYZ);
+	constexpr std::uint32_t limit4 = static_cast<std::uint32_t>(cool::rotation_type::XYX2);
+	constexpr std::uint32_t limit5 = static_cast<std::uint32_t>(cool::rotation_type::AA);
 
-	std::uint32_t index = cool::rotation_type_as_index(this->m_rotation_type);
+	std::uint32_t index = static_cast<std::uint32_t>(this->m_rotation_type);
 
 	if (limit3 <= index && index < limit5)
 	{
 		if (index < limit4)
 		{
-			return (_pole == 0) ? cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>()
+			return (pole == 0) ? cool::rotation_subroutine::minus_quarter_turn<Ty, _func_impl_number>()
 				: cool::rotation_subroutine::quarter_turn<Ty, _func_impl_number>();
 		}
 		else
 		{
-			return (_pole == 0) ? static_cast<Ty>(0) : cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
+			return (pole == 0) ? static_cast<Ty>(0) : cool::rotation_subroutine::half_turn<Ty, _func_impl_number>();
 		}
 	}
 	else
@@ -2075,10 +2075,10 @@ inline Ty cool::rotation3d<Ty, _dim_padded, _layout, _func_impl_number>::singula
 template <class Ty, std::size_t _dim_padded, cool::matrix_layout _layout, int _func_impl_number>
 inline Ty cool::rotation3d<Ty, _dim_padded, _layout, _func_impl_number>::required_epsilon(Ty angle_tol) noexcept
 {
-	constexpr std::uint32_t limit3 = cool::rotation_type_as_index(cool::rotation_type::XYZ);
-	constexpr std::uint32_t limit5 = cool::rotation_type_as_index(cool::rotation_type::AA);
+	constexpr std::uint32_t limit3 = static_cast<std::uint32_t>(cool::rotation_type::XYZ);
+	constexpr std::uint32_t limit5 = static_cast<std::uint32_t>(cool::rotation_type::AA);
 
-	std::uint32_t index = cool::rotation_type_as_index(this->m_rotation_type);
+	std::uint32_t index = static_cast<std::uint32_t>(this->m_rotation_type);
 
 	if (limit3 <= index && index < limit5)
 	{
@@ -2144,12 +2144,12 @@ inline cool::rotation_type cool::polymorphic_rotation3d<Ty>::rotation_type() con
 template <class Ty>
 inline std::size_t cool::polymorphic_rotation3d<Ty>::axis_count() const noexcept
 {
-	constexpr std::size_t limit1 = cool::rotation_type_as_index(cool::rotation_type::X);
-	constexpr std::size_t limit2 = cool::rotation_type_as_index(cool::rotation_type::XY);
-	constexpr std::size_t limit3 = cool::rotation_type_as_index(cool::rotation_type::XYZ);
-	constexpr std::size_t limit5 = cool::rotation_type_as_index(cool::rotation_type::AA);
+	constexpr std::uint32_t limit1 = static_cast<std::uint32_t>(cool::rotation_type::X);
+	constexpr std::uint32_t limit2 = static_cast<std::uint32_t>(cool::rotation_type::XY);
+	constexpr std::uint32_t limit3 = static_cast<std::uint32_t>(cool::rotation_type::XYZ);
+	constexpr std::uint32_t limit5 = static_cast<std::uint32_t>(cool::rotation_type::AA);
 
-	std::size_t _index = cool::rotation_type_as_index(m_rotation_type);
+	std::uint32_t _index = static_cast<std::uint32_t>(m_rotation_type);
 
 	return (_index >= limit5) ? 1
 		: static_cast<std::size_t>(_index >= limit1)
