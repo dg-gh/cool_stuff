@@ -550,7 +550,7 @@ inline constexpr num_Ty cool::duration<clock_Ty>::duration_per_tick(cool::durati
 
 #ifdef COOL_DURATION_CUSTOM_UNIT4
 	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT4:
-		return _duration_per_tick<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT4_RATIO>, unit_mod_ratio_Ty::num, unit_mod_ratio_Ty::denn>();
+		return _duration_per_tick<num_Ty, std::ratio<COOL_DURATION_CUSTOM_UNIT4_RATIO>, unit_mod_ratio_Ty::num, unit_mod_ratio_Ty::den>();
 #endif // COOL_DURATION_CUSTOM_UNIT4
 
 #ifdef COOL_DURATION_CUSTOM_UNIT5
@@ -603,12 +603,12 @@ inline constexpr typename cool::duration<clock_Ty>::ratio cool::duration<clock_T
 
 #ifdef COOL_DURATION_CUSTOM_UNIT2
 	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT2:
-		return _duration_per_tick_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT2_RATIO>, unit_mod_ratio_Ty::num, unit_mod_ratio_Ty::denn>();
+		return _duration_per_tick_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT2_RATIO>, unit_mod_ratio_Ty::num, unit_mod_ratio_Ty::den>();
 #endif // COOL_DURATION_CUSTOM_UNIT2
 
 #ifdef COOL_DURATION_CUSTOM_UNIT3
 	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT3:
-		return _duration_per_tick_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT3_RATIO>, unit_mod_ratio_Ty::num, unit_mod_ratio_Ty::denn>();
+		return _duration_per_tick_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT3_RATIO>, unit_mod_ratio_Ty::num, unit_mod_ratio_Ty::den>();
 #endif // COOL_DURATION_CUSTOM_UNIT3
 
 #ifdef COOL_DURATION_CUSTOM_UNIT4
@@ -749,7 +749,7 @@ inline constexpr typename cool::duration<clock_Ty>::ratio cool::duration<clock_T
 
 #ifdef COOL_DURATION_CUSTOM_UNIT6
 	case cool::duration_unit::COOL_DURATION_CUSTOM_UNIT6:
-		return _tick_per_duration_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT6_RATIO>, unit_mod_ratio_Ty::num, unit_mod_ratio_Ty::denn>();
+		return _tick_per_duration_ratio<std::ratio<COOL_DURATION_CUSTOM_UNIT6_RATIO>, unit_mod_ratio_Ty::num, unit_mod_ratio_Ty::den>();
 #endif // COOL_DURATION_CUSTOM_UNIT6
 
 #ifdef COOL_DURATION_CUSTOM_UNIT7
