@@ -9,6 +9,7 @@
 #include <initializer_list>
 #include <iterator>
 #include <type_traits>
+#include <memory>
 
 #ifndef COOL_MATRIX_RESTRICT
 #if defined(__clang__) || defined(__GNUC__) || defined(_MSC_VER)
@@ -18,9 +19,17 @@
 #endif // compiler choice
 #endif // COOL_MATRIX_RESTRICT
 
+#ifndef COOL_MATRIX_ASSUME_ALIGNED
+#if __cplusplus >= 202002L
+#define COOL_MATRIX_ASSUME_ALIGNED(ptr, align, Ty) std::assume_aligned<cool::_matrix_remove_zero_align<Ty, align>::value>(ptr)
+#else // C++ standard version
+#define COOL_MATRIX_ASSUME_ALIGNED(ptr, align, Ty) ptr
+#endif // C++ standard version
+#endif // COOL_MATRIX_ASSUME_ALIGNED
+
 
 #ifndef COOL_MATRIX_MM_DEFAULT_KERNEL_SPEC_PS
-#define COOL_MATRIX_MM_DEFAULT_KERNEL_SPEC_PS { 8, 2, 8 }
+#define COOL_MATRIX_MM_DEFAULT_KERNEL_SPEC_PS { 16, 2, 8 }
 #endif // COOL_MATRIX_MM_DEFAULT_KERNEL_SPEC_PS
 
 #ifndef COOL_MATRIX_DEFAULT_ALIGN_SPEC
@@ -154,10 +163,17 @@ namespace cool
 	template <class Ty, std::size_t _rows, std::size_t _cols = 1, std::size_t _rows_padded = _rows, std::size_t _align = alignof(Ty)>
 	using const_matrix_span = cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>>;
 
+	template <class Ty, std::size_t _rows, std::size_t _cols = 1, std::size_t _rows_padded = _rows>
+	using matrix_u = cool::matrix<Ty, _rows, _cols, _rows_padded, alignof(Ty)>;
 
 	template <std::size_t _optional_dim, std::size_t _default_dim> class _opt_dim {
 	public:
 		static constexpr std::size_t value = _optional_dim != 0 ? _optional_dim : _default_dim;
+	};
+
+	template <class Ty, std::size_t _rows_padded, std::size_t _align> class _col_align {
+	public:
+		static constexpr std::size_t value = (_align != 0) && ((_rows_padded * sizeof(Ty)) % _align == 0) ? _align : sizeof(Ty);
 	};
 
 	template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _opt_rows_padded, std::size_t _opt_align>
@@ -357,9 +373,9 @@ namespace cool
 		template <class uint_Ty> inline const Ty& operator[](uint_Ty mem_offset) const noexcept;
 
 
-		template <class uint_Ty> inline cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)> col(uint_Ty j) const noexcept;
+		template <class uint_Ty> inline cool::const_matrix_span<Ty, _rows, 1, _rows, cool::_col_align<Ty, _rows_padded, _align>::value> col(uint_Ty j) const noexcept;
 
-		template <class uint_Ty> inline cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)> ccol(uint_Ty j) const noexcept;
+		template <class uint_Ty> inline cool::const_matrix_span<Ty, _rows, 1, _rows, cool::_col_align<Ty, _rows_padded, _align>::value> ccol(uint_Ty j) const noexcept;
 
 		template <class uint_Ty> inline cool::const_matrix_span<Ty, 1, _cols, _rows_padded, alignof(Ty)> row(uint_Ty i) const noexcept;
 
@@ -382,10 +398,10 @@ namespace cool
 		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cblk(uint_Ty1 i) const noexcept;
 
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1>
-		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> blk() const noexcept;
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, _align> blk() const noexcept;
 
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1>
-		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cblk() const noexcept;
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, _align> cblk() const noexcept;
 
 		template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0>
 		inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator-() const noexcept;
@@ -620,10 +636,10 @@ namespace cool
 		template <class uint_Ty> inline const Ty& operator[](uint_Ty mem_offset) const noexcept;
 
 		template <class uint_Ty>
-		inline cool::matrix_span<Ty, _rows, 1, _rows, alignof(Ty)> col(uint_Ty j) noexcept;
+		inline cool::matrix_span<Ty, _rows, 1, _rows, cool::_col_align<Ty, _rows_padded, _align>::value> col(uint_Ty j) noexcept;
 
 		template <class uint_Ty>
-		inline cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)> col(uint_Ty j) const noexcept;
+		inline cool::const_matrix_span<Ty, _rows, 1, _rows, cool::_col_align<Ty, _rows_padded, _align>::value> col(uint_Ty j) const noexcept;
 
 		template <class uint_Ty>
 		inline cool::matrix_span<Ty, 1, _cols, _rows_padded, alignof(Ty)> row(uint_Ty i) noexcept;
@@ -648,10 +664,10 @@ namespace cool
 		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> blk(uint_Ty1 i) const noexcept;
 
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1>
-		inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> blk() noexcept;
+		inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, _align> blk() noexcept;
 
 		template <std::size_t _blk_rows, std::size_t _blk_cols = 1>
-		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> blk() const noexcept;
+		inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, _align> blk() const noexcept;
 
 
 		template <std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _rhs_matrix_storage_Ty>
@@ -1154,6 +1170,11 @@ namespace cool
 	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _dim, std::size_t _rhs_rows_padded, std::size_t _rhs_align, class _matrix_storage_Ty>
 	inline cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::value, cool::_opt_dim<_opt_res_align, cool::matrix_align_spec<Ty, _dim, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::value>::value>::value> lu(
 		const cool::const_matrix_interface<Ty, _dim, _dim, _rhs_rows_padded, _rhs_align, _matrix_storage_Ty>& rhs) noexcept;
+
+	template <class Ty, std::size_t _align> class _matrix_remove_zero_align {
+	public:
+		static constexpr std::size_t value = (_align != 0) ? _align : alignof(Ty);
+	};
 }
 
 
@@ -1250,8 +1271,8 @@ inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& cool::_matrix_
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 	constexpr std::size_t _packed = cool::matrix_multiply_kernel_spec<Ty, _rows, 2, _cols>::packed;
 
-	Ty* res_ptr = m_data_ptr;
-	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -1327,8 +1348,8 @@ inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& cool::_matrix_
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 	constexpr std::size_t _packed = cool::matrix_multiply_kernel_spec<Ty, _rows, 2, _cols>::packed;
 
-	Ty* res_ptr = m_data_ptr;
-	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -1399,13 +1420,13 @@ inline cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>& cool::_matrix_
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
 inline Ty* cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>::data() noexcept
 {
-	return m_data_ptr;
+	return COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
 inline const Ty* cool::_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>::data() const noexcept
 {
-	return m_data_ptr;
+	return COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty);
 }
 
 // _const_matrix_ptr
@@ -1420,7 +1441,7 @@ inline cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>::_const_m
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align>
 inline const Ty* cool::_const_matrix_ptr<Ty, _rows, _cols, _rows_padded, _align>::data() const noexcept
 {
-	return m_data_ptr;
+	return COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty);
 }
 
 // _matrix_array
@@ -1458,7 +1479,7 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 {
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 
-	const Ty* rhs_ptr = rhs.data();
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -1487,7 +1508,7 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 {
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 
-	const Ty* rhs_ptr = rhs.data();
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -1515,7 +1536,7 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 {
 	constexpr std::size_t _size_padded = _rows_padded * _cols;
 
-	Ty* res_ptr = this->data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	for (std::size_t n = 0; n < _size_padded; n++)
 	{
@@ -1622,25 +1643,25 @@ inline constexpr std::size_t cool::const_matrix_interface<Ty, _rows, _cols, _row
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty> template <class uint_Ty1, class uint_Ty2>
 inline const Ty& cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::operator()(uint_Ty1 i, uint_Ty2 j) const noexcept
 {
-	return *(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
+	return *(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty> template <class uint_Ty>
 inline const Ty& cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::operator[](uint_Ty mem_offset) const noexcept
 {
-	return *(this->data() + static_cast<std::size_t>(mem_offset));
+	return *(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + static_cast<std::size_t>(mem_offset));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
-template <class uint_Ty> inline cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::col(uint_Ty j) const noexcept
+template <class uint_Ty> inline cool::const_matrix_span<Ty, _rows, 1, _rows, cool::_col_align<Ty, _rows_padded, _align>::value> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::col(uint_Ty j) const noexcept
 {
-	return cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)>(this->data() + _rows_padded * static_cast<std::size_t>(j));
+	return cool::const_matrix_span<Ty, _rows, 1, _rows, cool::_col_align<Ty, _rows_padded, _align>::value>(this->data() + _rows_padded * static_cast<std::size_t>(j));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
-template <class uint_Ty> inline cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::ccol(uint_Ty j) const noexcept
+template <class uint_Ty> inline cool::const_matrix_span<Ty, _rows, 1, _rows, cool::_col_align<Ty, _rows_padded, _align>::value> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::ccol(uint_Ty j) const noexcept
 {
-	return cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)>(this->data() + _rows_padded * static_cast<std::size_t>(j));
+	return cool::const_matrix_span<Ty, _rows, 1, _rows, cool::_col_align<Ty, _rows_padded, _align>::value>(this->data() + _rows_padded * static_cast<std::size_t>(j));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
@@ -1697,16 +1718,16 @@ inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(T
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 template <std::size_t _blk_rows, std::size_t _blk_cols>
-inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::blk() const noexcept
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, _align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::blk() const noexcept
 {
-	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)>(this->data());
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, _align>(this->data());
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 template <std::size_t _blk_rows, std::size_t _blk_cols>
-inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cblk() const noexcept
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, _align> cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cblk() const noexcept
 {
-	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)>(this->data());
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, _align>(this->data());
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
@@ -1718,8 +1739,8 @@ inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_alig
 
 	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* ptr = this->data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -1754,9 +1775,9 @@ inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_alig
 
 	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* lhs_ptr = this->data();
-	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -1791,9 +1812,9 @@ inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_alig
 
 	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* lhs_ptr = this->data();
-	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -1827,8 +1848,8 @@ inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_alig
 
 	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* lhs_ptr = this->data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -1862,8 +1883,8 @@ inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_alig
 
 	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* lhs_ptr = this->data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -1911,9 +1932,9 @@ inline cool::matrix_result<Ty, _rows, _rhs_cols, _opt_res_rows_padded, _opt_res_
 
 	cool::matrix_result<Ty, _rows, _rhs_cols, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* lhs_ptr = this->data();
-	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_lhs_cols_small)
 	{
@@ -2211,8 +2232,8 @@ inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align,
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 	constexpr bool _line_matrix = _rows == 1;
 
-	const Ty* lhs_ptr = this->data();
-	const Ty* rhs_ptr = rhs.data();
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -2310,8 +2331,8 @@ inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align,
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 	constexpr bool _line_matrix = _rows == 1;
 
-	const Ty* lhs_ptr = this->data();
-	const Ty* rhs_ptr = rhs.data();
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -2409,8 +2430,8 @@ inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align,
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 	constexpr bool _line_matrix = _rows == 1;
 
-	const Ty* lhs_ptr = this->data();
-	const Ty* rhs_ptr = rhs.data();
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -2508,8 +2529,8 @@ inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align,
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 	constexpr bool _line_matrix = _rows == 1;
 
-	const Ty* lhs_ptr = this->data();
-	const Ty* rhs_ptr = rhs.data();
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -2607,8 +2628,8 @@ inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align,
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 	constexpr bool _line_matrix = _rows == 1;
 
-	const Ty* lhs_ptr = this->data();
-	const Ty* rhs_ptr = rhs.data();
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -2706,8 +2727,8 @@ inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align,
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 	constexpr bool _line_matrix = _rows == 1;
 
-	const Ty* lhs_ptr = this->data();
-	const Ty* rhs_ptr = rhs.data();
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -2803,7 +2824,7 @@ inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align,
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 	constexpr bool _line_matrix = _rows == 1;
 
-	const Ty* lhs_ptr = this->data();
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -2899,7 +2920,7 @@ inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align,
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 	constexpr bool _line_matrix = _rows == 1;
 
-	const Ty* lhs_ptr = this->data();
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -2995,7 +3016,7 @@ inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align,
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 	constexpr bool _line_matrix = _rows == 1;
 
-	const Ty* lhs_ptr = this->data();
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -3091,7 +3112,7 @@ inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align,
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 	constexpr bool _line_matrix = _rows == 1;
 
-	const Ty* lhs_ptr = this->data();
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -3187,7 +3208,7 @@ inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align,
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 	constexpr bool _line_matrix = _rows == 1;
 
-	const Ty* lhs_ptr = this->data();
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -3283,7 +3304,7 @@ inline bool cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align,
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 	constexpr bool _line_matrix = _rows == 1;
 
-	const Ty* lhs_ptr = this->data();
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -3822,8 +3843,8 @@ inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_st
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 	constexpr std::size_t _packed = cool::matrix_multiply_kernel_spec<Ty, _rows, 2, _cols>::packed;
 
-	Ty* res_ptr = this->data();
-	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -3897,7 +3918,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 
-	Ty* res_ptr = this->data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -3928,7 +3949,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 
-	Ty* res_ptr = this->data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 	const Ty* rhs_ptr = rhs.begin();
 
 	if (_contiguous)
@@ -3960,7 +3981,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 
-	Ty* res_ptr = this->data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 	const Ty* rhs_ptr = rhs.begin();
 
 	if (_contiguous)
@@ -3990,7 +4011,7 @@ template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padd
 inline cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>&
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::operator=(cool::rm<Ty> rhs)
 {
-	Ty* res_ptr = this->data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 	const Ty* rhs_ptr = rhs.begin();
 
 	for (std::size_t j = 0; j < _cols; j++)
@@ -4007,39 +4028,39 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 template <class uint_Ty1, class uint_Ty2> inline Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::operator()(uint_Ty1 i, uint_Ty2 j) noexcept
 {
-	return *(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
+	return *(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 template <class uint_Ty1, class uint_Ty2> inline const Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::operator()(uint_Ty1 i, uint_Ty2 j) const noexcept
 {
-	return *(this->data() + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
+	return *(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + static_cast<std::size_t>(i) + _rows_padded * static_cast<std::size_t>(j));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 template <class uint_Ty> inline Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::operator[](uint_Ty mem_offset) noexcept
 {
-	return *(this->data() + static_cast<std::size_t>(mem_offset));
+	return *(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + static_cast<std::size_t>(mem_offset));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 template <class uint_Ty> inline const Ty& cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::operator[](uint_Ty mem_offset) const noexcept
 {
-	return *(this->data() + static_cast<std::size_t>(mem_offset));
+	return *(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + static_cast<std::size_t>(mem_offset));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty> template <class uint_Ty>
-inline cool::matrix_span<Ty, _rows, 1, _rows, alignof(Ty)>
+inline cool::matrix_span<Ty, _rows, 1, _rows, cool::_col_align<Ty, _rows_padded, _align>::value>
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::col(uint_Ty j) noexcept
 {
-	return cool::matrix_span<Ty, _rows, 1, _rows, alignof(Ty)>(this->data() + _rows_padded * static_cast<std::size_t>(j));
+	return cool::matrix_span<Ty, _rows, 1, _rows, cool::_col_align<Ty, _rows_padded, _align>::value>(this->data() + _rows_padded * static_cast<std::size_t>(j));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty> template <class uint_Ty>
-inline cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)>
+inline cool::const_matrix_span<Ty, _rows, 1, _rows, cool::_col_align<Ty, _rows_padded, _align>::value>
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::col(uint_Ty j) const noexcept
 {
-	return cool::const_matrix_span<Ty, _rows, 1, _rows, alignof(Ty)>(this->data() + _rows_padded * static_cast<std::size_t>(j));
+	return cool::const_matrix_span<Ty, _rows, 1, _rows, cool::_col_align<Ty, _rows_padded, _align>::value>(this->data() + _rows_padded * static_cast<std::size_t>(j));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty> template <class uint_Ty>
@@ -4096,16 +4117,16 @@ inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(T
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 template <std::size_t _blk_rows, std::size_t _blk_cols>
-inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::blk() noexcept
+inline cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, _align> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::blk() noexcept
 {
-	return cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)>(this->data());
+	return cool::matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, _align>(this->data());
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 template <std::size_t _blk_rows, std::size_t _blk_cols>
-inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::blk() const noexcept
+inline cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, _align> cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::blk() const noexcept
 {
-	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, alignof(Ty)>(this->data());
+	return cool::const_matrix_span<Ty, _blk_rows, _blk_cols, _rows_padded, _align>(this->data());
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
@@ -4117,8 +4138,8 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 	constexpr std::size_t _packed = cool::matrix_multiply_kernel_spec<Ty, _rows, 2, _cols>::packed;
 
-	Ty* res_ptr = this->data();
-	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -4195,8 +4216,8 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 	constexpr std::size_t _packed = cool::matrix_multiply_kernel_spec<Ty, _rows, 2, _cols>::packed;
 
-	Ty* res_ptr = this->data();
-	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -4273,8 +4294,8 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _rhs_rows_padded)) || (_cols == 1);
 	constexpr std::size_t _packed = cool::matrix_multiply_kernel_spec<Ty, _rows, 2, _cols>::packed;
 
-	Ty* res_ptr = this->data();
-	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -4348,7 +4369,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 
-	Ty* res_ptr = this->data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -4379,7 +4400,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 
-	Ty* res_ptr = this->data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -4410,7 +4431,7 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 {
 	constexpr bool _contiguous = (_rows == _rows_padded) || (_cols == 1);
 
-	Ty* res_ptr = this->data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -4447,8 +4468,8 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 
 	static_assert(_sign == 1 || _sign == -1, "sign template argument requirement : value must be 1 or -1");
 
-	Ty* res_ptr = this->data();
-	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 	if (_contiguous)
 	{
@@ -4600,9 +4621,9 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 
 	static_assert(_sign == 1 || _sign == -1, "sign template argument requirement : value must be 1 or -1");
 
-	const Ty* lhs_ptr = lhs.data();
-	const Ty* rhs_ptr = rhs.data();
-	Ty* res_ptr = this->data();
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(lhs.data(), _lhs_align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_lhs_cols_small)
 	{
@@ -5027,9 +5048,9 @@ cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_T
 
 	static_assert(_sign == 1 || _sign == -1, "sign template argument requirement : value must be 1 or -1");
 
-	const Ty* lhs_ptr = lhs.data();
-	const Ty* rhs_ptr = rhs.data();
-	Ty* res_ptr = this->data();
+	const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(lhs.data(), _lhs_align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 	if (_lhs_cols_small)
 	{
@@ -5902,8 +5923,8 @@ inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_alig
 
 	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -5936,8 +5957,8 @@ inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_alig
 
 	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -5970,8 +5991,8 @@ inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_alig
 
 	cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* rhs_ptr = rhs.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -6038,15 +6059,15 @@ template <class res_Ty, std::size_t _opt_res_rows_padded, std::size_t _opt_res_a
 	class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty
 >
 inline cool::matrix_result<res_Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::matrix_cast(
-	const cool::const_matrix_interface < Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>& A)
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>& A)
 {
 	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _res_rows_padded)) || (_cols == 1);
 
 	cool::matrix_result<res_Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
 
-	res_Ty* res_ptr = ret.data();
-	const Ty* ptrA = A.data();
+	res_Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, res_Ty);
+	const Ty* ptrA = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -6075,15 +6096,15 @@ template <class res_Ty, std::size_t _opt_res_rows_padded, std::size_t _opt_res_a
 	class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty, class function_Ty
 >
 inline cool::matrix_result<res_Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> cool::matrix_elem_eval(
-	const cool::const_matrix_interface < Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>& A, function_Ty fn)
+	const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>& A, function_Ty fn)
 {
 	constexpr std::size_t _res_rows_padded = cool::_opt_dim<_opt_res_rows_padded, _rows>::value;
 	constexpr bool _contiguous = ((_rows == _rows_padded) && (_rows == _res_rows_padded)) || (_cols == 1);
 
 	cool::matrix_result<res_Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> ret;
 
-	res_Ty* res_ptr = ret.data();
-	const Ty* ptrA = A.data();
+	res_Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, res_Ty);
+	const Ty* ptrA = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty);
 
 	if (_contiguous)
 	{
@@ -6134,8 +6155,8 @@ inline Ty cool::dot(const cool::const_matrix_interface<Ty, _rows, _cols, _lhs_ro
 				constexpr std::size_t _size_mult2 = _size - _size % 2;
 				constexpr bool _size_odd = _size % 2 != 0;
 
-				const Ty* lhs_ptr = lhs.data();
-				const Ty* rhs_ptr = rhs.data();
+				const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(lhs.data(), _lhs_align, Ty);
+				const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 				Ty acc0 = *lhs_ptr * *rhs_ptr;
 				Ty acc1 = *(lhs_ptr + 1) * *(rhs_ptr + 1);
@@ -6157,8 +6178,8 @@ inline Ty cool::dot(const cool::const_matrix_interface<Ty, _rows, _cols, _lhs_ro
 				constexpr std::size_t _size_mult4 = _size - _size % 4;
 				constexpr std::size_t remainder = _size % 4;
 
-				const Ty* lhs_ptr = lhs.data();
-				const Ty* rhs_ptr = rhs.data();
+				const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(lhs.data(), _lhs_align, Ty);
+				const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 				Ty acc[4] = { *lhs_ptr * *rhs_ptr,
 					*(lhs_ptr + 1) * *(rhs_ptr + 1),
@@ -6184,8 +6205,8 @@ inline Ty cool::dot(const cool::const_matrix_interface<Ty, _rows, _cols, _lhs_ro
 		else
 		{
 			Ty ret = static_cast<Ty>(0);
-			const Ty* lhs_ptr = lhs.data();
-			const Ty* rhs_ptr = rhs.data();
+			const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(lhs.data(), _lhs_align, Ty);
+			const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 			for (std::size_t j = 0; j < _cols; j++)
 			{
 				for (std::size_t i = 0; i < _rows; i++)
@@ -6216,8 +6237,8 @@ inline Ty cool::dot(const cool::const_matrix_interface<Ty, _rows, _cols, _lhs_ro
 				constexpr std::size_t _size_mult2 = _size - _size % 2;
 				constexpr bool _size_odd = _size % 2 != 0;
 
-				const Ty* lhs_ptr = lhs.data();
-				const Ty* rhs_ptr = rhs.data();
+				const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(lhs.data(), _lhs_align, Ty);
+				const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 				Ty acc0 = *lhs_ptr * cool::matrix_scalar_subroutine::conj(*rhs_ptr);
 				Ty acc1 = *(lhs_ptr + 1) * cool::matrix_scalar_subroutine::conj(*(rhs_ptr + 1));
@@ -6239,8 +6260,8 @@ inline Ty cool::dot(const cool::const_matrix_interface<Ty, _rows, _cols, _lhs_ro
 				constexpr std::size_t _size_mult4 = _size - _size % 4;
 				constexpr std::size_t remainder = _size % 4;
 
-				const Ty* lhs_ptr = lhs.data();
-				const Ty* rhs_ptr = rhs.data();
+				const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(lhs.data(), _lhs_align, Ty);
+				const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 
 				Ty acc[4] = { *lhs_ptr * cool::matrix_scalar_subroutine::conj(*rhs_ptr),
 					*(lhs_ptr + 1) * cool::matrix_scalar_subroutine::conj(*(rhs_ptr + 1)),
@@ -6267,8 +6288,8 @@ inline Ty cool::dot(const cool::const_matrix_interface<Ty, _rows, _cols, _lhs_ro
 		else
 		{
 			Ty ret = static_cast<Ty>(0);
-			const Ty* lhs_ptr = lhs.data();
-			const Ty* rhs_ptr = rhs.data();
+			const Ty* lhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(lhs.data(), _lhs_align, Ty);
+			const Ty* rhs_ptr = COOL_MATRIX_ASSUME_ALIGNED(rhs.data(), _rhs_align, Ty);
 			for (std::size_t j = 0; j < _cols; j++)
 			{
 				for (std::size_t i = 0; i < _rows; i++)
@@ -6300,8 +6321,8 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 
 	if (_line_matrix)
 	{
-		Ty* res_ptr = ret.data();
-		const Ty* ptrA = A.data();
+		Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+		const Ty* ptrA = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty);
 
 		for (std::size_t n = 0; n < _rows; n++)
 		{
@@ -6428,8 +6449,8 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 	{
 		if (_line_matrix)
 		{
-			Ty* res_ptr = ret.data();
-			const Ty* ptrA = A.data();
+			Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+			const Ty* ptrA = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty);
 
 			for (std::size_t n = 0; n < _rows; n++)
 			{
@@ -6536,8 +6557,8 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 	{
 		if (_line_matrix)
 		{
-			Ty* res_ptr = ret.data();
-			const Ty* ptrA = A.data();
+			Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+			const Ty* ptrA = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty);
 
 			for (std::size_t n = 0; n < _rows; n++)
 			{
@@ -6661,7 +6682,7 @@ inline Ty cool::trace(const cool::const_matrix_interface<Ty, _rows, _rows, _rows
 		constexpr std::size_t _rows_mult2 = _rows - _rows % 2;
 		constexpr bool _rows_odd = _rows % 2 != 0;
 
-		const Ty* ptr = A.data();
+		const Ty* ptr = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty);
 
 		Ty acc0 = *ptr;
 		Ty acc1 = *(ptr + _rows_padded_p1);
@@ -6683,7 +6704,7 @@ inline Ty cool::trace(const cool::const_matrix_interface<Ty, _rows, _rows, _rows
 		constexpr std::size_t _rows_mult4 = _rows - _rows % 4;
 		constexpr std::size_t remainder = _rows % 4;
 
-		const Ty* ptr = A.data();
+		const Ty* ptr = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty);
 
 		Ty acc[4] = { *ptr,
 			*(ptr + _rows_padded_p1),
@@ -6716,9 +6737,9 @@ inline cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> cool:
 {
 	cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* xptr = x.data();
-	const Ty* yptr = y.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* xptr = COOL_MATRIX_ASSUME_ALIGNED(x.data(), _x_align, Ty);
+	const Ty* yptr = COOL_MATRIX_ASSUME_ALIGNED(y.data(), _y_align, Ty);
 
 	*(res_ptr + 0) = *(xptr + 1) * *(yptr + 2) - *(xptr + 2) * *(yptr + 1);
 	*(res_ptr + 1) = *(xptr + 2) * *(yptr + 0) - *(xptr + 0) * *(yptr + 2);
@@ -6736,9 +6757,9 @@ inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> cool:
 {
 	cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* xptr = x.data();
-	const Ty* yptr = y.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* xptr = COOL_MATRIX_ASSUME_ALIGNED(x.data(), _x_align, Ty);
+	const Ty* yptr = COOL_MATRIX_ASSUME_ALIGNED(y.data(), _y_align, Ty);
 
 	*(res_ptr + 0) = *(xptr + 1) * *(yptr + 2) - *(xptr + 2) * *(yptr + 1);
 	*(res_ptr + 1) = *(xptr + 2) * *(yptr + 0) - *(xptr + 0) * *(yptr + 2);
@@ -6757,9 +6778,9 @@ inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> cool:
 {
 	cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* xptr = x.data();
-	const Ty* yptr = y.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* xptr = COOL_MATRIX_ASSUME_ALIGNED(x.data(), _x_align, Ty);
+	const Ty* yptr = COOL_MATRIX_ASSUME_ALIGNED(y.data(), _y_align, Ty);
 
 	*(res_ptr + 0) = *(xptr + 0) * *(yptr + 0) - *(xptr + 1) * *(yptr + 1) - *(xptr + 2) * *(yptr + 2) - *(xptr + 3) * *(yptr + 3);
 	*(res_ptr + 1) = *(xptr + 0) * *(yptr + 1) + *(xptr + 1) * *(yptr + 0) + *(xptr + 2) * *(yptr + 3) - *(xptr + 3) * *(yptr + 2);
@@ -6777,8 +6798,8 @@ inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> cool:
 {
 	cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* xptr = x.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* xptr = COOL_MATRIX_ASSUME_ALIGNED(x.data(), _x_align, Ty);
 
 	*(res_ptr + 0) = *(xptr + 0);
 	*(res_ptr + 1) = -*(xptr + 1);
@@ -6796,8 +6817,8 @@ inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> cool:
 {
 	cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* xptr = x.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* xptr = COOL_MATRIX_ASSUME_ALIGNED(x.data(), _x_align, Ty);
 
 	Ty x0 = *(xptr + 0);
 	Ty x1 = *(xptr + 1);
@@ -6833,7 +6854,7 @@ inline Ty cool::det(const cool::const_matrix_interface<Ty, 2, 2, _rows_padded, _
 	constexpr std::size_t i10 = 1 + _rows_padded * 0;
 	constexpr std::size_t i01 = 0 + _rows_padded * 1;
 	constexpr std::size_t i11 = 1 + _rows_padded * 1;
-	const Ty* ptr = A.data();
+	const Ty* ptr = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty);
 
 	return *(ptr + i00) * *(ptr + i11) - *(ptr + i10) * *(ptr + i01);
 }
@@ -6850,7 +6871,7 @@ inline Ty cool::det(const cool::const_matrix_interface<Ty, 3, 3, _rows_padded, _
 	constexpr std::size_t i02 = 0 + _rows_padded * 2;
 	constexpr std::size_t i12 = 1 + _rows_padded * 2;
 	constexpr std::size_t i22 = 2 + _rows_padded * 2;
-	const Ty* ptr = A.data();
+	const Ty* ptr = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty);
 
 	return *(ptr + i00) * (*(ptr + i11) * *(ptr + i22) - *(ptr + i21) * *(ptr + i12))
 		+ *(ptr + i10) * (*(ptr + i21) * *(ptr + i02) - *(ptr + i01) * *(ptr + i22))
@@ -6876,7 +6897,7 @@ inline Ty cool::det(const cool::const_matrix_interface<Ty, 4, 4, _rows_padded, _
 	constexpr std::size_t i13 = 1 + _rows_padded * 3;
 	constexpr std::size_t i23 = 2 + _rows_padded * 3;
 	constexpr std::size_t i33 = 3 + _rows_padded * 3;
-	const Ty* ptr = A.data();
+	const Ty* ptr = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty);
 
 	return (*(ptr + i00) * *(ptr + i11) - *(ptr + i10) * *(ptr + i01)) * (*(ptr + i22) * *(ptr + i33) - *(ptr + i32) * *(ptr + i23))
 		- (*(ptr + i00) * *(ptr + i21) - *(ptr + i20) * *(ptr + i01)) * (*(ptr + i12) * *(ptr + i33) - *(ptr + i32) * *(ptr + i13))
@@ -6894,8 +6915,8 @@ inline Ty cool::det2v(
 	const cool::const_matrix_interface<Ty, 2, 1, _a0_rows_padded, _a0_align, _a0_matrix_storage_Ty>& a0,
 	const cool::const_matrix_interface<Ty, 2, 1, _a1_rows_padded, _a1_align, _a1_matrix_storage_Ty>& a1) noexcept
 {
-	const Ty* a0ptr = a0.data();
-	const Ty* a1ptr = a1.data();
+	const Ty* a0ptr = COOL_MATRIX_ASSUME_ALIGNED(a0.data(), _a0_align, Ty);
+	const Ty* a1ptr = COOL_MATRIX_ASSUME_ALIGNED(a1.data(), _a1_align, Ty);
 
 	return *(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0);
 }
@@ -6909,9 +6930,9 @@ inline Ty cool::det3v(
 	const cool::const_matrix_interface<Ty, 3, 1, _a1_rows_padded, _a1_align, _a1_matrix_storage_Ty>& a1,
 	const cool::const_matrix_interface<Ty, 3, 1, _a2_rows_padded, _a2_align, _a2_matrix_storage_Ty>& a2) noexcept
 {
-	const Ty* a0ptr = a0.data();
-	const Ty* a1ptr = a1.data();
-	const Ty* a2ptr = a2.data();
+	const Ty* a0ptr = COOL_MATRIX_ASSUME_ALIGNED(a0.data(), _a0_align, Ty);
+	const Ty* a1ptr = COOL_MATRIX_ASSUME_ALIGNED(a1.data(), _a1_align, Ty);
+	const Ty* a2ptr = COOL_MATRIX_ASSUME_ALIGNED(a2.data(), _a2_align, Ty);
 
 	return *(a0ptr + 0) * (*(a1ptr + 1) * *(a2ptr + 2) - *(a1ptr + 2) * *(a2ptr + 1))
 		+ *(a0ptr + 1) * (*(a1ptr + 2) * *(a2ptr + 0) - *(a1ptr + 0) * *(a2ptr + 2))
@@ -6928,10 +6949,10 @@ inline Ty cool::det4v(
 	const cool::const_matrix_interface<Ty, 4, 1, _a2_rows_padded, _a2_align, _a2_matrix_storage_Ty>& a2,
 	const cool::const_matrix_interface<Ty, 4, 1, _a3_rows_padded, _a3_align, _a3_matrix_storage_Ty>& a3) noexcept
 {
-	const Ty* a0ptr = a0.data();
-	const Ty* a1ptr = a1.data();
-	const Ty* a2ptr = a2.data();
-	const Ty* a3ptr = a3.data();
+	const Ty* a0ptr = COOL_MATRIX_ASSUME_ALIGNED(a0.data(), _a0_align, Ty);
+	const Ty* a1ptr = COOL_MATRIX_ASSUME_ALIGNED(a1.data(), _a1_align, Ty);
+	const Ty* a2ptr = COOL_MATRIX_ASSUME_ALIGNED(a2.data(), _a2_align, Ty);
+	const Ty* a3ptr = COOL_MATRIX_ASSUME_ALIGNED(a3.data(), _a3_align, Ty);
 
 	return (*(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0)) * (*(a2ptr + 2) * *(a3ptr + 3) - *(a2ptr + 3) * *(a3ptr + 2))
 		- (*(a0ptr + 0) * *(a1ptr + 2) - *(a0ptr + 2) * *(a1ptr + 0)) * (*(a2ptr + 1) * *(a3ptr + 3) - *(a2ptr + 3) * *(a3ptr + 1))
@@ -6970,8 +6991,8 @@ inline cool::matrix_result<Ty, 2, 2, _opt_res_rows_padded, _opt_res_align> cool:
 
 	cool::matrix_result<Ty, 2, 2, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* ptr = A.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* ptr = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty);
 
 	Ty d = static_cast<Ty>(1) / (*(ptr + i00) * *(ptr + i11) - *(ptr + i10) * *(ptr + i01));
 
@@ -7010,8 +7031,8 @@ inline cool::matrix_result<Ty, 3, 3, _opt_res_rows_padded, _opt_res_align> cool:
 
 	cool::matrix_result<Ty, 3, 3, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* ptr = A.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* ptr = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty);
 
 	Ty cof0 = *(ptr + i11) * *(ptr + i22) - *(ptr + i21) * *(ptr + i12);
 	Ty cof1 = *(ptr + i21) * *(ptr + i02) - *(ptr + i01) * *(ptr + i22);
@@ -7075,8 +7096,8 @@ inline cool::matrix_result<Ty, 4, 4, _opt_res_rows_padded, _opt_res_align> cool:
 
 	cool::matrix_result<Ty, 4, 4, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* ptr = A.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* ptr = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty);
 
 	Ty temp_01_01 = *(ptr + i00) * *(ptr + i11) - *(ptr + i10) * *(ptr + i01);
 	Ty temp_01_02 = *(ptr + i00) * *(ptr + i12) - *(ptr + i10) * *(ptr + i02);
@@ -7139,9 +7160,9 @@ inline cool::matrix_result<Ty, 2, 2, _opt_res_rows_padded, _opt_res_align> cool:
 
 	cool::matrix_result<Ty, 2, 2, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* a0ptr = a0.data();
-	const Ty* a1ptr = a1.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* a0ptr = COOL_MATRIX_ASSUME_ALIGNED(a0.data(), _a0_align, Ty);
+	const Ty* a1ptr = COOL_MATRIX_ASSUME_ALIGNED(a1.data(), _a1_align, Ty);
 
 	Ty d = static_cast<Ty>(1) / (*(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0));
 
@@ -7177,10 +7198,10 @@ inline cool::matrix_result<Ty, 3, 3, _opt_res_rows_padded, _opt_res_align> cool:
 
 	cool::matrix_result<Ty, 3, 3, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* a0ptr = a0.data();
-	const Ty* a1ptr = a1.data();
-	const Ty* a2ptr = a2.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* a0ptr = COOL_MATRIX_ASSUME_ALIGNED(a0.data(), _a0_align, Ty);
+	const Ty* a1ptr = COOL_MATRIX_ASSUME_ALIGNED(a1.data(), _a1_align, Ty);
+	const Ty* a2ptr = COOL_MATRIX_ASSUME_ALIGNED(a2.data(), _a2_align, Ty);
 
 	Ty cof0 = *(a1ptr + 1) * *(a2ptr + 2) - *(a1ptr + 2) * *(a2ptr + 1);
 	Ty cof1 = *(a1ptr + 2) * *(a2ptr + 0) - *(a1ptr + 0) * *(a2ptr + 2);
@@ -7235,11 +7256,11 @@ inline cool::matrix_result<Ty, 4, 4, _opt_res_rows_padded, _opt_res_align> cool:
 
 	cool::matrix_result<Ty, 4, 4, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* a0ptr = a0.data();
-	const Ty* a1ptr = a1.data();
-	const Ty* a2ptr = a2.data();
-	const Ty* a3ptr = a3.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* a0ptr = COOL_MATRIX_ASSUME_ALIGNED(a0.data(), _a0_align, Ty);
+	const Ty* a1ptr = COOL_MATRIX_ASSUME_ALIGNED(a1.data(), _a1_align, Ty);
+	const Ty* a2ptr = COOL_MATRIX_ASSUME_ALIGNED(a2.data(), _a2_align, Ty);
+	const Ty* a3ptr = COOL_MATRIX_ASSUME_ALIGNED(a3.data(), _a3_align, Ty);
 
 	Ty temp_01_01 = *(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0);
 	Ty temp_01_02 = *(a0ptr + 0) * *(a2ptr + 1) - *(a0ptr + 1) * *(a2ptr + 0);
@@ -7318,9 +7339,9 @@ inline cool::matrix_result<Ty, 2, 1, _opt_res_rows_padded, _opt_res_align> cool:
 
 	cool::matrix_result<Ty, 2, 1, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* Aptr = A.data();
-	const Ty* yptr = y.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* Aptr = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _a_align, Ty);
+	const Ty* yptr = COOL_MATRIX_ASSUME_ALIGNED(y.data(), _y_align, Ty);
 
 	Ty d = static_cast<Ty>(1) / (*(Aptr + i00) * *(Aptr + i11) - *(Aptr + i10) * *(Aptr + i01));
 
@@ -7349,9 +7370,9 @@ inline cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> cool:
 
 	cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* Aptr = A.data();
-	const Ty* yptr = y.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* Aptr = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _a_align, Ty);
+	const Ty* yptr = COOL_MATRIX_ASSUME_ALIGNED(y.data(), _y_align, Ty);
 
 	Ty cof0 = *(Aptr + i11) * *(Aptr + i22) - *(Aptr + i21) * *(Aptr + i12);
 	Ty cof1 = *(Aptr + i21) * *(Aptr + i02) - *(Aptr + i01) * *(Aptr + i22);
@@ -7398,9 +7419,9 @@ inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> cool:
 
 	cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> ret;
 
-	Ty* res_ptr = ret.data();
-	const Ty* Aptr = A.data();
-	const Ty* yptr = y.data();
+	Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty);
+	const Ty* Aptr = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _a_align, Ty);
+	const Ty* yptr = COOL_MATRIX_ASSUME_ALIGNED(y.data(), _y_align, Ty);
 
 	Ty temp_01_01 = *(Aptr + i00) * *(Aptr + i11) - *(Aptr + i10) * *(Aptr + i01);
 	Ty temp_01_02 = *(Aptr + i00) * *(Aptr + i12) - *(Aptr + i10) * *(Aptr + i02);
@@ -7457,10 +7478,10 @@ inline cool::matrix_result<Ty, 2, 1, _opt_res_rows_padded, _opt_res_align> cool:
 {
 	cool::matrix_result<Ty, 2, 1, _opt_res_rows_padded, _opt_res_align> x;
 
-	Ty* xptr = x.data();
-	const Ty* a0ptr = a0.data();
-	const Ty* a1ptr = a1.data();
-	const Ty* yptr = y.data();
+	Ty* xptr = COOL_MATRIX_ASSUME_ALIGNED(x.data(), _opt_res_align, Ty);
+	const Ty* a0ptr = COOL_MATRIX_ASSUME_ALIGNED(a0.data(), _a0_align, Ty);
+	const Ty* a1ptr = COOL_MATRIX_ASSUME_ALIGNED(a1.data(), _a1_align, Ty);
+	const Ty* yptr = COOL_MATRIX_ASSUME_ALIGNED(y.data(), _y_align, Ty);
 
 	Ty d = static_cast<Ty>(1) / (*(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0));
 
@@ -7483,11 +7504,11 @@ inline cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> cool:
 {
 	cool::matrix_result<Ty, 3, 1, _opt_res_rows_padded, _opt_res_align> x;
 
-	Ty* xptr = x.data();
-	const Ty* a0ptr = a0.data();
-	const Ty* a1ptr = a1.data();
-	const Ty* a2ptr = a2.data();
-	const Ty* yptr = y.data();
+	Ty* xptr = COOL_MATRIX_ASSUME_ALIGNED(x.data(), _opt_res_align, Ty);
+	const Ty* a0ptr = COOL_MATRIX_ASSUME_ALIGNED(a0.data(), _a0_align, Ty);
+	const Ty* a1ptr = COOL_MATRIX_ASSUME_ALIGNED(a1.data(), _a1_align, Ty);
+	const Ty* a2ptr = COOL_MATRIX_ASSUME_ALIGNED(a2.data(), _a2_align, Ty);
+	const Ty* yptr = COOL_MATRIX_ASSUME_ALIGNED(y.data(), _y_align, Ty);
 
 	Ty cof0 = *(a1ptr + 1) * *(a2ptr + 2) - *(a1ptr + 2) * *(a2ptr + 1);
 	Ty cof1 = *(a1ptr + 2) * *(a2ptr + 0) - *(a1ptr + 0) * *(a2ptr + 2);
@@ -7522,12 +7543,12 @@ inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> cool:
 {
 	cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> x;
 
-	Ty* xptr = x.data();
-	const Ty* a0ptr = a0.data();
-	const Ty* a1ptr = a1.data();
-	const Ty* a2ptr = a2.data();
-	const Ty* a3ptr = a3.data();
-	const Ty* yptr = y.data();
+	Ty* xptr = COOL_MATRIX_ASSUME_ALIGNED(x.data(), _opt_res_align, Ty);
+	const Ty* a0ptr = COOL_MATRIX_ASSUME_ALIGNED(a0.data(), _a0_align, Ty);
+	const Ty* a1ptr = COOL_MATRIX_ASSUME_ALIGNED(a1.data(), _a1_align, Ty);
+	const Ty* a2ptr = COOL_MATRIX_ASSUME_ALIGNED(a2.data(), _a2_align, Ty);
+	const Ty* a3ptr = COOL_MATRIX_ASSUME_ALIGNED(a3.data(), _a3_align, Ty);
+	const Ty* yptr = COOL_MATRIX_ASSUME_ALIGNED(y.data(), _y_align, Ty);
 
 	Ty temp_01_01 = *(a0ptr + 0) * *(a1ptr + 1) - *(a0ptr + 1) * *(a1ptr + 0);
 	Ty temp_01_02 = *(a0ptr + 0) * *(a2ptr + 1) - *(a0ptr + 1) * *(a2ptr + 0);
@@ -7658,7 +7679,7 @@ inline Ty cool::lu_matrix<Ty, _dim, _rows_padded, _align>::det() const noexcept
 		constexpr std::size_t _dim_mult2 = _dim - _dim % 2;
 		constexpr bool _dim_odd = _dim % 2 != 0;
 
-		const Ty* ptr = this->data();
+		const Ty* ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 		Ty acc0 = *ptr;
 		Ty acc1 = *(ptr + (_rows_padded + 1));
@@ -7681,7 +7702,7 @@ inline Ty cool::lu_matrix<Ty, _dim, _rows_padded, _align>::det() const noexcept
 		constexpr std::size_t _dim_mult4 = _dim - _dim % 4;
 		constexpr std::size_t remainder = _dim % 4;
 
-		const Ty* ptr = this->data();
+		const Ty* ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 		Ty acc[4] = { *ptr,
 			*(ptr + (_rows_padded + 1)),
@@ -7719,7 +7740,7 @@ inline Ty cool::lu_matrix<Ty, _dim, _rows_padded, _align>::diag_ratio() const no
 	{
 		std::size_t _dim_m1 = _dim - 1;
 
-		const Ty* ptr = this->data();
+		const Ty* ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 		Ty min_value = *ptr;
 		auto min_value_sq = cool::matrix_scalar_subroutine::abs_sq<Ty>(min_value);
@@ -7766,8 +7787,8 @@ inline cool::matrix<Ty, _dim, _rhs_cols, _rows_padded, _align> cool::lu_matrix<T
 
 	for (std::size_t k = 0; k < _rhs_cols; k++)
 	{
-		Ty* ptrX = X.data() + k * _rows_padded;
-		const Ty* ptrY = Y.data() + k * _rhs_rows_padded;
+		Ty* ptrX = COOL_MATRIX_ASSUME_ALIGNED(X.data(), _align, Ty) + k * _rows_padded;
+		const Ty* ptrY = COOL_MATRIX_ASSUME_ALIGNED(Y.data(), _rhs_align, Ty) + k * _rhs_rows_padded;
 		for (std::size_t j = 0; j < _dim; j++)
 		{
 			*ptrX++ = *(ptrY + perm[j]);
@@ -7781,7 +7802,7 @@ inline cool::matrix<Ty, _dim, _rhs_cols, _rows_padded, _align> cool::lu_matrix<T
 	{
 		for (std::size_t j = 0; j < _dim; j++)
 		{
-			Ty* ptrX = X.data() + j + _rows_padded * k;
+			Ty* ptrX = COOL_MATRIX_ASSUME_ALIGNED(X.data(), _align, Ty) + j + _rows_padded * k;
 			Ty temp0 = *ptrX;
 			Ty temp1 = *(ptrX + _rows_padded);
 			Ty temp2 = *(ptrX + _rows_padded * 2);
@@ -7791,7 +7812,7 @@ inline cool::matrix<Ty, _dim, _rhs_cols, _rows_padded, _align> cool::lu_matrix<T
 			Ty* ptrX2 = ptrX + 1 + _rows_padded * 2;
 			Ty* ptrX3 = ptrX + 1 + _rows_padded * 3;
 			std::size_t i = j + 1;
-			const Ty* ptrLU = this->data() + i + _rows_padded * j;
+			const Ty* ptrLU = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + i + _rows_padded * j;
 			for (; i < _dim; i++)
 			{
 				Ty temp = *ptrLU++;
@@ -7805,17 +7826,17 @@ inline cool::matrix<Ty, _dim, _rhs_cols, _rows_padded, _align> cool::lu_matrix<T
 		for (std::size_t j = _dim; j > 0; )
 		{
 			j--;
-			Ty* ptrX0 = X.data() + _rows_padded * k;
+			Ty* ptrX0 = COOL_MATRIX_ASSUME_ALIGNED(X.data(), _align, Ty) + _rows_padded * k;
 			Ty* ptrX1 = ptrX0 + _rows_padded;
 			Ty* ptrX2 = ptrX0 + _rows_padded * 2;
 			Ty* ptrX3 = ptrX0 + _rows_padded * 3;
 			Ty* ptrX = ptrX0 + j;
-			Ty temp_inv = (static_cast<Ty>(1) / *(this->data() + (_rows_padded + 1) * j));
+			Ty temp_inv = (static_cast<Ty>(1) / *(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + (_rows_padded + 1) * j));
 			Ty temp0 = (*ptrX *= temp_inv);
 			Ty temp1 = (*(ptrX + _rows_padded) *= temp_inv);
 			Ty temp2 = (*(ptrX + _rows_padded * 2) *= temp_inv);
 			Ty temp3 = (*(ptrX + _rows_padded * 3) *= temp_inv);
-			const Ty* ptrLU = this->data() + _rows_padded * j;
+			const Ty* ptrLU = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + _rows_padded * j;
 			for (std::size_t i = 0; i < j; i++)
 			{
 				Ty temp = *ptrLU++;
@@ -7837,7 +7858,7 @@ inline cool::matrix<Ty, _dim, _rhs_cols, _rows_padded, _align> cool::lu_matrix<T
 			Ty* ptrX0 = X.data() + j + _rows_padded * _rhs_cols_mmod4;
 			Ty temp0 = *ptrX0++;
 			std::size_t i = j + 1;
-			const Ty* ptrLU = this->data() + i + _rows_padded * j;
+			const Ty* ptrLU = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + i + _rows_padded * j;
 			for (; i < _dim; i++)
 			{
 				*ptrX0++ -= temp0 * *ptrLU++;
@@ -7848,8 +7869,8 @@ inline cool::matrix<Ty, _dim, _rhs_cols, _rows_padded, _align> cool::lu_matrix<T
 		{
 			j--;
 			Ty* ptrX0 = X.data() + _rows_padded * _rhs_cols_mmod4;
-			Ty temp0 = (*(ptrX0 + j) /= *(this->data() + (_rows_padded + 1) * j));
-			const Ty* ptrLU = this->data() + _rows_padded * j;
+			Ty temp0 = (*(ptrX0 + j) /= *(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + (_rows_padded + 1) * j));
+			const Ty* ptrLU = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + _rows_padded * j;
 			for (std::size_t i = 0; i < j; i++)
 			{
 				*ptrX0++ -= temp0 * *ptrLU++;
@@ -7868,7 +7889,7 @@ inline cool::matrix<Ty, _dim, _rhs_cols, _rows_padded, _align> cool::lu_matrix<T
 			Ty* ptrX0 = ptrX + 1;
 			Ty* ptrX1 = ptrX + 1 + _rows_padded;
 			std::size_t i = j + 1;
-			const Ty* ptrLU = this->data() + i + _rows_padded * j;
+			const Ty* ptrLU = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + i + _rows_padded * j;
 			for (; i < _dim; i++)
 			{
 				Ty temp = *ptrLU++;
@@ -7883,10 +7904,10 @@ inline cool::matrix<Ty, _dim, _rhs_cols, _rows_padded, _align> cool::lu_matrix<T
 			Ty* ptrX0 = X.data() + _rows_padded * _rhs_cols_mmod4;
 			Ty* ptrX1 = ptrX0 + _rows_padded;
 			Ty* ptrX = ptrX0 + j;
-			Ty temp_inv = (static_cast<Ty>(1) / *(this->data() + (_rows_padded + 1) * j));
+			Ty temp_inv = (static_cast<Ty>(1) / *(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + (_rows_padded + 1) * j));
 			Ty temp0 = (*ptrX *= temp_inv);
 			Ty temp1 = (*(ptrX + _rows_padded) *= temp_inv);
-			const Ty* ptrLU = this->data() + _rows_padded * j;
+			const Ty* ptrLU = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + _rows_padded * j;
 			for (std::size_t i = 0; i < j; i++)
 			{
 				Ty temp = *ptrLU++;
@@ -7910,7 +7931,7 @@ inline cool::matrix<Ty, _dim, _rhs_cols, _rows_padded, _align> cool::lu_matrix<T
 			Ty* ptrX1 = ptrX + 1 + _rows_padded;
 			Ty* ptrX2 = ptrX + 1 + _rows_padded * 2;
 			std::size_t i = j + 1;
-			const Ty* ptrLU = this->data() + i + _rows_padded * j;
+			const Ty* ptrLU = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + i + _rows_padded * j;
 			for (; i < _dim; i++)
 			{
 				Ty temp = *ptrLU++;
@@ -7927,11 +7948,11 @@ inline cool::matrix<Ty, _dim, _rhs_cols, _rows_padded, _align> cool::lu_matrix<T
 			Ty* ptrX1 = ptrX0 + _rows_padded;
 			Ty* ptrX2 = ptrX0 + _rows_padded * 2;
 			Ty* ptrX = ptrX0 + j;
-			Ty temp_inv = (static_cast<Ty>(1) / *(this->data() + (_rows_padded + 1) * j));
+			Ty temp_inv = (static_cast<Ty>(1) / *(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + (_rows_padded + 1) * j));
 			Ty temp0 = (*ptrX *= temp_inv);
 			Ty temp1 = (*(ptrX + _rows_padded) *= temp_inv);
 			Ty temp2 = (*(ptrX + _rows_padded * 2) *= temp_inv);
-			const Ty* ptrLU = this->data() + _rows_padded * j;
+			const Ty* ptrLU = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + _rows_padded * j;
 			for (std::size_t i = 0; i < j; i++)
 			{
 				Ty temp = *ptrLU++;
@@ -7955,7 +7976,7 @@ inline cool::matrix<Ty, _dim, _dim, _rows_padded, _align> cool::lu_matrix<Ty, _d
 {
 	cool::matrix<Ty, _dim, _dim, _rows_padded, _align> Id = static_cast<Ty>(0);
 
-	Ty* ptrId = Id.data();
+	Ty* ptrId = COOL_MATRIX_ASSUME_ALIGNED(Id.data(), _align, Ty);
 	for (std::size_t k = 0; k < _dim; k++)
 	{
 		*(ptrId + (_rows_padded + 1) * k) = static_cast<Ty>(1);
@@ -7971,8 +7992,8 @@ inline cool::matrix<Ty, _dim, _dim, _rows_padded, _align> cool::lu_matrix<Ty, _d
 
 	for (std::size_t j = 0; j < _dim; j++)
 	{
-		Ty* res_ptr = ret.data() + (_rows_padded + 1) * j;
-		const Ty* ptrL = this->data() + 1 + (_rows_padded + 1) * j;
+		Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _align, Ty) + (_rows_padded + 1) * j;
+		const Ty* ptrL = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + 1 + (_rows_padded + 1) * j;
 		*res_ptr++ = static_cast<Ty>(1);
 		for (std::size_t i = j + 1; i < _dim; i++)
 		{
@@ -7990,8 +8011,8 @@ inline cool::matrix<Ty, _dim, _dim, _rows_padded, _align> cool::lu_matrix<Ty, _d
 
 	for (std::size_t j = 0; j < _dim; j++)
 	{
-		Ty* res_ptr = ret.data() + _rows_padded * j;
-		const Ty* ptrL = this->data() + _rows_padded * j;
+		Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _align, Ty) + _rows_padded * j;
+		const Ty* ptrL = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty) + _rows_padded * j;
 		for (std::size_t i = 0; i <= j; i++)
 		{
 			*res_ptr++ = *ptrL++;
@@ -8007,8 +8028,9 @@ inline cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::val
 {
 	constexpr std::size_t _dim_m1 = (_dim == 0) ? 0 : _dim - 1;
 	constexpr std::size_t _rows_padded = cool::_opt_dim<_opt_res_rows_padded, _dim>::value;
+	constexpr std::size_t _lu_align = cool::_opt_dim<_opt_res_align, cool::matrix_align_spec<Ty, _dim, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::value>::value>::value;
 
-	cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::value, cool::_opt_dim<_opt_res_align, cool::matrix_align_spec<Ty, _dim, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::value>::value>::value> LU = rhs;
+	cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::value, _lu_align> LU = rhs;
 
 	for (std::size_t n = 0; n < _dim; n++)
 	{
@@ -8020,7 +8042,7 @@ inline cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::val
 	for (std::size_t k = 0; k < _dim_m1; k++)
 	{
 		{
-			Ty* ptrLU = LU.data() + k + _rows_padded * k;
+			Ty* ptrLU = COOL_MATRIX_ASSUME_ALIGNED(LU.data(), _lu_align, Ty) + k + _rows_padded * k;
 			auto piv_abs_sq = cool::matrix_scalar_subroutine::abs_sq<Ty>(*ptrLU++);
 			std::size_t grt = k;
 			bool permute = false;
@@ -8038,8 +8060,8 @@ inline cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::val
 
 			if (permute)
 			{
-				Ty* ptrLU1 = LU.data() + k;
-				Ty* ptrLU2 = LU.data() + grt;
+				Ty* ptrLU1 = COOL_MATRIX_ASSUME_ALIGNED(LU.data(), _lu_align, Ty) + k;
+				Ty* ptrLU2 = COOL_MATRIX_ASSUME_ALIGNED(LU.data(), _lu_align, Ty) + grt;
 				for (std::size_t j = 0; j < _dim; j++)
 				{
 					Ty temp = *ptrLU1;
@@ -8059,7 +8081,7 @@ inline cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::val
 			}
 		}
 
-		Ty* ptrLU = LU.data() + k + _rows_padded * k;
+		Ty* ptrLU = COOL_MATRIX_ASSUME_ALIGNED(LU.data(), _lu_align, Ty) + k + _rows_padded * k;
 
 		if (*ptrLU != static_cast<Ty>(0))
 		{
@@ -8075,7 +8097,7 @@ inline cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::val
 			std::size_t j = k + 1;
 			for (; j + 3 < _dim; j += 4)
 			{
-				Ty* ptr0 = LU.data() + k + _rows_padded * j;
+				Ty* ptr0 = COOL_MATRIX_ASSUME_ALIGNED(LU.data(), _lu_align, Ty) + k + _rows_padded * j;
 				Ty* ptr1 = ptr0 + _rows_padded;
 				Ty* ptr2 = ptr0 + _rows_padded * 2;
 				Ty* ptr3 = ptr0 + _rows_padded * 3;
@@ -8095,7 +8117,7 @@ inline cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::val
 			}
 			for (; j < _dim; j++)
 			{
-				Ty* ptr0 = LU.data() + k + _rows_padded * j;
+				Ty* ptr0 = COOL_MATRIX_ASSUME_ALIGNED(LU.data(), _lu_align, Ty) + k + _rows_padded * j;
 				Ty temp0 = *ptr0++;
 				Ty* ptrL = ptrLU;
 				for (std::size_t i = k + 1; i < _dim; i++)
