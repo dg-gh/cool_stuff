@@ -3398,42 +3398,42 @@ template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padd
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator_proxy
 cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator_proxy(this->data());
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator_proxy(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator_proxy
 cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator_proxy(this->data());
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator_proxy(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator
 cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::begin() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(this->data(), 0);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty), 0);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator
 cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::end() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(this->data(), _cols);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty), _cols);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator
 cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cbegin() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(this->data(), 0);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty), 0);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator
 cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cend() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(this->data(), _cols);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty), _cols);
 }
 
 // const_matrix_interface<...>::cm_const_iterator_proxy
@@ -3442,28 +3442,28 @@ template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padd
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator
 cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator_proxy::begin() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(m_data_ptr, 0);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), 0);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator
 cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator_proxy::end() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(m_data_ptr, _cols);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), _cols);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator
 cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator_proxy::cbegin() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(m_data_ptr, 0);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), 0);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator
 cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator_proxy::cend() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(m_data_ptr, _cols);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), _cols);
 }
 
 // const_matrix_interface<...>::rm_const_iterator_proxy
@@ -3472,28 +3472,28 @@ template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padd
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator
 cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator_proxy::begin() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator(m_data_ptr, 0);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), 0);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator
 cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator_proxy::end() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator(m_data_ptr, _rows);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), _rows);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator
 cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator_proxy::cbegin() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator(m_data_ptr, 0);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), 0);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator
 cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator_proxy::cend() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator(m_data_ptr, _rows);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), _rows);
 }
 
 // const_matrix_interface<...>::cm_const_iterator
@@ -5456,70 +5456,70 @@ template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padd
 inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator_proxy
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm() noexcept
 {
-	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator_proxy(this->data());
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator_proxy(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator_proxy
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm() noexcept
 {
-	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator_proxy(this->data());
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator_proxy(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator_proxy
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator_proxy(this->data());
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator_proxy(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator_proxy
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator_proxy(this->data());
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator_proxy(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty));
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::begin() noexcept
 {
-	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator(this->data(), 0);
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty), 0);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::end() noexcept
 {
-	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator(this->data(), _cols);
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty), _cols);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::begin() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(this->data(), 0);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty), 0);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::end() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(this->data(), _cols);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty), _cols);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cbegin() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(this->data(), 0);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty), 0);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cend() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(this->data(), _cols);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty), _cols);
 }
 
 // matrix_interface<...>::cm_iterator_proxy
@@ -5528,28 +5528,28 @@ template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padd
 inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator_proxy::begin() const noexcept
 {
-	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator(m_data_ptr, 0);
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), 0);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator_proxy::end() const noexcept
 {
-	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator(m_data_ptr, _cols);
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), _cols);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator_proxy::cbegin() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(m_data_ptr, 0);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), 0);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_iterator_proxy::cend() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(m_data_ptr, _cols);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::cm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), _cols);
 }
 
 // matrix_interface<...>::rm_iterator_proxy
@@ -5558,28 +5558,28 @@ template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padd
 inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator_proxy::begin() const noexcept
 {
-	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator(m_data_ptr, 0);
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), 0);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator_proxy::end() const noexcept
 {
-	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator(m_data_ptr, _rows);
+	return typename cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), _rows);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator_proxy::cbegin() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator(m_data_ptr, 0);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), 0);
 }
 
 template <class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 inline typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator
 cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_iterator_proxy::cend() const noexcept
 {
-	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator(m_data_ptr, _rows);
+	return typename cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>::rm_const_iterator(COOL_MATRIX_ASSUME_ALIGNED(m_data_ptr, _align, Ty), _rows);
 }
 
 // matrix_interface<...>::cm_iterator
