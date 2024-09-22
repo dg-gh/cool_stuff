@@ -218,6 +218,12 @@ namespace cool
 	inline constexpr cool::rotation_type index_as_rotation_type(std::size_t _index) noexcept;
 
 
+	template <cool::rotation_type rtype, class Ty, std::size_t _dim_padded = 3, int _func_impl_number = 0,
+		cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT> class rotation_comp {
+		rotation_comp() = delete;
+	};
+
+
 	template <class Ty, std::size_t _dim_padded = 3, int _func_impl_number = 0,
 		cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT> class rotationX;
 
@@ -283,6 +289,50 @@ namespace cool
 
 	template <class Ty, std::size_t _dim_padded = 3, int _func_impl_number = 0,
 		cool::matrix_layout _layout = COOL_ROTATIONS_DEFAULT_MATRIX_LAYOUT> class rotationZYZ2;
+
+
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::X, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationX<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::Y, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationY<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::Z, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationZ<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::XY, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationXY<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::XZ, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationXZ<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::YZ, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationYZ<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::YX, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationYX<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::ZX, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationZX<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::ZY, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationZY<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::XYZ, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationXYZ<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::XZY, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationXZY<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::YZX, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationYZX<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::YXZ, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationYXZ<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::ZXY, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationZXY<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::ZYX, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationZYX<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::XYX2, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationXYX2<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::XZX2, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationXZX2<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::YZY2, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationYZY2<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::YXY2, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationYXY2<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::ZXZ2, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationZXZ2<Ty, _dim_padded, _func_impl_number, _layout> {};
+	template <class Ty, std::size_t _dim_padded, int _func_impl_number, cool::matrix_layout _layout>
+	class rotation_comp<cool::rotation_type::ZYZ2, Ty, _dim_padded, _func_impl_number, _layout> : public cool::rotationZYZ2<Ty, _dim_padded, _func_impl_number, _layout> {};
 
 
 	// class member details
