@@ -34,8 +34,10 @@ namespace cool
 	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class _threads_sq_data;
 	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class _threads_mq_data;
 	class _async_task_end_incr_proxy;
+	class _async_task_end_try_incr_proxy;
 	template <class Ty> class _async_task_result_proxy;
 	template <class Ty> class _async_task_result_incr_proxy;
+	template <class Ty> class _async_task_result_try_incr_proxy;
 
 	// threads_sq
 
@@ -110,10 +112,10 @@ namespace cool
 		inline bool try_priority_async(cool::async_task_end& target, function_Ty task, args_Ty ... args) noexcept;
 
 		template <class function_Ty, class ... args_Ty>
-		inline bool try_async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args) noexcept;
 
 		template <class function_Ty, class ... args_Ty>
-		inline bool try_priority_async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_priority_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args) noexcept;
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
 		inline bool try_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
@@ -122,10 +124,10 @@ namespace cool
 		inline bool try_priority_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline bool try_async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline bool try_priority_async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_priority_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
 
 		inline bool init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size);
 		inline std::uint16_t thread_count() const noexcept;
@@ -191,13 +193,13 @@ namespace cool
 		inline bool try_async(cool::async_task_end& target, function_Ty task, args_Ty ... args) noexcept;
 
 		template <class function_Ty, class ... args_Ty>
-		inline bool try_async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args) noexcept;
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
 		inline bool try_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline bool try_async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
 
 		inline bool init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size,
 			countdown_type push_rounds = static_cast<countdown_type>(-1), countdown_type pop_rounds = 1,
@@ -228,16 +230,17 @@ namespace cool
 		cool::async_task_end& operator=(cool::async_task_end&& rhs) = delete;
 		~async_task_end() = default;
 
-		inline cool::async_task_end& add_awaited(std::size_t number_of_tasks) noexcept;
+		inline void add_awaited(std::size_t number_of_tasks) noexcept;
 		inline bool sub_awaited(std::size_t number_of_tasks) noexcept; // returns true iff notified
 		inline bool set_awaited(std::ptrdiff_t number_of_tasks) noexcept; // returns true iff notified
 		inline std::ptrdiff_t get_awaited() const noexcept;
 		inline bool decr_awaited() noexcept; // returns true iff notified
-		inline cool::async_task_end& notify() noexcept;
-		inline cool::async_task_end& finish() noexcept;
+		inline void notify() noexcept;
+		inline void finish() noexcept;
 		inline bool finished() const noexcept;
 
-		inline cool::_async_task_end_incr_proxy try_incr_awaited() noexcept;
+		inline cool::_async_task_end_incr_proxy incr_awaited() noexcept;
+		inline cool::_async_task_end_try_incr_proxy try_incr_awaited() noexcept;
 
 	private:
 
@@ -278,31 +281,31 @@ namespace cool
 		explicit inline async_task_result(return_Ty* storage_ptr);
 		explicit inline async_task_result(return_Ty* storage_ptr, const return_Ty& rhs);
 
-		inline cool::async_task_result<return_Ty>& add_awaited(std::size_t number_of_tasks) noexcept;
+		inline void add_awaited(std::size_t number_of_tasks) noexcept;
 		inline bool sub_awaited(std::size_t number_of_tasks) noexcept; // returns true iff notified
 		inline bool set_awaited(std::ptrdiff_t number_of_tasks) noexcept; // returns true iff notified
 		inline std::ptrdiff_t get_awaited() const noexcept;
 		inline cool::_async_task_result_proxy<return_Ty> to(std::size_t offset) noexcept;
 		inline bool decr_awaited() noexcept; // returns true iff notified
-		inline cool::async_task_result<return_Ty>& notify() noexcept;
-		inline cool::async_task_result<return_Ty>& finish() noexcept;
+		inline void notify() noexcept;
+		inline void finish() noexcept;
 		inline bool finished() const noexcept;
 
 		inline return_Ty& get(std::size_t offset) noexcept;
 		inline return_Ty& get_unchecked(std::size_t offset) noexcept;
 		inline const return_Ty& get_unchecked(std::size_t offset) const noexcept;
-		inline cool::async_task_result<return_Ty>& reset(std::size_t count);
-		inline cool::async_task_result<return_Ty>& reset(std::size_t count, const return_Ty& rhs);
-		inline cool::async_task_result<return_Ty>& reset_unchecked(std::size_t count);
-		inline cool::async_task_result<return_Ty>& reset_unchecked(std::size_t count, const return_Ty& rhs);
+		inline void reset(std::size_t count);
+		inline void reset(std::size_t count, const return_Ty& rhs);
+		inline void reset_unchecked(std::size_t count);
+		inline void reset_unchecked(std::size_t count, const return_Ty& rhs);
 
 		inline return_Ty* data() noexcept;
 		inline const return_Ty* data() const noexcept;
 
-		inline cool::async_task_result<return_Ty>& set_data(return_Ty* storage_ptr) noexcept;
-		inline cool::async_task_result<return_Ty>& set_data_unchecked(return_Ty* storage_ptr) noexcept;
-		inline cool::async_task_result<return_Ty>& clear() noexcept;
-		inline cool::async_task_result<return_Ty>& clear_unchecked() noexcept;
+		inline void set_data(return_Ty* storage_ptr) noexcept;
+		inline void set_data_unchecked(return_Ty* storage_ptr) noexcept;
+		inline void clear() noexcept;
+		inline void clear_unchecked() noexcept;
 
 	private:
 
@@ -513,8 +516,30 @@ namespace cool
 
 	private:
 
-		_async_task_end_incr_proxy(cool::async_task_end* target_ptr) noexcept
-			: m_parent_ptr(target_ptr) {}
+		_async_task_end_incr_proxy(cool::async_task_end* target_ptr) noexcept : m_parent_ptr(target_ptr) {}
+
+		cool::async_task_end* m_parent_ptr;
+
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_sq;
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_mq;
+		friend class cool::async_task_end;
+	};
+
+	class _async_task_end_try_incr_proxy
+	{
+
+	public:
+
+		_async_task_end_try_incr_proxy() = delete;
+		_async_task_end_try_incr_proxy(const cool::_async_task_end_try_incr_proxy&) = delete;
+		cool::_async_task_end_try_incr_proxy& operator=(const cool::_async_task_end_try_incr_proxy&) = delete;
+		_async_task_end_try_incr_proxy(cool::_async_task_end_try_incr_proxy&&) noexcept = default;
+		cool::_async_task_end_try_incr_proxy& operator=(cool::_async_task_end_try_incr_proxy&&) noexcept = default;
+		~_async_task_end_try_incr_proxy() = default;
+
+	private:
+
+		_async_task_end_try_incr_proxy(cool::async_task_end* target_ptr) noexcept : m_parent_ptr(target_ptr) {}
 
 		cool::async_task_end* m_parent_ptr;
 
@@ -535,12 +560,12 @@ namespace cool
 		cool::_async_task_result_proxy<return_Ty>& operator=(cool::_async_task_result_proxy<return_Ty>&&) noexcept = default;
 		~_async_task_result_proxy() = default;
 
-		inline cool::_async_task_result_incr_proxy<return_Ty> try_incr_awaited() noexcept;
+		inline cool::_async_task_result_incr_proxy<return_Ty> incr_awaited() noexcept;
+		inline cool::_async_task_result_try_incr_proxy<return_Ty> try_incr_awaited() noexcept;
 
 	private:
 
-		_async_task_result_proxy(cool::async_task_result<return_Ty>* target_ptr, std::size_t offset) noexcept
-			: m_parent_ptr(target_ptr), m_offset(offset) {}
+		_async_task_result_proxy(cool::async_task_result<return_Ty>* target_ptr, std::size_t offset) noexcept : m_parent_ptr(target_ptr), m_offset(offset) {}
 
 		cool::async_task_result<return_Ty>* m_parent_ptr;
 		std::size_t m_offset;
@@ -564,8 +589,31 @@ namespace cool
 
 	private:
 
-		_async_task_result_incr_proxy(cool::async_task_result<return_Ty>* target_ptr, std::size_t offset) noexcept
-			: m_parent_ptr(target_ptr), m_offset(offset) {}
+		_async_task_result_incr_proxy(cool::async_task_result<return_Ty>* target_ptr, std::size_t offset) noexcept : m_parent_ptr(target_ptr), m_offset(offset) {}
+
+		cool::async_task_result<return_Ty>* m_parent_ptr;
+		std::size_t m_offset;
+
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_sq;
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_mq;
+		template <class return_Ty2> friend class cool::_async_task_result_proxy;
+	};
+
+	template <class return_Ty> class _async_task_result_try_incr_proxy
+	{
+
+	public:
+
+		_async_task_result_try_incr_proxy() = delete;
+		_async_task_result_try_incr_proxy(const cool::_async_task_result_try_incr_proxy<return_Ty>&) = delete;
+		cool::_async_task_result_try_incr_proxy<return_Ty>& operator=(const cool::_async_task_result_try_incr_proxy<return_Ty>&) = delete;
+		_async_task_result_try_incr_proxy(cool::_async_task_result_try_incr_proxy<return_Ty>&&) noexcept = default;
+		cool::_async_task_result_try_incr_proxy<return_Ty>& operator=(cool::_async_task_result_try_incr_proxy<return_Ty>&&) noexcept = default;
+		~_async_task_result_try_incr_proxy() = default;
+
+	private:
+
+		_async_task_result_try_incr_proxy(cool::async_task_result<return_Ty>* target_ptr, std::size_t offset) noexcept : m_parent_ptr(target_ptr), m_offset(offset) {}
 
 		cool::async_task_result<return_Ty>* m_parent_ptr;
 		std::size_t m_offset;
@@ -668,7 +716,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
 
 			this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
 			{
@@ -787,7 +835,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
 			this->m_next_task_ptr->m_target_ptr = static_cast<void*>(&target);
 
 			this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
@@ -914,7 +962,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
 			this->m_next_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
 
 			this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
@@ -1041,7 +1089,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
 			this->m_next_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
 			this->m_next_task_ptr->m_offset = target.m_offset;
 
@@ -1176,7 +1224,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
 			this->m_next_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
 			this->m_next_task_ptr->m_offset = target.m_offset;
 
@@ -1300,7 +1348,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
 
 			this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
 			{
@@ -1425,7 +1473,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
 			this->m_next_task_ptr->m_target_ptr = static_cast<void*>(&target);
 
 			this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
@@ -1466,7 +1514,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
@@ -1532,7 +1580,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
@@ -1558,7 +1606,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
 			this->m_next_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
 
 			this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
@@ -1691,7 +1739,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
 			this->m_next_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
 			this->m_next_task_ptr->m_offset = target.m_offset;
 
@@ -1736,7 +1784,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
@@ -1806,7 +1854,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
@@ -1832,7 +1880,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			(this->m_next_task_ptr)--;
 
 			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
 			this->m_next_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
 			this->m_next_task_ptr->m_offset = target.m_offset;
 
@@ -3152,7 +3200,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args) noexcept
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
@@ -3474,7 +3522,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
@@ -3998,10 +4046,9 @@ inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 
 // async_task_end detail
 
-inline cool::async_task_end& cool::async_task_end::add_awaited(std::size_t number_of_tasks) noexcept
+inline void cool::async_task_end::add_awaited(std::size_t number_of_tasks) noexcept
 {
 	m_tasks_awaited.fetch_add(static_cast<std::ptrdiff_t>(number_of_tasks), std::memory_order_seq_cst);
-	return *this;
 }
 
 inline bool cool::async_task_end::sub_awaited(std::size_t number_of_tasks) noexcept
@@ -4054,14 +4101,13 @@ inline bool cool::async_task_end::decr_awaited() noexcept
 	}
 }
 
-inline cool::async_task_end& cool::async_task_end::notify() noexcept
+inline void cool::async_task_end::notify() noexcept
 {
 	std::lock_guard<std::mutex> lock(m_finish_mutex);
 	m_finish_condition_var.notify_all();
-	return *this;
 }
 
-inline cool::async_task_end& cool::async_task_end::finish() noexcept
+inline void cool::async_task_end::finish() noexcept
 {
 	while (m_tasks_awaited.load(std::memory_order_seq_cst) > 0)
 	{
@@ -4072,8 +4118,6 @@ inline cool::async_task_end& cool::async_task_end::finish() noexcept
 			m_finish_condition_var.wait(lock);
 		}
 	}
-	
-	return *this;
 }
 
 inline bool cool::async_task_end::finished() const noexcept
@@ -4081,9 +4125,14 @@ inline bool cool::async_task_end::finished() const noexcept
 	return m_tasks_awaited.load(std::memory_order_seq_cst) <= 0;
 }
 
-inline cool::_async_task_end_incr_proxy cool::async_task_end::try_incr_awaited() noexcept
+inline cool::_async_task_end_incr_proxy cool::async_task_end::incr_awaited() noexcept
 {
 	return cool::_async_task_end_incr_proxy(this);
+}
+
+inline cool::_async_task_end_try_incr_proxy cool::async_task_end::try_incr_awaited() noexcept
+{
+	return cool::_async_task_end_try_incr_proxy(this);
 }
 
 
@@ -4102,10 +4151,9 @@ inline cool::async_task_result<return_Ty>::async_task_result(return_Ty* storage_
 }
 
 template <class return_Ty>
-inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::add_awaited(std::size_t number_of_tasks) noexcept
+inline void cool::async_task_result<return_Ty>::add_awaited(std::size_t number_of_tasks) noexcept
 {
 	m_tasks_awaited.fetch_add(number_of_tasks, std::memory_order_seq_cst);
-	return *this;
 }
 
 template <class return_Ty>
@@ -4169,15 +4217,14 @@ inline bool cool::async_task_result<return_Ty>::decr_awaited() noexcept
 }
 
 template <class return_Ty>
-inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::notify() noexcept
+inline void cool::async_task_result<return_Ty>::notify() noexcept
 {
 	std::lock_guard<std::mutex> lock(m_finish_mutex);
 	m_finish_condition_var.notify_all();
-	return *this;
 }
 
 template <class return_Ty>
-inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::finish() noexcept
+inline void cool::async_task_result<return_Ty>::finish() noexcept
 {
 	while (m_tasks_awaited.load(std::memory_order_seq_cst) > 0)
 	{
@@ -4188,8 +4235,6 @@ inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::f
 			m_finish_condition_var.wait(lock);
 		}
 	}
-
-	return *this;
 }
 
 template <class return_Ty>
@@ -4218,7 +4263,7 @@ inline const return_Ty& cool::async_task_result<return_Ty>::get_unchecked(std::s
 }
 
 template <class return_Ty>
-inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::reset(std::size_t count)
+inline void cool::async_task_result<return_Ty>::reset(std::size_t count)
 {
 	finish();
 
@@ -4226,12 +4271,10 @@ inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::r
 	{
 		*(m_stored_values_ptr + k) = return_Ty();
 	}
-
-	return *this;
 }
 
 template <class return_Ty>
-inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::reset(std::size_t count, const return_Ty& rhs)
+inline void cool::async_task_result<return_Ty>::reset(std::size_t count, const return_Ty& rhs)
 {
 	finish();
 
@@ -4239,30 +4282,24 @@ inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::r
 	{
 		*(m_stored_values_ptr + k) = rhs;
 	}
-
-	return *this;
 }
 
 template <class return_Ty>
-inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::reset_unchecked(std::size_t count)
+inline void cool::async_task_result<return_Ty>::reset_unchecked(std::size_t count)
 {
 	for (std::size_t k = 0; k < count; k++)
 	{
 		*(m_stored_values_ptr + k) = return_Ty();
 	}
-
-	return *this;
 }
 
 template <class return_Ty>
-inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::reset_unchecked(std::size_t count, const return_Ty& rhs)
+inline void cool::async_task_result<return_Ty>::reset_unchecked(std::size_t count, const return_Ty& rhs)
 {
 	for (std::size_t k = 0; k < count; k++)
 	{
 		*(m_stored_values_ptr + k) = rhs;
 	}
-
-	return *this;
 }
 
 template <class return_Ty>
@@ -4278,39 +4315,41 @@ inline const return_Ty* cool::async_task_result<return_Ty>::data() const noexcep
 }
 
 template <class return_Ty>
-inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::set_data(return_Ty* storage_ptr) noexcept
+inline void cool::async_task_result<return_Ty>::set_data(return_Ty* storage_ptr) noexcept
 {
 	finish();
 	m_stored_values_ptr = storage_ptr;
-	return *this;
 }
 
 template <class return_Ty>
-inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::set_data_unchecked(return_Ty* storage_ptr) noexcept
+inline void cool::async_task_result<return_Ty>::set_data_unchecked(return_Ty* storage_ptr) noexcept
 {
 	m_stored_values_ptr = storage_ptr;
-	return *this;
 }
 
 template <class return_Ty>
-inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::clear() noexcept
+inline void cool::async_task_result<return_Ty>::clear() noexcept
 {
 	finish();
 	m_stored_values_ptr = nullptr;
-	return *this;
 }
 
 template <class return_Ty>
-inline cool::async_task_result<return_Ty>& cool::async_task_result<return_Ty>::clear_unchecked() noexcept
+inline void cool::async_task_result<return_Ty>::clear_unchecked() noexcept
 {
 	m_stored_values_ptr = nullptr;
-	return *this;
 }
 
 template <class return_Ty>
-inline cool::_async_task_result_incr_proxy<return_Ty> cool::_async_task_result_proxy<return_Ty>::try_incr_awaited() noexcept
+inline cool::_async_task_result_incr_proxy<return_Ty> cool::_async_task_result_proxy<return_Ty>::incr_awaited() noexcept
 {
 	return cool::_async_task_result_incr_proxy<return_Ty>(m_parent_ptr, m_offset);
+}
+
+template <class return_Ty>
+inline cool::_async_task_result_try_incr_proxy<return_Ty> cool::_async_task_result_proxy<return_Ty>::try_incr_awaited() noexcept
+{
+	return cool::_async_task_result_try_incr_proxy<return_Ty>(m_parent_ptr, m_offset);
 }
 
 #endif // xCOOL_THREADS_HPP
