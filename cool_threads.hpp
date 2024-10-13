@@ -143,12 +143,6 @@ namespace cool
 
 	public:
 
-#ifdef UINT64_MAX
-		using countdown_type = std::uint64_t;
-#else // UINT64_MAX
-		using countdown_type = std::uint32_t;
-#endif // UINT64_MAX
-
 		static constexpr std::size_t cache_line_size = alignof(cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>);
 		static constexpr std::size_t arg_buffer_size = _arg_buffer_size;
 		static constexpr std::size_t arg_buffer_align = alignof(typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task);
@@ -201,13 +195,17 @@ namespace cool
 		template <class return_Ty, class function_Ty, class ... args_Ty>
 		inline bool try_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
 
-		inline bool init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size,
-			countdown_type push_rounds = static_cast<countdown_type>(-1), countdown_type pop_rounds = 1,
-			std::uint16_t dispatch_interval = 1);
+		inline bool init_new_threads(
+			std::uint16_t new_thread_count,
+			std::size_t new_task_buffer_size,
+			unsigned int pop_rounds = 1,
+			unsigned int push_rounds = static_cast<unsigned int>(-1),
+			std::uint16_t dispatch_interval = 1
+		);
 		inline std::uint16_t thread_count() const noexcept;
 		inline std::size_t task_buffer_size() const noexcept;
-		inline countdown_type push_rounds() const noexcept;
-		inline countdown_type pop_rounds() const noexcept;
+		inline unsigned int pop_rounds() const noexcept;
+		inline unsigned int push_rounds() const noexcept;
 		inline std::uint16_t dispatch_interval() const noexcept;
 		inline void delete_threads() noexcept;
 	};
@@ -405,11 +403,9 @@ namespace cool
 	private:
 
 #ifdef UINT64_MAX
-		using countdown_type = std::uint64_t;
 		using _uintX = std::uint32_t;
 		using _uint2X = std::uint64_t;
 #else // UINT64_MAX
-		using countdown_type = std::uint32_t;
 		using _uintX = std::uint16_t;
 		using _uint2X = std::uint32_t;
 #endif // UINT64_MAX
@@ -429,8 +425,8 @@ namespace cool
 
 		_thread_block* m_thread_blocks_data_ptr = nullptr;
 		std::size_t m_thread_count = 0;
-		countdown_type m_push_rounds = 1;
-		countdown_type m_pop_rounds = 1;
+		unsigned int m_pop_rounds = 1;
+		unsigned int m_push_rounds = static_cast<unsigned int>(-1);
 		
 		_uint2X m_mod_D = 1;
 		_uint2X m_mod_a = static_cast<_uint2X>(1) << (sizeof(_uintX) * CHAR_BIT);
@@ -2924,7 +2920,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 	bool success = false;
 
-	for (countdown_type n = this->m_push_rounds; n > 0; n--)
+	for (unsigned int n = this->m_push_rounds; n > 0; n--)
 	{
 		for (std::size_t k = first_thread + 1; k > 0; )
 		{
@@ -3071,7 +3067,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 	bool success = false;
 
-	for (countdown_type n = this->m_push_rounds; n > 0; n--)
+	for (unsigned int n = this->m_push_rounds; n > 0; n--)
 	{
 		for (std::size_t k = first_thread + 1; k > 0; )
 		{
@@ -3226,7 +3222,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 	bool success = false;
 
-	for (countdown_type n = this->m_push_rounds; n > 0; n--)
+	for (unsigned int n = this->m_push_rounds; n > 0; n--)
 	{
 		for (std::size_t k = first_thread + 1; k > 0; )
 		{
@@ -3385,7 +3381,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 	bool success = false;
 
-	for (countdown_type n = this->m_push_rounds; n > 0; n--)
+	for (unsigned int n = this->m_push_rounds; n > 0; n--)
 	{
 		for (std::size_t k = first_thread + 1; k > 0; )
 		{
@@ -3548,7 +3544,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 	bool success = false;
 
-	for (countdown_type n = this->m_push_rounds; n > 0; n--)
+	for (unsigned int n = this->m_push_rounds; n > 0; n--)
 	{
 		for (std::size_t k = first_thread + 1; k > 0; )
 		{
@@ -3692,8 +3688,8 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::init_new_threads(
 	std::uint16_t new_thread_count,
 	std::size_t new_task_buffer_size,
-	typename cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::countdown_type push_rounds,
-	typename cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::countdown_type pop_rounds,
+	unsigned int pop_rounds,
+	unsigned int push_rounds,
 	std::uint16_t dispatch_interval)
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
@@ -3705,7 +3701,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	delete_threads();
 
 	if ((new_thread_count == 0) || (new_task_buffer_size == 0)
-		|| (push_rounds == 0) || (pop_rounds == 0))
+		|| (pop_rounds == 0) || (push_rounds == 0))
 	{
 		return false;
 	}
@@ -3717,8 +3713,8 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		task_buffer_size_per_thread++;
 	}
 
-	this->m_push_rounds = push_rounds;
 	this->m_pop_rounds = pop_rounds;
+	this->m_push_rounds = push_rounds;
 
 	std::size_t threads_constructed = 0;
 	std::size_t threads_launched = 0;
@@ -3800,7 +3796,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 				{
 					bool ongoing = [&]() -> bool
 					{
-						for (countdown_type n = pop_rounds; n > 0; n--)
+						for (unsigned int n = pop_rounds; n > 0; n--)
 						{
 							for (std::size_t k = thread_num; k < _new_thread_count; k++)
 							{
@@ -3918,15 +3914,15 @@ inline std::size_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buf
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
-inline typename cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::countdown_type cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::push_rounds() const noexcept
+inline unsigned int cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::pop_rounds() const noexcept
 {
-	return this->m_push_rounds;
+	return this->m_pop_rounds;
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
-inline typename cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::countdown_type cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::pop_rounds() const noexcept
+inline unsigned int cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::push_rounds() const noexcept
 {
-	return this->m_pop_rounds;
+	return this->m_push_rounds;
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
@@ -3978,8 +3974,8 @@ inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 
 	this->m_thread_blocks_data_ptr = nullptr;
 	this->m_thread_count = 0;
-	this->m_push_rounds = 1;
 	this->m_pop_rounds = 1;
+	this->m_push_rounds = static_cast<unsigned int>(-1);
 
 	constexpr std::size_t uintX_bitcount = sizeof(_uintX) * CHAR_BIT;
 
