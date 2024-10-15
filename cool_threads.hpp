@@ -19,7 +19,6 @@
 
 namespace cool
 {
-	// 64 (bytes) is the most usual value for _cache_line_size
 	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class threads_sq;
 	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class threads_mq;
 
@@ -41,7 +40,7 @@ namespace cool
 
 	// threads_sq
 
-	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align = 0>
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align = alignof(std::max_align_t)>
 	class threads_sq : private cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>
 	{
 
@@ -49,12 +48,16 @@ namespace cool
 
 		static constexpr std::size_t cache_line_size = alignof(cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>);
 		static constexpr std::size_t arg_buffer_size = _arg_buffer_size;
-		static constexpr std::size_t arg_buffer_align = alignof(typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task);
+		static constexpr std::size_t arg_buffer_align = _arg_buffer_align;
+
+		// 64 (bytes) is the most common value for _cache_line_size
 
 		static_assert((_cache_line_size & (_cache_line_size - 1)) == 0,
 			"cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : cache_line_size must be a power of 2");
 		static_assert((_arg_buffer_align & (_arg_buffer_align - 1)) == 0,
 			"cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : arg_buffer_align must be a power of 2");
+		static_assert(_arg_buffer_align >= alignof(std::max_align_t),
+			"cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : arg_buffer_align must be greater or equal to alignof(std::max_align_t)");
 
 		threads_sq() = default;
 		threads_sq(const cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
@@ -138,7 +141,7 @@ namespace cool
 
 	// threads_mq
 
-	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align = 0>
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align = alignof(std::max_align_t)>
 	class threads_mq : private cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>
 	{
 
@@ -146,12 +149,16 @@ namespace cool
 
 		static constexpr std::size_t cache_line_size = alignof(cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>);
 		static constexpr std::size_t arg_buffer_size = _arg_buffer_size;
-		static constexpr std::size_t arg_buffer_align = alignof(typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task);
+		static constexpr std::size_t arg_buffer_align = _arg_buffer_align;
+
+		// 64 (bytes) is the most common value for _cache_line_size
 
 		static_assert((_cache_line_size & (_cache_line_size - 1)) == 0,
-			"cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : cache_line_size must be a power of 2");
+			"cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : cache_line_size must be a power of 2");
 		static_assert((_arg_buffer_align & (_arg_buffer_align - 1)) == 0,
-			"cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : arg_buffer_align must be a power of 2");
+			"cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : arg_buffer_align must be a power of 2");
+		static_assert(_arg_buffer_align >= alignof(std::max_align_t),
+			"cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : arg_buffer_align must be greater or equal to alignof(std::max_align_t)");
 
 		threads_mq() = default;
 		threads_mq(const cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
