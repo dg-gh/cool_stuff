@@ -68,75 +68,77 @@ namespace cool
 
 		// 'function_Ty task' must be a function pointer
 		// 'function_Ty task' must pass arguments by copy
-		// 'function_Ty task' must not throw exceptions
 		// 'args_Ty ... args' must be movable or copyable without throwing exceptions
+
+		// if 'function_Ty task' throws an exception, the task will end prematurely but the thread will jump to the next task and keep running
+		// all methods of threads_mq deal with potential exceptions internally and will not pass exceptions to the caller, even if not marked 'noexcept'
 
 		// WARNING: queuing tasks with 'async' / 'priority_async' / 'try_async' / 'try_priority_async' does not check wether threads have been initialized beforehand
 
 		template <class function_Ty, class ... args_Ty>
-		inline void async(cool::no_target_t, function_Ty task, args_Ty ... args) noexcept;
+		inline void async(cool::no_target_t, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline void priority_async(cool::no_target_t, function_Ty task, args_Ty ... args) noexcept;
+		inline void priority_async(cool::no_target_t, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline void async(cool::async_task_end& target, function_Ty task, args_Ty ... args) noexcept;
+		inline void async(cool::async_task_end& target, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline void priority_async(cool::async_task_end& target, function_Ty task, args_Ty ... args) noexcept;
+		inline void priority_async(cool::async_task_end& target, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline void async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args) noexcept;
+		inline void async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline void priority_async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args) noexcept;
+		inline void priority_async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args);
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline void async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline void async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args);
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline void priority_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline void priority_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args);
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline void async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline void async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args);
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline void priority_async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline void priority_async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline bool try_async(cool::no_target_t, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_async(cool::no_target_t, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline bool try_priority_async(cool::no_target_t, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_priority_async(cool::no_target_t, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline bool try_async(cool::async_task_end& target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_async(cool::async_task_end& target, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline bool try_priority_async(cool::async_task_end& target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_priority_async(cool::async_task_end& target, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline bool try_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline bool try_priority_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_priority_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args);
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline bool try_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args);
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline bool try_priority_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_priority_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args);
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline bool try_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args);
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline bool try_priority_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_priority_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args);
 
 		inline bool init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size);
 		inline std::uint16_t thread_count() const noexcept;
 		inline std::size_t task_buffer_size() const noexcept;
-		inline void delete_threads() noexcept;
+		inline void delete_threads();
 	};
 
 	// threads_mq
@@ -169,40 +171,42 @@ namespace cool
 
 		// 'function_Ty task' must be a function pointer
 		// 'function_Ty task' must pass arguments by copy
-		// 'function_Ty task' must not throw exceptions
 		// 'args_Ty ... args' must be movable or copyable without throwing exceptions
+
+		// if 'function_Ty task' throws an exception, the task will end prematurely but the thread will jump to the next task and keep running
+		// all methods of threads_mq deal with potential exceptions internally and will not pass exceptions to the caller, even if not marked 'noexcept'
 
 		// WARNING: queuing tasks with 'async' / 'try_async' does not check wether threads have been initialized beforehand
 
 		template <class function_Ty, class ... args_Ty>
-		inline void async(cool::no_target_t, function_Ty task, args_Ty ... args) noexcept;
+		inline void async(cool::no_target_t, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline void async(cool::async_task_end& target, function_Ty task, args_Ty ... args) noexcept;
+		inline void async(cool::async_task_end& target, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline void async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args) noexcept;
+		inline void async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args);
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline void async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline void async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args);
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline void async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline void async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline bool try_async(cool::no_target_t, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_async(cool::no_target_t, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline bool try_async(cool::async_task_end& target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_async(cool::async_task_end& target, function_Ty task, args_Ty ... args);
 
 		template <class function_Ty, class ... args_Ty>
-		inline bool try_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args);
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline bool try_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args);
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
-		inline bool try_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+		inline bool try_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args);
 
 		inline bool init_new_threads(
 			std::uint16_t new_thread_count,
@@ -216,7 +220,7 @@ namespace cool
 		inline unsigned int pop_tries() const noexcept;
 		inline unsigned int push_tries() const noexcept;
 		inline std::uint16_t dispatch_interval() const noexcept;
-		inline void delete_threads() noexcept;
+		inline void delete_threads();
 	};
 
 
@@ -238,12 +242,12 @@ namespace cool
 		~async_task_end() = default;
 
 		inline void add_awaited(std::size_t number_of_tasks) noexcept;
-		inline bool sub_awaited(std::size_t number_of_tasks) noexcept; // returns true iff notified
-		inline bool set_awaited(std::ptrdiff_t number_of_tasks) noexcept; // returns true iff notified
+		inline bool sub_awaited(std::size_t number_of_tasks); // returns true iff notified
+		inline bool set_awaited(std::ptrdiff_t number_of_tasks); // returns true iff notified
 		inline std::ptrdiff_t get_awaited() const noexcept;
-		inline bool decr_awaited() noexcept; // returns true iff notified
-		inline void notify() noexcept;
-		inline void finish() noexcept;
+		inline bool decr_awaited(); // returns true iff notified
+		inline void notify();
+		inline void finish();
 		inline bool finished() const noexcept;
 
 		inline cool::_async_task_end_incr_proxy incr_awaited() noexcept;
@@ -289,16 +293,16 @@ namespace cool
 		explicit inline async_task_result(return_Ty* storage_ptr, const return_Ty& rhs);
 
 		inline void add_awaited(std::size_t number_of_tasks) noexcept;
-		inline bool sub_awaited(std::size_t number_of_tasks) noexcept; // returns true iff notified
-		inline bool set_awaited(std::ptrdiff_t number_of_tasks) noexcept; // returns true iff notified
+		inline bool sub_awaited(std::size_t number_of_tasks); // returns true iff notified
+		inline bool set_awaited(std::ptrdiff_t number_of_tasks); // returns true iff notified
 		inline std::ptrdiff_t get_awaited() const noexcept;
 		inline cool::_async_task_result_proxy<return_Ty> to(std::size_t offset) noexcept;
-		inline bool decr_awaited() noexcept; // returns true iff notified
-		inline void notify() noexcept;
-		inline void finish() noexcept;
+		inline bool decr_awaited(); // returns true iff notified
+		inline void notify();
+		inline void finish();
 		inline bool finished() const noexcept;
 
-		inline return_Ty& get(std::size_t offset) noexcept;
+		inline return_Ty& get(std::size_t offset);
 		inline return_Ty& get_unchecked(std::size_t offset) noexcept;
 		inline const return_Ty& get_unchecked(std::size_t offset) const noexcept;
 		inline void reset(std::size_t count);
@@ -345,7 +349,7 @@ namespace cool
 		cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>& operator=(cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&&) = delete;
 		~_threads_sq_data() = default;
 
-		inline void delete_threads_detail(std::size_t threads_constructed) noexcept;
+		inline void delete_threads_detail(std::size_t threads_constructed);
 
 		class _task;
 
@@ -428,7 +432,7 @@ namespace cool
 		cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>& operator=(cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&&) = delete;
 		~_threads_mq_data() = default;
 
-		inline void delete_threads_detail(std::size_t threads_constructed, std::size_t threads_launched) noexcept;
+		inline void delete_threads_detail(std::size_t threads_constructed, std::size_t threads_launched);
 
 		class _thread_block;
 
@@ -639,7 +643,7 @@ inline cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::no_target_t, function_Ty task, args_Ty ... args) noexcept
+inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::no_target_t, function_Ty task, args_Ty ... args)
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
@@ -650,6 +654,677 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
 
 	while (true)
+	{
+		try
+		{
+			std::lock_guard<std::mutex> lock(this->m_mutex);
+
+			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+
+			if ((last_task_ptr_p1 != this->m_next_task_ptr)
+				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
+					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			{
+				new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
+				std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+
+				this->m_last_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
+				{
+					if (_fetch_task_ptr == nullptr)
+					{
+						function_Ty function_ptr;
+						std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
+
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
+							function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
+						);
+
+						reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+					}
+					else
+					{
+						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
+						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+
+						_task_ptr->m_callable = _fetch_task_ptr->m_callable;
+						_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
+					}
+				};
+
+				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
+					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+
+				break;
+			}
+		}
+		catch (...) {}
+	}
+
+	this->m_condition_var.notify_one();
+}
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
+inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::priority_async(cool::no_target_t, function_Ty task, args_Ty ... args)
+{
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
+
+	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
+		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
+	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
+
+	while (true)
+	{
+		try
+		{
+			std::lock_guard<std::mutex> lock(this->m_mutex);
+
+			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+
+			if ((last_task_ptr_p1 != this->m_next_task_ptr)
+				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
+					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			{
+				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
+					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
+				(this->m_next_task_ptr)--;
+
+				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
+				std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+
+				this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
+				{
+					if (_fetch_task_ptr == nullptr)
+					{
+						function_Ty function_ptr;
+						std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
+
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
+							function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
+						);
+
+						reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+					}
+					else
+					{
+						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
+						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+
+						_task_ptr->m_callable = _fetch_task_ptr->m_callable;
+						_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
+					}
+				};
+
+				break;
+			}
+		}
+		catch (...) {}
+	}
+
+	this->m_condition_var.notify_one();
+}
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
+inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::async_task_end& target, function_Ty task, args_Ty ... args)
+{
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
+
+	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
+		"cool::threads_sq<...>::try_async : task must be a function pointer");
+	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : task arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
+
+	while (true)
+	{
+		try
+		{
+			std::lock_guard<std::mutex> lock(this->m_mutex);
+
+			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+
+			if ((last_task_ptr_p1 != this->m_next_task_ptr)
+				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
+					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			{
+				new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
+				std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+				this->m_last_task_ptr->m_target_ptr = static_cast<void*>(&target);
+
+				this->m_last_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
+				{
+					if (_fetch_task_ptr == nullptr)
+					{
+						function_Ty function_ptr;
+						std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
+
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
+							function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
+						);
+
+						static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
+
+						reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+					}
+					else
+					{
+						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
+						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+
+						_task_ptr->m_callable = _fetch_task_ptr->m_callable;
+						_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
+						_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
+					}
+				};
+
+				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
+					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+
+				break;
+			}
+		}
+		catch (...) {}
+	}
+
+	this->m_condition_var.notify_one();
+}
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
+inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::priority_async(cool::async_task_end& target, function_Ty task, args_Ty ... args)
+{
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
+
+	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
+		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
+	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
+
+	while (true)
+	{
+		try
+		{
+			std::lock_guard<std::mutex> lock(this->m_mutex);
+
+			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+
+			if ((last_task_ptr_p1 != this->m_next_task_ptr)
+				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
+					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			{
+				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
+					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
+				(this->m_next_task_ptr)--;
+
+				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
+				std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+				this->m_next_task_ptr->m_target_ptr = static_cast<void*>(&target);
+
+				this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
+				{
+					if (_fetch_task_ptr == nullptr)
+					{
+						function_Ty function_ptr;
+						std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
+
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
+							function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
+						);
+
+						static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
+
+						reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+					}
+					else
+					{
+						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
+						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+
+						_task_ptr->m_callable = _fetch_task_ptr->m_callable;
+						_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
+						_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
+					}
+				};
+
+				break;
+			}
+		}
+		catch (...) {}
+	}
+
+	this->m_condition_var.notify_one();
+}
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
+inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args)
+{
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
+
+	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
+		"cool::threads_sq<...>::try_async : task must be a function pointer");
+	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : task arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
+
+	while (true)
+	{
+		try
+		{
+			std::lock_guard<std::mutex> lock(this->m_mutex);
+
+			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+
+			if ((last_task_ptr_p1 != this->m_next_task_ptr)
+				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
+					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			{
+				target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
+
+				new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
+				std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+				this->m_last_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
+
+				this->m_last_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
+				{
+					if (_fetch_task_ptr == nullptr)
+					{
+						function_Ty function_ptr;
+						std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
+
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
+							function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
+						);
+
+						static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
+
+						reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+					}
+					else
+					{
+						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
+						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+
+						_task_ptr->m_callable = _fetch_task_ptr->m_callable;
+						_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
+						_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
+					}
+				};
+
+				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
+					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+
+				break;
+			}
+		}
+		catch (...) {}
+	}
+
+	this->m_condition_var.notify_one();
+}
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
+inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::priority_async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args)
+{
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
+
+	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
+		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
+	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
+
+	while (true)
+	{
+		try
+		{
+			std::lock_guard<std::mutex> lock(this->m_mutex);
+
+			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+
+			if ((last_task_ptr_p1 != this->m_next_task_ptr)
+				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
+					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			{
+				target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
+
+				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
+					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
+				(this->m_next_task_ptr)--;
+
+				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
+				std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+				this->m_next_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
+
+				this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
+				{
+					if (_fetch_task_ptr == nullptr)
+					{
+						function_Ty function_ptr;
+						std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
+
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
+							function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
+						);
+
+						static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
+
+						reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+					}
+					else
+					{
+						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
+						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+
+						_task_ptr->m_callable = _fetch_task_ptr->m_callable;
+						_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
+						_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
+					}
+				};
+
+				break;
+			}
+		}
+		catch (...) {}
+	}
+
+	this->m_condition_var.notify_one();
+}
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
+inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args)
+{
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
+
+	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
+		"cool::threads_sq<...>::try_async : task must be a function pointer");
+	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : task arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
+
+	while (true)
+	{
+		try
+		{
+			std::lock_guard<std::mutex> lock(this->m_mutex);
+
+			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+
+			if ((last_task_ptr_p1 != this->m_next_task_ptr)
+				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
+					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			{
+				new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
+				std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+				this->m_last_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
+				this->m_last_task_ptr->m_offset = target.m_offset;
+
+				this->m_last_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
+				{
+					if (_fetch_task_ptr == nullptr)
+					{
+						function_Ty function_ptr;
+						std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
+
+						cool::async_task_result<return_Ty>& target_ref = *static_cast<cool::async_task_result<return_Ty>*>(_task_ptr->m_target_ptr);
+
+						*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
+							function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
+						);
+
+						target_ref.decr_awaited();
+
+						reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+					}
+					else
+					{
+						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
+						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+
+						_task_ptr->m_callable = _fetch_task_ptr->m_callable;
+						_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
+						_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
+						_task_ptr->m_offset = _fetch_task_ptr->m_offset;
+					}
+				};
+
+				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
+					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+
+				break;
+			}
+		}
+		catch (...) {}
+	}
+
+	this->m_condition_var.notify_one();
+}
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
+inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::priority_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args)
+{
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
+
+	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
+		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
+	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
+
+	while (true)
+	{
+		try
+		{
+			std::lock_guard<std::mutex> lock(this->m_mutex);
+
+			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+
+			if ((last_task_ptr_p1 != this->m_next_task_ptr)
+				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
+					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			{
+				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
+					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
+				(this->m_next_task_ptr)--;
+
+				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
+				std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+				this->m_next_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
+				this->m_next_task_ptr->m_offset = target.m_offset;
+
+				this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
+				{
+					if (_fetch_task_ptr == nullptr)
+					{
+						function_Ty function_ptr;
+						std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
+
+						cool::async_task_result<return_Ty>& target_ref = *static_cast<cool::async_task_result<return_Ty>*>(_task_ptr->m_target_ptr);
+
+						*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
+							function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
+						);
+
+						target_ref.decr_awaited();
+
+						reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+					}
+					else
+					{
+						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
+						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+
+						_task_ptr->m_callable = _fetch_task_ptr->m_callable;
+						_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
+						_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
+						_task_ptr->m_offset = _fetch_task_ptr->m_offset;
+					}
+				};
+
+				break;
+			}
+		}
+		catch (...) {}
+	}
+
+	this->m_condition_var.notify_one();
+}
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
+inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args)
+{
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
+
+	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
+		"cool::threads_sq<...>::try_async : task must be a function pointer");
+	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : task arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
+
+	while (true)
+	{
+		try
+		{
+			std::lock_guard<std::mutex> lock(this->m_mutex);
+
+			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+
+			if ((last_task_ptr_p1 != this->m_next_task_ptr)
+				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
+					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			{
+				target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
+
+				new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
+				std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+				this->m_last_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
+				this->m_last_task_ptr->m_offset = target.m_offset;
+
+				this->m_last_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
+				{
+					if (_fetch_task_ptr == nullptr)
+					{
+						function_Ty function_ptr;
+						std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
+
+						cool::async_task_result<return_Ty>& target_ref = *static_cast<cool::async_task_result<return_Ty>*>(_task_ptr->m_target_ptr);
+
+						*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
+							function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
+						);
+
+						target_ref.decr_awaited();
+
+						reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+					}
+					else
+					{
+						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
+						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+
+						_task_ptr->m_callable = _fetch_task_ptr->m_callable;
+						_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
+						_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
+						_task_ptr->m_offset = _fetch_task_ptr->m_offset;
+					}
+				};
+
+				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
+					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+
+				break;
+			}
+		}
+		catch (...) {}
+	}
+
+	this->m_condition_var.notify_one();
+}
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
+inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::priority_async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args)
+{
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
+
+	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
+		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
+	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
+
+	while (true)
+	{
+		try
+		{
+			std::lock_guard<std::mutex> lock(this->m_mutex);
+
+			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+
+			if ((last_task_ptr_p1 != this->m_next_task_ptr)
+				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
+					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			{
+				target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
+
+				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
+					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
+				(this->m_next_task_ptr)--;
+
+				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
+				std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
+				this->m_next_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
+				this->m_next_task_ptr->m_offset = target.m_offset;
+
+				this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
+				{
+					if (_fetch_task_ptr == nullptr)
+					{
+						function_Ty function_ptr;
+						std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
+
+						cool::async_task_result<return_Ty>& target_ref = *static_cast<cool::async_task_result<return_Ty>*>(_task_ptr->m_target_ptr);
+
+						*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
+							function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
+						);
+
+						target_ref.decr_awaited();
+
+						reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+					}
+					else
+					{
+						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
+						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
+
+						_task_ptr->m_callable = _fetch_task_ptr->m_callable;
+						_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
+						_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
+						_task_ptr->m_offset = _fetch_task_ptr->m_offset;
+					}
+				};
+
+				break;
+			}
+		}
+		catch (...) {}
+	}
+
+	this->m_condition_var.notify_one();
+}
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::no_target_t, function_Ty task, args_Ty ... args)
+{
+	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
+	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
+
+	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
+		"cool::threads_sq<...>::try_async : task must be a function pointer");
+	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : task arguments too large");
+	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
+
+	try
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
 
@@ -687,16 +1362,24 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
 				last_task_ptr_p1 : this->m_task_buffer_data_ptr;
-
-			break;
 		}
+		else
+		{
+			return false;
+		}
+	}
+	catch (...)
+	{
+		return false;
 	}
 
 	this->m_condition_var.notify_one();
+
+	return true;
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::priority_async(cool::no_target_t, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::no_target_t, function_Ty task, args_Ty ... args)
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
@@ -706,7 +1389,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
 	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
 
-	while (true)
+	try
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
 
@@ -745,16 +1428,24 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
 				}
 			};
-
-			break;
 		}
+		else
+		{
+			return false;
+		}
+	}
+	catch (...)
+	{
+		return false;
 	}
 
 	this->m_condition_var.notify_one();
+
+	return true;
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::async_task_end& target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::async_task_end& target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
@@ -764,7 +1455,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : task arguments too large");
 	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
 
-	while (true)
+	try
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
 
@@ -806,16 +1497,24 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
 				last_task_ptr_p1 : this->m_task_buffer_data_ptr;
-
-			break;
 		}
+		else
+		{
+			return false;
+		}
+	}
+	catch (...)
+	{
+		return false;
 	}
 
 	this->m_condition_var.notify_one();
+
+	return true;
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::priority_async(cool::async_task_end& target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::async_task_end& target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
@@ -825,7 +1524,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
 	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
 
-	while (true)
+	try
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
 
@@ -868,520 +1567,15 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
 				}
 			};
-
-			break;
-		}
-	}
-
-	this->m_condition_var.notify_one();
-}
-
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args) noexcept
-{
-	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
-
-	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
-		"cool::threads_sq<...>::try_async : task must be a function pointer");
-	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : task arguments too large");
-	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
-
-	while (true)
-	{
-		std::lock_guard<std::mutex> lock(this->m_mutex);
-
-		_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
-
-		if ((last_task_ptr_p1 != this->m_next_task_ptr)
-			&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-				|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
-		{
-			target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
-
-			new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
-			this->m_last_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
-
-			this->m_last_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
-			{
-				if (_fetch_task_ptr == nullptr)
-				{
-					function_Ty function_ptr;
-					std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
-
-					cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
-						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
-					);
-
-					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
-
-					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-				}
-				else
-				{
-					new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
-					reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-
-					_task_ptr->m_callable = _fetch_task_ptr->m_callable;
-					_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
-					_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
-				}
-			};
-
-			this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-				last_task_ptr_p1 : this->m_task_buffer_data_ptr;
-
-			break;
-		}
-	}
-
-	this->m_condition_var.notify_one();
-}
-
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::priority_async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args) noexcept
-{
-	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
-
-	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
-		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
-	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
-	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
-
-	while (true)
-	{
-		std::lock_guard<std::mutex> lock(this->m_mutex);
-
-		_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
-
-		if ((last_task_ptr_p1 != this->m_next_task_ptr)
-			&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-				|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
-		{
-			target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
-
-			this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-				this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-			(this->m_next_task_ptr)--;
-
-			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
-			this->m_next_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
-
-			this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
-			{
-				if (_fetch_task_ptr == nullptr)
-				{
-					function_Ty function_ptr;
-					std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
-
-					cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
-						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
-					);
-
-					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
-
-					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-				}
-				else
-				{
-					new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
-					reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-
-					_task_ptr->m_callable = _fetch_task_ptr->m_callable;
-					_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
-					_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
-				}
-			};
-
-			break;
-		}
-	}
-
-	this->m_condition_var.notify_one();
-}
-
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
-{
-	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
-
-	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
-		"cool::threads_sq<...>::try_async : task must be a function pointer");
-	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : task arguments too large");
-	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
-
-	while (true)
-	{
-		std::lock_guard<std::mutex> lock(this->m_mutex);
-
-		_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
-
-		if ((last_task_ptr_p1 != this->m_next_task_ptr)
-			&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-				|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
-		{
-			new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
-			this->m_last_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
-			this->m_last_task_ptr->m_offset = target.m_offset;
-
-			this->m_last_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
-			{
-				if (_fetch_task_ptr == nullptr)
-				{
-					function_Ty function_ptr;
-					std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
-
-					cool::async_task_result<return_Ty>& target_ref = *static_cast<cool::async_task_result<return_Ty>*>(_task_ptr->m_target_ptr);
-
-					*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
-						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
-					);
-
-					target_ref.decr_awaited();
-
-					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-				}
-				else
-				{
-					new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
-					reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-
-					_task_ptr->m_callable = _fetch_task_ptr->m_callable;
-					_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
-					_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
-					_task_ptr->m_offset = _fetch_task_ptr->m_offset;
-				}
-			};
-
-			this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-				last_task_ptr_p1 : this->m_task_buffer_data_ptr;
-
-			break;
-		}
-	}
-
-	this->m_condition_var.notify_one();
-}
-
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::priority_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
-{
-	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
-
-	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
-		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
-	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
-	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
-
-	while (true)
-	{
-		std::lock_guard<std::mutex> lock(this->m_mutex);
-
-		_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
-
-		if ((last_task_ptr_p1 != this->m_next_task_ptr)
-			&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-				|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
-		{
-			this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-				this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-			(this->m_next_task_ptr)--;
-
-			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
-			this->m_next_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
-			this->m_next_task_ptr->m_offset = target.m_offset;
-
-			this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
-			{
-				if (_fetch_task_ptr == nullptr)
-				{
-					function_Ty function_ptr;
-					std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
-
-					cool::async_task_result<return_Ty>& target_ref = *static_cast<cool::async_task_result<return_Ty>*>(_task_ptr->m_target_ptr);
-
-					*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
-						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
-					);
-
-					target_ref.decr_awaited();
-
-					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-				}
-				else
-				{
-					new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
-					reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-
-					_task_ptr->m_callable = _fetch_task_ptr->m_callable;
-					_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
-					_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
-					_task_ptr->m_offset = _fetch_task_ptr->m_offset;
-				}
-			};
-
-			break;
-		}
-	}
-
-	this->m_condition_var.notify_one();
-}
-
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
-{
-	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
-
-	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
-		"cool::threads_sq<...>::try_async : task must be a function pointer");
-	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : task arguments too large");
-	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
-
-	while (true)
-	{
-		std::lock_guard<std::mutex> lock(this->m_mutex);
-
-		_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
-
-		if ((last_task_ptr_p1 != this->m_next_task_ptr)
-			&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-				|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
-		{
-			target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
-
-			new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
-			this->m_last_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
-			this->m_last_task_ptr->m_offset = target.m_offset;
-
-			this->m_last_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
-			{
-				if (_fetch_task_ptr == nullptr)
-				{
-					function_Ty function_ptr;
-					std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
-
-					cool::async_task_result<return_Ty>& target_ref = *static_cast<cool::async_task_result<return_Ty>*>(_task_ptr->m_target_ptr);
-
-					*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
-						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
-					);
-
-					target_ref.decr_awaited();
-
-					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-				}
-				else
-				{
-					new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
-					reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-
-					_task_ptr->m_callable = _fetch_task_ptr->m_callable;
-					_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
-					_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
-					_task_ptr->m_offset = _fetch_task_ptr->m_offset;
-				}
-			};
-
-			this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-				last_task_ptr_p1 : this->m_task_buffer_data_ptr;
-
-			break;
-		}
-	}
-
-	this->m_condition_var.notify_one();
-}
-
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::priority_async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
-{
-	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
-
-	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
-		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
-	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
-	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
-
-	while (true)
-	{
-		std::lock_guard<std::mutex> lock(this->m_mutex);
-
-		_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
-
-		if ((last_task_ptr_p1 != this->m_next_task_ptr)
-			&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-				|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
-		{
-			target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
-
-			this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-				this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-			(this->m_next_task_ptr)--;
-
-			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
-			this->m_next_task_ptr->m_target_ptr = static_cast<void*>(target.m_parent_ptr);
-			this->m_next_task_ptr->m_offset = target.m_offset;
-
-			this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
-			{
-				if (_fetch_task_ptr == nullptr)
-				{
-					function_Ty function_ptr;
-					std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
-
-					cool::async_task_result<return_Ty>& target_ref = *static_cast<cool::async_task_result<return_Ty>*>(_task_ptr->m_target_ptr);
-
-					*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call(
-						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
-					);
-
-					target_ref.decr_awaited();
-
-					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-				}
-				else
-				{
-					new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
-					reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-
-					_task_ptr->m_callable = _fetch_task_ptr->m_callable;
-					_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
-					_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
-					_task_ptr->m_offset = _fetch_task_ptr->m_offset;
-				}
-			};
-
-			break;
-		}
-	}
-
-	this->m_condition_var.notify_one();
-}
-
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::no_target_t, function_Ty task, args_Ty ... args) noexcept
-{
-	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
-
-	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
-		"cool::threads_sq<...>::try_async : task must be a function pointer");
-	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : task arguments too large");
-	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
-
-	{
-		std::lock_guard<std::mutex> lock(this->m_mutex);
-
-		_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
-
-		if ((last_task_ptr_p1 != this->m_next_task_ptr)
-			&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-				|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
-		{
-			new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
-
-			this->m_last_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
-			{
-				if (_fetch_task_ptr == nullptr)
-				{
-					function_Ty function_ptr;
-					std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
-
-					cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
-						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
-					);
-
-					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-				}
-				else
-				{
-					new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
-					reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-
-					_task_ptr->m_callable = _fetch_task_ptr->m_callable;
-					_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
-				}
-			};
-
-			this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-				last_task_ptr_p1 : this->m_task_buffer_data_ptr;
 		}
 		else
 		{
 			return false;
 		}
 	}
-
-	this->m_condition_var.notify_one();
-	return true;
-}
-
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::no_target_t, function_Ty task, args_Ty ... args) noexcept
-{
-	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
-
-	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
-		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
-	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
-	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
-
+	catch (...)
 	{
-		std::lock_guard<std::mutex> lock(this->m_mutex);
-
-		_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
-
-		if ((last_task_ptr_p1 != this->m_next_task_ptr)
-			&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-				|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
-		{
-			this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-				this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-			(this->m_next_task_ptr)--;
-
-			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
-
-			this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
-			{
-				if (_fetch_task_ptr == nullptr)
-				{
-					function_Ty function_ptr;
-					std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
-
-					cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
-						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
-					);
-
-					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-				}
-				else
-				{
-					new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
-					reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-
-					_task_ptr->m_callable = _fetch_task_ptr->m_callable;
-					_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
-				}
-			};
-		}
-		else
-		{
-			return false;
-		}
+		return false;
 	}
 
 	this->m_condition_var.notify_one();
@@ -1390,7 +1584,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::async_task_end& target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
@@ -1400,135 +1594,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : task arguments too large");
 	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
 
-	{
-		std::lock_guard<std::mutex> lock(this->m_mutex);
-
-		_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
-
-		if ((last_task_ptr_p1 != this->m_next_task_ptr)
-			&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-				|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
-		{
-			new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_last_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
-			this->m_last_task_ptr->m_target_ptr = static_cast<void*>(&target);
-
-			this->m_last_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
-			{
-				if (_fetch_task_ptr == nullptr)
-				{
-					function_Ty function_ptr;
-					std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
-
-					cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
-						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
-					);
-
-					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
-
-					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-				}
-				else
-				{
-					new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
-					reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-
-					_task_ptr->m_callable = _fetch_task_ptr->m_callable;
-					_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
-					_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
-				}
-			};
-
-			this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-				last_task_ptr_p1 : this->m_task_buffer_data_ptr;
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-	this->m_condition_var.notify_one();
-
-	return true;
-}
-
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::async_task_end& target, function_Ty task, args_Ty ... args) noexcept
-{
-	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
-
-	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
-		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
-	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
-	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
-
-	{
-		std::lock_guard<std::mutex> lock(this->m_mutex);
-
-		_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
-
-		if ((last_task_ptr_p1 != this->m_next_task_ptr)
-			&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-				|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
-		{
-			this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-				this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-			(this->m_next_task_ptr)--;
-
-			new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::move(args)...));
-			std::memcpy(&(this->m_next_task_ptr->m_function_ptr), &task, sizeof(void(*)(void)));
-			this->m_next_task_ptr->m_target_ptr = static_cast<void*>(&target);
-
-			this->m_next_task_ptr->m_callable = [](_cool_thsq_task* _task_ptr, _cool_thsq_task* _fetch_task_ptr)
-			{
-				if (_fetch_task_ptr == nullptr)
-				{
-					function_Ty function_ptr;
-					std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(void(*)(void)));
-
-					cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::call_no_return(
-						function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
-					);
-
-					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
-
-					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-				}
-				else
-				{
-					new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
-					reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
-
-					_task_ptr->m_callable = _fetch_task_ptr->m_callable;
-					_task_ptr->m_function_ptr = _fetch_task_ptr->m_function_ptr;
-					_task_ptr->m_target_ptr = _fetch_task_ptr->m_target_ptr;
-				}
-			};
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-	this->m_condition_var.notify_one();
-
-	return true;
-}
-
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args) noexcept
-{
-	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
-
-	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
-		"cool::threads_sq<...>::try_async : task must be a function pointer");
-	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : task arguments too large");
-	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
-
+	try
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
 
@@ -1578,6 +1644,10 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			return false;
 		}
 	}
+	catch (...)
+	{
+		return false;
+	}
 
 	this->m_condition_var.notify_one();
 
@@ -1585,7 +1655,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
@@ -1595,6 +1665,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
 	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
 
+	try
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
 
@@ -1645,6 +1716,10 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			return false;
 		}
 	}
+	catch (...)
+	{
+		return false;
+	}
 
 	this->m_condition_var.notify_one();
 
@@ -1652,7 +1727,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
@@ -1662,6 +1737,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : task arguments too large");
 	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
 
+	try
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
 
@@ -1713,6 +1789,10 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			return false;
 		}
 	}
+	catch (...)
+	{
+		return false;
+	}
 
 	this->m_condition_var.notify_one();
 
@@ -1720,7 +1800,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
@@ -1730,6 +1810,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
 	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
 
+	try
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
 
@@ -1782,6 +1863,10 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			return false;
 		}
 	}
+	catch (...)
+	{
+		return false;
+	}
 
 	this->m_condition_var.notify_one();
 
@@ -1789,7 +1874,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
@@ -1799,6 +1884,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_async : task arguments too large");
 	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_async : task arguments alignment too large");
 
+	try
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
 
@@ -1852,6 +1938,10 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			return false;
 		}
 	}
+	catch (...)
+	{
+		return false;
+	}
 
 	this->m_condition_var.notify_one();
 
@@ -1859,7 +1949,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_priority_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thsq_pack = decltype(std::make_tuple(std::move(args)...));
@@ -1869,6 +1959,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	static_assert(sizeof(_cool_thsq_pack) <= _arg_buffer_size, "cool::threads_sq<...>::try_priority_async : task arguments too large");
 	static_assert(alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task), "cool::threads_sq<...>::try_priority_async : task arguments alignment too large");
 
+	try
 	{
 		std::lock_guard<std::mutex> lock(this->m_mutex);
 
@@ -1922,6 +2013,10 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			return false;
 		}
+	}
+	catch (...)
+	{
+		return false;
 	}
 
 	this->m_condition_var.notify_one();
@@ -2003,27 +2098,31 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 				while (true)
 				{
+					try
 					{
-						std::unique_lock<std::mutex> lock(this->m_mutex);
-
-						this->m_condition_var.wait(lock, [this]() -> bool { return (this->m_last_task_ptr != this->m_next_task_ptr) || this->m_stop_threads; });
-
-						if (this->m_last_task_ptr != this->m_next_task_ptr)
 						{
-							this->m_next_task_ptr->m_callable(&current_task, this->m_next_task_ptr);
+							std::unique_lock<std::mutex> lock(this->m_mutex);
 
-							_cool_thsq_task* next_task_ptr_p1 = this->m_next_task_ptr + 1;
+							this->m_condition_var.wait(lock, [this]() -> bool { return (this->m_last_task_ptr != this->m_next_task_ptr) || this->m_stop_threads; });
 
-							this->m_next_task_ptr = (next_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-								next_task_ptr_p1 : this->m_task_buffer_data_ptr;
+							if (this->m_last_task_ptr != this->m_next_task_ptr)
+							{
+								this->m_next_task_ptr->m_callable(&current_task, this->m_next_task_ptr);
+
+								_cool_thsq_task* next_task_ptr_p1 = this->m_next_task_ptr + 1;
+
+								this->m_next_task_ptr = (next_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
+									next_task_ptr_p1 : this->m_task_buffer_data_ptr;
+							}
+							else
+							{
+								return;
+							}
 						}
-						else
-						{
-							return;
-						}
+
+						current_task.m_callable(&current_task, nullptr);
 					}
-
-					current_task.m_callable(&current_task, nullptr);
+					catch (...) {}
 				}
 			});
 
@@ -2059,19 +2158,25 @@ inline std::size_t cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buf
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
-inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads() noexcept
+inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads()
 {
 	this->delete_threads_detail(this->m_thread_count);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
-inline void cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads_detail(std::size_t threads_constructed) noexcept
+inline void cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads_detail(std::size_t threads_constructed)
 {
 	constexpr std::size_t cache_line_size = alignof(cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>);
 
+	while (true)
 	{
-		std::unique_lock<std::mutex> lock(this->m_mutex);
-		this->m_stop_threads = true;
+		try
+		{
+			std::unique_lock<std::mutex> lock(this->m_mutex);
+			this->m_stop_threads = true;
+			break;
+		}
+		catch (...) {}
 	}
 
 	this->m_condition_var.notify_all();
@@ -2122,7 +2227,7 @@ inline cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::no_target_t, function_Ty task, args_Ty ... args) noexcept
+inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::no_target_t, function_Ty task, args_Ty ... args)
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
@@ -2146,8 +2251,6 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
 
-	bool success = false;
-
 	while (true)
 	{
 		for (std::size_t k = first_thread + 1; k > 0; )
@@ -2156,6 +2259,9 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -2200,6 +2306,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -2212,6 +2319,9 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -2256,6 +2366,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -2267,7 +2378,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::async_task_end& target, function_Ty task, args_Ty ... args) noexcept
+inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::async_task_end& target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
@@ -2291,8 +2402,6 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
 
-	bool success = false;
-
 	while (true)
 	{
 		for (std::size_t k = first_thread + 1; k > 0; )
@@ -2301,6 +2410,9 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -2349,6 +2461,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -2361,6 +2474,9 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -2409,6 +2525,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -2420,7 +2537,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args) noexcept
+inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::_async_task_end_incr_proxy target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
@@ -2444,8 +2561,6 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
 
-	bool success = false;
-
 	while (true)
 	{
 		for (std::size_t k = first_thread + 1; k > 0; )
@@ -2454,6 +2569,9 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+			
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -2504,6 +2622,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -2516,6 +2635,9 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -2566,6 +2688,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -2577,7 +2700,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
+inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
@@ -2601,8 +2724,6 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
 
-	bool success = false;
-
 	while (true)
 	{
 		for (std::size_t k = first_thread + 1; k > 0; )
@@ -2611,6 +2732,9 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -2663,6 +2787,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -2675,6 +2800,9 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -2727,6 +2855,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -2738,7 +2867,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
+inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
@@ -2762,8 +2891,6 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
 
-	bool success = false;
-
 	while (true)
 	{
 		for (std::size_t k = first_thread + 1; k > 0; )
@@ -2772,6 +2899,9 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -2826,6 +2956,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -2838,6 +2969,9 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -2892,6 +3026,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -2903,7 +3038,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::no_target_t, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::no_target_t, function_Ty task, args_Ty ... args)
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
@@ -2926,8 +3061,6 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		_cool_thmq_uint2X b = (N * this->m_mod_a) >> uintX_bitcount;
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
-
-	bool success = false;
 
 	for (unsigned int n = this->m_push_rounds; n > 0; n--)
 	{
@@ -2937,6 +3070,9 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -2981,6 +3117,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -2993,6 +3130,9 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -3037,6 +3177,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -3050,7 +3191,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::async_task_end& target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::async_task_end& target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
@@ -3074,8 +3215,6 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
 
-	bool success = false;
-
 	for (unsigned int n = this->m_push_rounds; n > 0; n--)
 	{
 		for (std::size_t k = first_thread + 1; k > 0; )
@@ -3084,6 +3223,9 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -3132,6 +3274,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -3144,6 +3287,9 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -3192,6 +3338,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -3205,7 +3352,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... args_Ty>
-inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_end_try_incr_proxy target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
@@ -3229,8 +3376,6 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
 
-	bool success = false;
-
 	for (unsigned int n = this->m_push_rounds; n > 0; n--)
 	{
 		for (std::size_t k = first_thread + 1; k > 0; )
@@ -3239,6 +3384,9 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -3289,6 +3437,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -3301,6 +3450,9 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -3351,6 +3503,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -3364,7 +3517,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_proxy<return_Ty> target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
@@ -3388,8 +3541,6 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
 
-	bool success = false;
-
 	for (unsigned int n = this->m_push_rounds; n > 0; n--)
 	{
 		for (std::size_t k = first_thread + 1; k > 0; )
@@ -3398,6 +3549,9 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -3450,6 +3604,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -3462,6 +3617,9 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -3514,6 +3672,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -3527,7 +3686,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class return_Ty, class function_Ty, class ... args_Ty>
-inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept
+inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::try_async(cool::_async_task_result_try_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args)
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
@@ -3551,8 +3710,6 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		first_thread = static_cast<std::size_t>(N - ((((N - b) >> 1) + b) >> this->m_mod_k) * this->m_mod_D);
 	}
 
-	bool success = false;
-
 	for (unsigned int n = this->m_push_rounds; n > 0; n--)
 	{
 		for (std::size_t k = first_thread + 1; k > 0; )
@@ -3561,6 +3718,9 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -3615,6 +3775,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -3627,6 +3788,9 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
+			bool success = false;
+
+			try
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
 
@@ -3681,6 +3845,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				}
 			}
+			catch (...) {}
 
 			if (success)
 			{
@@ -3812,25 +3977,67 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			(this->m_thread_blocks_data_ptr + thread_num)->m_thread = std::thread([this, thread_num, _new_thread_count, _new_pop_rounds]()
 			{
-				_cool_thmq_task current_task;
-				_cool_thmq_tblk* ptr;
-
 				while (true)
 				{
-					bool ongoing = [&]() -> bool
+					try
 					{
-						for (unsigned int n = _new_pop_rounds; n > 0; n--)
+						_cool_thmq_task current_task;
+						_cool_thmq_tblk* ptr;
+
+						bool ongoing = [&]() -> bool
 						{
-							for (std::size_t k = thread_num; k < _new_thread_count; k++)
+							for (unsigned int n = _new_pop_rounds; n > 0; n--)
 							{
-								ptr = this->m_thread_blocks_data_ptr + k;
+								for (std::size_t k = thread_num; k < _new_thread_count; k++)
+								{
+									ptr = this->m_thread_blocks_data_ptr + k;
 
-								std::unique_lock<std::mutex> lock(ptr->m_mutex, std::try_to_lock);
+									std::unique_lock<std::mutex> lock(ptr->m_mutex, std::try_to_lock);
 
-								if (lock.owns_lock() && (ptr->m_last_task_ptr != ptr->m_next_task_ptr))
+									if (lock.owns_lock() && (ptr->m_last_task_ptr != ptr->m_next_task_ptr))
+									{
+										ptr->m_next_task_ptr->m_callable(&current_task, ptr->m_next_task_ptr);
+										current_task = std::move(*(ptr->m_next_task_ptr));
+
+										_cool_thmq_task* next_task_ptr_p1 = ptr->m_next_task_ptr + 1;
+
+										ptr->m_next_task_ptr = (next_task_ptr_p1 != ptr->m_task_buffer_end_ptr) ?
+											next_task_ptr_p1 : ptr->m_task_buffer_data_ptr;
+
+										return true; // return from lambda, sets variable 'ongoing' as true
+									}
+								}
+
+								for (std::size_t k = 0; k < thread_num; k++)
+								{
+									ptr = this->m_thread_blocks_data_ptr + k;
+
+									std::unique_lock<std::mutex> lock(ptr->m_mutex, std::try_to_lock);
+
+									if (lock.owns_lock() && (ptr->m_last_task_ptr != ptr->m_next_task_ptr))
+									{
+										ptr->m_next_task_ptr->m_callable(&current_task, ptr->m_next_task_ptr);
+
+										_cool_thmq_task* next_task_ptr_p1 = ptr->m_next_task_ptr + 1;
+
+										ptr->m_next_task_ptr = (next_task_ptr_p1 != ptr->m_task_buffer_end_ptr) ?
+											next_task_ptr_p1 : ptr->m_task_buffer_data_ptr;
+
+										return true; // return from lambda, sets variable 'ongoing' as true
+									}
+								}
+							}
+
+							{
+								ptr = this->m_thread_blocks_data_ptr + thread_num;
+
+								std::unique_lock<std::mutex> lock(ptr->m_mutex);
+
+								ptr->m_condition_var.wait(lock, [ptr]() -> bool { return (ptr->m_last_task_ptr != ptr->m_next_task_ptr) || ptr->m_stop_threads; });
+
+								if (ptr->m_last_task_ptr != ptr->m_next_task_ptr)
 								{
 									ptr->m_next_task_ptr->m_callable(&current_task, ptr->m_next_task_ptr);
-									current_task = std::move(*(ptr->m_next_task_ptr));
 
 									_cool_thmq_task* next_task_ptr_p1 = ptr->m_next_task_ptr + 1;
 
@@ -3839,61 +4046,23 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 									return true; // return from lambda, sets variable 'ongoing' as true
 								}
-							}
-
-							for (std::size_t k = 0; k < thread_num; k++)
-							{
-								ptr = this->m_thread_blocks_data_ptr + k;
-
-								std::unique_lock<std::mutex> lock(ptr->m_mutex, std::try_to_lock);
-
-								if (lock.owns_lock() && (ptr->m_last_task_ptr != ptr->m_next_task_ptr))
+								else
 								{
-									ptr->m_next_task_ptr->m_callable(&current_task, ptr->m_next_task_ptr);
-
-									_cool_thmq_task* next_task_ptr_p1 = ptr->m_next_task_ptr + 1;
-
-									ptr->m_next_task_ptr = (next_task_ptr_p1 != ptr->m_task_buffer_end_ptr) ?
-										next_task_ptr_p1 : ptr->m_task_buffer_data_ptr;
-
-									return true; // return from lambda, sets variable 'ongoing' as true
+									return false; // return from lambda, sets variable 'ongoing' as false
 								}
 							}
-						}
+						}();
 
+						if (ongoing)
 						{
-							ptr = this->m_thread_blocks_data_ptr + thread_num;
-
-							std::unique_lock<std::mutex> lock(ptr->m_mutex);
-
-							ptr->m_condition_var.wait(lock, [ptr]() -> bool { return (ptr->m_last_task_ptr != ptr->m_next_task_ptr) || ptr->m_stop_threads; });
-
-							if (ptr->m_last_task_ptr != ptr->m_next_task_ptr)
-							{
-								ptr->m_next_task_ptr->m_callable(&current_task, ptr->m_next_task_ptr);
-
-								_cool_thmq_task* next_task_ptr_p1 = ptr->m_next_task_ptr + 1;
-
-								ptr->m_next_task_ptr = (next_task_ptr_p1 != ptr->m_task_buffer_end_ptr) ?
-									next_task_ptr_p1 : ptr->m_task_buffer_data_ptr;
-
-								return true; // return from lambda, sets variable 'ongoing' as true
-							}
-							else
-							{
-								return false; // return from lambda, sets variable 'ongoing' as false
-							}
+							current_task.m_callable(&current_task, nullptr);
 						}
-					}();
-
-					if (ongoing)
-					{
-						current_task.m_callable(&current_task, nullptr);
+						else
+						{
+							return;
+						}
 					}
-					else
-					{
-						return;
-					}
+					catch (...) {}
 				}
 			});
 
@@ -3955,13 +4124,13 @@ inline std::uint16_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_b
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
-inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads() noexcept
+inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads()
 {
 	this->delete_threads_detail(this->m_thread_count, this->m_thread_count);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
-inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads_detail(std::size_t threads_constructed, std::size_t threads_launched) noexcept
+inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads_detail(std::size_t threads_constructed, std::size_t threads_launched)
 {
 	if (this->m_thread_blocks_data_ptr != nullptr)
 	{
@@ -3971,9 +4140,15 @@ inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 
 			if (k < threads_launched)
 			{
+				while (true)
 				{
-					std::lock_guard<std::mutex> lock(ptr->m_mutex);
-					ptr->m_stop_threads = true;
+					try
+					{
+						std::lock_guard<std::mutex> lock(ptr->m_mutex);
+						ptr->m_stop_threads = true;
+						break;
+					}
+					catch (...) {}
 				}
 
 				ptr->m_condition_var.notify_one();
@@ -4070,15 +4245,23 @@ inline void cool::async_task_end::add_awaited(std::size_t number_of_tasks) noexc
 	m_tasks_awaited.fetch_add(static_cast<std::ptrdiff_t>(number_of_tasks), std::memory_order_seq_cst);
 }
 
-inline bool cool::async_task_end::sub_awaited(std::size_t number_of_tasks) noexcept
+inline bool cool::async_task_end::sub_awaited(std::size_t number_of_tasks)
 {
 	std::ptrdiff_t _number_of_tasks = static_cast<std::ptrdiff_t>(number_of_tasks);
 	std::ptrdiff_t prev = m_tasks_awaited.fetch_sub(_number_of_tasks, std::memory_order_seq_cst);
+
 	if ((prev > 0) && (prev - _number_of_tasks <= 0))
 	{
-		std::lock_guard<std::mutex> lock(m_finish_mutex);
-		m_finish_condition_var.notify_all();
-		return true;
+		while (true)
+		{
+			try
+			{
+				std::lock_guard<std::mutex> lock(m_finish_mutex);
+				m_finish_condition_var.notify_all();
+				return true;
+			}
+			catch (...) {}
+		}
 	}
 	else
 	{
@@ -4086,14 +4269,22 @@ inline bool cool::async_task_end::sub_awaited(std::size_t number_of_tasks) noexc
 	}
 }
 
-inline bool cool::async_task_end::set_awaited(std::ptrdiff_t number_of_tasks) noexcept
+inline bool cool::async_task_end::set_awaited(std::ptrdiff_t number_of_tasks)
 {
 	std::ptrdiff_t prev = m_tasks_awaited.exchange(number_of_tasks, std::memory_order_seq_cst);
+
 	if ((prev > 0) && (number_of_tasks <= 0))
 	{
-		std::lock_guard<std::mutex> lock(m_finish_mutex);
-		m_finish_condition_var.notify_all();
-		return true;
+		while (true)
+		{
+			try
+			{
+				std::lock_guard<std::mutex> lock(m_finish_mutex);
+				m_finish_condition_var.notify_all();
+				return true;
+			}
+			catch (...) {}
+		}
 	}
 	else
 	{
@@ -4106,13 +4297,20 @@ inline std::ptrdiff_t cool::async_task_end::get_awaited() const noexcept
 	return m_tasks_awaited.load(std::memory_order_seq_cst);
 }
 
-inline bool cool::async_task_end::decr_awaited() noexcept
+inline bool cool::async_task_end::decr_awaited()
 {
 	if (m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 	{
-		std::lock_guard<std::mutex> lock(m_finish_mutex);
-		m_finish_condition_var.notify_all();
-		return true;
+		while (true)
+		{
+			try
+			{
+				std::lock_guard<std::mutex> lock(m_finish_mutex);
+				m_finish_condition_var.notify_all();
+				return true;
+			}
+			catch (...) {}
+		}
 	}
 	else
 	{
@@ -4120,22 +4318,34 @@ inline bool cool::async_task_end::decr_awaited() noexcept
 	}
 }
 
-inline void cool::async_task_end::notify() noexcept
+inline void cool::async_task_end::notify()
 {
-	std::lock_guard<std::mutex> lock(m_finish_mutex);
-	m_finish_condition_var.notify_all();
+	while (true)
+	{
+		try
+		{
+			std::lock_guard<std::mutex> lock(m_finish_mutex);
+			m_finish_condition_var.notify_all();
+			return;
+		}
+		catch (...) {}
+	}
 }
 
-inline void cool::async_task_end::finish() noexcept
+inline void cool::async_task_end::finish()
 {
 	while (m_tasks_awaited.load(std::memory_order_seq_cst) > 0)
 	{
-		std::unique_lock<std::mutex> lock(m_finish_mutex);
-
-		if (m_tasks_awaited.load(std::memory_order_seq_cst) > 0)
+		try
 		{
-			m_finish_condition_var.wait(lock);
+			std::unique_lock<std::mutex> lock(m_finish_mutex);
+
+			if (m_tasks_awaited.load(std::memory_order_seq_cst) > 0)
+			{
+				m_finish_condition_var.wait(lock);
+			}
 		}
+		catch (...) {}
 	}
 }
 
@@ -4176,15 +4386,23 @@ inline void cool::async_task_result<return_Ty>::add_awaited(std::size_t number_o
 }
 
 template <class return_Ty>
-inline bool cool::async_task_result<return_Ty>::sub_awaited(std::size_t number_of_tasks) noexcept
+inline bool cool::async_task_result<return_Ty>::sub_awaited(std::size_t number_of_tasks)
 {
 	std::ptrdiff_t _number_of_tasks = static_cast<std::ptrdiff_t>(number_of_tasks);
 	std::ptrdiff_t prev = m_tasks_awaited.fetch_sub(_number_of_tasks, std::memory_order_seq_cst);
+
 	if ((prev > 0) && (prev - _number_of_tasks <= 0))
 	{
-		std::lock_guard<std::mutex> lock(m_finish_mutex);
-		m_finish_condition_var.notify_all();
-		return true;
+		while (true)
+		{
+			try
+			{
+				std::lock_guard<std::mutex> lock(m_finish_mutex);
+				m_finish_condition_var.notify_all();
+				return true;
+			}
+			catch (...) {}
+		}
 	}
 	else
 	{
@@ -4193,14 +4411,22 @@ inline bool cool::async_task_result<return_Ty>::sub_awaited(std::size_t number_o
 }
 
 template <class return_Ty>
-inline bool cool::async_task_result<return_Ty>::set_awaited(std::ptrdiff_t number_of_tasks) noexcept
+inline bool cool::async_task_result<return_Ty>::set_awaited(std::ptrdiff_t number_of_tasks)
 {
 	std::ptrdiff_t prev = m_tasks_awaited.exchange(number_of_tasks, std::memory_order_seq_cst);
+
 	if ((prev > 0) && (number_of_tasks <= 0))
 	{
-		std::lock_guard<std::mutex> lock(m_finish_mutex);
-		m_finish_condition_var.notify_all();
-		return true;
+		while (true)
+		{
+			try
+			{
+				std::lock_guard<std::mutex> lock(m_finish_mutex);
+				m_finish_condition_var.notify_all();
+				return true;
+			}
+			catch (...) {}
+		}
 	}
 	else
 	{
@@ -4221,13 +4447,20 @@ inline cool::_async_task_result_proxy<return_Ty> cool::async_task_result<return_
 }
 
 template <class return_Ty>
-inline bool cool::async_task_result<return_Ty>::decr_awaited() noexcept
+inline bool cool::async_task_result<return_Ty>::decr_awaited()
 {
 	if (m_tasks_awaited.fetch_sub(1, std::memory_order_seq_cst) == 1)
 	{
-		std::lock_guard<std::mutex> lock(m_finish_mutex);
-		m_finish_condition_var.notify_all();
-		return true;
+		while (true)
+		{
+			try
+			{
+				std::lock_guard<std::mutex> lock(m_finish_mutex);
+				m_finish_condition_var.notify_all();
+				return true;
+			}
+			catch (...) {}
+		}
 	}
 	else
 	{
@@ -4236,23 +4469,35 @@ inline bool cool::async_task_result<return_Ty>::decr_awaited() noexcept
 }
 
 template <class return_Ty>
-inline void cool::async_task_result<return_Ty>::notify() noexcept
+inline void cool::async_task_result<return_Ty>::notify()
 {
-	std::lock_guard<std::mutex> lock(m_finish_mutex);
-	m_finish_condition_var.notify_all();
+	while (true)
+	{
+		try
+		{
+			std::lock_guard<std::mutex> lock(m_finish_mutex);
+			m_finish_condition_var.notify_all();
+			return;
+		}
+		catch (...) {}
+	}
 }
 
 template <class return_Ty>
-inline void cool::async_task_result<return_Ty>::finish() noexcept
+inline void cool::async_task_result<return_Ty>::finish()
 {
 	while (m_tasks_awaited.load(std::memory_order_seq_cst) > 0)
 	{
-		std::unique_lock<std::mutex> lock(m_finish_mutex);
-
-		if (m_tasks_awaited.load(std::memory_order_seq_cst) > 0)
+		try
 		{
-			m_finish_condition_var.wait(lock);
+			std::unique_lock<std::mutex> lock(m_finish_mutex);
+
+			if (m_tasks_awaited.load(std::memory_order_seq_cst) > 0)
+			{
+				m_finish_condition_var.wait(lock);
+			}
 		}
+		catch (...) {}
 	}
 }
 
@@ -4263,7 +4508,7 @@ inline bool cool::async_task_result<return_Ty>::finished() const noexcept
 }
 
 template <class return_Ty>
-inline return_Ty& cool::async_task_result<return_Ty>::get(std::size_t offset) noexcept
+inline return_Ty& cool::async_task_result<return_Ty>::get(std::size_t offset)
 {
 	finish();
 	return *(m_stored_values_ptr + offset);
