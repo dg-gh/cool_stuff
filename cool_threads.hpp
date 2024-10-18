@@ -3982,7 +3982,6 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					try
 					{
 						_cool_thmq_task current_task;
-						_cool_thmq_tblk* ptr;
 
 						bool ongoing = [&]() -> bool
 						{
@@ -3990,7 +3989,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							{
 								for (std::size_t k = thread_num; k < _new_thread_count; k++)
 								{
-									ptr = this->m_thread_blocks_data_ptr + k;
+									_cool_thmq_tblk* ptr = this->m_thread_blocks_data_ptr + k;
 
 									std::unique_lock<std::mutex> lock(ptr->m_mutex, std::try_to_lock);
 
@@ -4010,7 +4009,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 								for (std::size_t k = 0; k < thread_num; k++)
 								{
-									ptr = this->m_thread_blocks_data_ptr + k;
+									_cool_thmq_tblk* ptr = this->m_thread_blocks_data_ptr + k;
 
 									std::unique_lock<std::mutex> lock(ptr->m_mutex, std::try_to_lock);
 
@@ -4029,7 +4028,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 
 							{
-								ptr = this->m_thread_blocks_data_ptr + thread_num;
+								_cool_thmq_tblk* ptr = this->m_thread_blocks_data_ptr + thread_num;
 
 								std::unique_lock<std::mutex> lock(ptr->m_mutex);
 
