@@ -61,14 +61,14 @@
 
 // custom clock code example
 
-//struct custom_clock_example
+//class custom_clock_example
 //{
+//public:
 //	using rep = INTEGRAL_TYPE;
 //	using period = std::ratio<NUM, DEM>; // one period is NUM/DEM second
 //	using duration = std::chrono::duration<rep, period>;
 //	using time_point = std::chrono::time_point<custom_clock_example>;
 //	static constexpr bool is_steady = true;
-
 //	static time_point now() noexcept
 //	{
 //		return time_point(duration(INTEGRAL_COUNTER_VALUE));

@@ -32,6 +32,7 @@ namespace cool
 
 	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class _threads_sq_data;
 	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class _threads_mq_data;
+	template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class _threads_base;
 	class _async_task_end_incr_proxy;
 	template <class Ty> class _async_task_result_at_proxy;
 	template <class Ty> class _async_task_result_incr_proxy;
@@ -331,12 +332,58 @@ namespace cool
 
 namespace cool
 {
-	// _threads_sq_data detail
+	// _threads_base
 
-	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class alignas(_cache_line_size) _threads_sq_data
+	template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class _threads_base
+	{
+
+	public:
+
+		class _task
+		{
+
+		public:
+
+			static constexpr std::size_t _arg_buffer_size_padded = (_arg_buffer_size != 0) ? _arg_buffer_size : 1;
+
+			alignas(_arg_buffer_align) unsigned char m_arg_buffer[_arg_buffer_size_padded];
+			void(*m_callable)(_task*, _task*);
+			void(*m_function_ptr)(void);
+			void* m_target_ptr;
+			std::size_t m_offset;
+		};
+
+		template <std::size_t ... _indices> class indices {};
+		template <std::size_t n, std::size_t ... _indices> class build_indices : public build_indices<n - 1, n - 1, _indices...> {};
+		template <std::size_t ... _indices> class build_indices<0, _indices...> : public indices<_indices...> {};
+
+		template <class function_Ty, class tuple_Ty, std::size_t ... _indices>
+		static inline auto call(function_Ty task, tuple_Ty&& args, indices<_indices...>) -> decltype(task(std::get<_indices>(std::forward<tuple_Ty>(args))...)) {
+			return std::move(task(std::get<_indices>(std::forward<tuple_Ty>(args))...));
+		}
+		template <class function_Ty, class tuple_Ty>
+		static inline auto call(function_Ty task, tuple_Ty&& args) -> decltype(call(task, args, build_indices<std::tuple_size<tuple_Ty>::value>())) {
+			return std::move(call(task, std::move(args), build_indices<std::tuple_size<tuple_Ty>::value>()));
+		}
+		template <class function_Ty, class tuple_Ty, std::size_t ... _indices>
+		static inline void call_no_return(function_Ty task, tuple_Ty&& args, indices<_indices...>) {
+			task(std::get<_indices>(std::forward<tuple_Ty>(args))...);
+		}
+		template <class function_Ty, class tuple_Ty>
+		static inline void call_no_return(function_Ty task, tuple_Ty&& args) {
+			call_no_return(task, std::move(args), build_indices<std::tuple_size<tuple_Ty>::value>());
+		}
+	};
+
+	// _threads_sq_data
+
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+	class alignas(_cache_line_size) _threads_sq_data : public cool::_threads_base<_arg_buffer_size, _arg_buffer_align>
 	{
 
 	private:
+
+		using typename cool::_threads_base<_arg_buffer_size, _arg_buffer_align>::_task;
 
 		friend class cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>;
 
@@ -348,8 +395,6 @@ namespace cool
 		~_threads_sq_data() = default;
 
 		inline void delete_threads_detail(std::size_t threads_constructed);
-
-		class _task;
 
 		_task* m_task_buffer_data_ptr = nullptr;
 		_task* m_task_buffer_end_ptr = nullptr;
@@ -366,52 +411,17 @@ namespace cool
 		bool m_stop_threads = true;
 
 		char* m_task_buffer_unaligned_data_ptr = nullptr;
-
-		class _task
-		{
-
-		public:
-
-			static constexpr std::size_t _arg_buffer_size_padded = (_arg_buffer_size != 0) ? _arg_buffer_size : 1;
-
-			alignas(_arg_buffer_align) unsigned char m_arg_buffer[_arg_buffer_size_padded];
-			void(*m_callable)(_task*, _task*);
-			void(*m_function_ptr)(void);
-			void* m_target_ptr;
-			std::size_t m_offset;
-		};
-
-		template <std::size_t ... _indices> struct indices {};
-		template <std::size_t n, std::size_t ... _indices> struct build_indices : build_indices<n - 1, n - 1, _indices...> {};
-		template <std::size_t ... _indices> struct build_indices<0, _indices...> : indices<_indices...> {};
-
-		template <class function_Ty, class tuple_Ty, std::size_t ... _indices>
-		static inline auto call(function_Ty task, tuple_Ty&& args, indices<_indices...>) -> decltype(task(std::get<_indices>(std::forward<tuple_Ty>(args))...)) {
-			return std::move(task(std::get<_indices>(std::forward<tuple_Ty>(args))...));
-		}
-
-		template <class function_Ty, class tuple_Ty>
-		static inline auto call(function_Ty task, tuple_Ty&& args) -> decltype(call(task, args, build_indices<std::tuple_size<tuple_Ty>::value>())) {
-			return std::move(call(task, std::move(args), build_indices<std::tuple_size<tuple_Ty>::value>()));
-		}
-
-		template <class function_Ty, class tuple_Ty, std::size_t ... _indices>
-		static inline void call_no_return(function_Ty task, tuple_Ty&& args, indices<_indices...>) {
-			task(std::get<_indices>(std::forward<tuple_Ty>(args))...);
-		}
-
-		template <class function_Ty, class tuple_Ty>
-		static inline void call_no_return(function_Ty task, tuple_Ty&& args) {
-			call_no_return(task, std::move(args), build_indices<std::tuple_size<tuple_Ty>::value>());
-		}
 	};
 
-	// _threads_mq_data detail
+	// _threads_mq_data
 
-	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class alignas(_cache_line_size) _threads_mq_data
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+	class alignas(_cache_line_size) _threads_mq_data : public cool::_threads_base<_arg_buffer_size, _arg_buffer_align>
 	{
 
 	private:
+
+		using typename cool::_threads_base<_arg_buffer_size, _arg_buffer_align>::_task;
 
 #ifdef UINT64_MAX
 		using _uintX = std::uint32_t;
@@ -447,19 +457,6 @@ namespace cool
 
 		alignas(_cache_line_size) std::atomic<_uintX> m_thread_dispatch{ 0 };
 
-		class _task
-		{
-
-		public:
-
-			static constexpr std::size_t _arg_buffer_size_padded = (_arg_buffer_size != 0) ? _arg_buffer_size : 1;
-
-			alignas(_arg_buffer_align) unsigned char m_arg_buffer[_arg_buffer_size_padded];
-			void(*m_callable)(_task*, _task*);
-			void(*m_function_ptr)(void);
-			void* m_target_ptr;
-			std::size_t m_offset;
-		};
 
 		class alignas(_cache_line_size) _thread_block
 		{
@@ -483,30 +480,6 @@ namespace cool
 
 			char* m_task_buffer_unaligned_data_ptr = nullptr;
 		};
-
-		template <std::size_t ... _indices> struct indices {};
-		template <std::size_t n, std::size_t ... _indices> struct build_indices : build_indices<n - 1, n - 1, _indices...> {};
-		template <std::size_t ... _indices> struct build_indices<0, _indices...> : indices<_indices...> {};
-
-		template <class function_Ty, class tuple_Ty, std::size_t ... _indices>
-		static inline auto call(function_Ty task, tuple_Ty&& args, indices<_indices...>) -> decltype(task(std::get<_indices>(std::forward<tuple_Ty>(args))...)) {
-			return std::move(task(std::get<_indices>(std::forward<tuple_Ty>(args))...));
-		}
-
-		template <class function_Ty, class tuple_Ty>
-		static inline auto call(function_Ty task, tuple_Ty&& args) -> decltype(call(task, args, build_indices<std::tuple_size<tuple_Ty>::value>())) {
-			return std::move(call(task, std::move(args), build_indices<std::tuple_size<tuple_Ty>::value>()));
-		}
-
-		template <class function_Ty, class tuple_Ty, std::size_t... _indices>
-		static inline void call_no_return(function_Ty task, tuple_Ty&& args, indices<_indices...>) {
-			task(std::get<_indices>(std::forward<tuple_Ty>(args))...);
-		}
-
-		template <class function_Ty, class tuple_Ty>
-		static inline void call_no_return(function_Ty task, tuple_Ty&& args) {
-			call_no_return(task, std::move(args), build_indices<std::tuple_size<tuple_Ty>::value>());
-		}
 	};
 
 	class _async_task_end_incr_proxy
