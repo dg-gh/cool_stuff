@@ -71,10 +71,10 @@ namespace cool
 		// 'function_Ty task' must pass arguments by copy
 		// 'args_Ty ... args' must be movable or copyable without throwing exceptions
 
-		// if 'function_Ty task' throws an exception, the task will end prematurely but the thread will jump to the next task and keep running
+		// if 'function_Ty task' throws an exception, the thread will call the exception handler and jump to the next task
 		// all methods of threads_mq deal with potential exceptions internally and will not pass exceptions to the caller, even if not marked 'noexcept'
 
-		// WARNING: queuing tasks with 'async' / 'priority_async' / 'try_async' / 'try_priority_async' does not check wether threads have been initialized beforehand
+		// WARNING : queuing tasks with 'async' / 'priority_async' / 'try_async' / 'try_priority_async' does not check wether threads have been initialized beforehand
 
 		template <class function_Ty, class ... args_Ty>
 		inline void async(cool::no_target_t, function_Ty task, args_Ty ... args);
@@ -174,10 +174,10 @@ namespace cool
 		// 'function_Ty task' must pass arguments by copy
 		// 'args_Ty ... args' must be movable or copyable without throwing exceptions
 
-		// if 'function_Ty task' throws an exception, the task will end prematurely but the thread will jump to the next task and keep running
+		// if 'function_Ty task' throws an exception, the thread will call the exception handler and jump to the next task
 		// all methods of threads_mq deal with potential exceptions internally and will not pass exceptions to the caller, even if not marked 'noexcept'
 
-		// WARNING: queuing tasks with 'async' / 'try_async' does not check wether threads have been initialized beforehand
+		// WARNING : queuing tasks with 'async' / 'try_async' does not check wether threads have been initialized beforehand
 
 		template <class function_Ty, class ... args_Ty>
 		inline void async(cool::no_target_t, function_Ty task, args_Ty ... args);
@@ -233,15 +233,17 @@ namespace cool
 	public:
 
 		// 'on_exception' must not throw
+		// 'on_exception' arguments are : exception thrown, task function pointer that produced the exception, optional pointer to buffer 'exception_arg_ptr'
+		// potential reads and writes to 'exception_arg_ptr' by 'on_exception' must be synchronized properly
 
-		static inline void set(void(*on_exception)(const std::exception&, void*), void* exception_arg_ptr = nullptr) noexcept;
+		static inline void set(void(*on_exception)(const std::exception&, void(*)(void), void*), void* exception_arg_ptr = nullptr) noexcept;
 		static inline void clear() noexcept;
 	};
 
 
 	// async_task_end
 
-	// WARNNING: async_task_end object must outlive the threads of threads_sq/threads_mq object that calls
+	// WARNNING : async_task_end object must outlive the threads of threads_sq/threads_mq object that calls
 	// try_async or try_priority_async with it as a target argument
 
 	class async_task_end
@@ -420,9 +422,9 @@ namespace cool
 
 		class exception_handler {
 		public:
-			inline exception_handler(void(*_function)(const std::exception&, void*), void* _arg_ptr) noexcept
+			inline exception_handler(void(*_function)(const std::exception&, void(*)(void), void*), void* _arg_ptr) noexcept
 				: m_function(_function), m_arg_ptr(_arg_ptr) {};
-			void(*m_function)(const std::exception&, void*) = nullptr;
+			void(*m_function)(const std::exception&, void(*)(void), void*) = nullptr;
 			void* m_arg_ptr = nullptr;
 		};
 
@@ -430,10 +432,10 @@ namespace cool
 			static std::atomic<exception_handler> handler{ exception_handler{ nullptr, nullptr } };
 			return handler;
 		}
-		static inline void catch_exception(const std::exception& excep) noexcept {
+		static inline void catch_exception(const std::exception& excep, void(*task_function_ptr)(void)) noexcept {
 			exception_handler handler = get_exception_handler().load(std::memory_order_seq_cst);
 			if (handler.m_function != nullptr) {
-				handler.m_function(excep, handler.m_arg_ptr);
+				handler.m_function(excep, task_function_ptr, handler.m_arg_ptr);
 			}
 		}
 	};
@@ -643,7 +645,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						}
 						catch (std::exception excep)
 						{
-							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 						}
 
 						reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
@@ -715,7 +717,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						}
 						catch (std::exception excep)
 						{
-							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 						}
 
 						reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
@@ -781,7 +783,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						}
 						catch (std::exception excep)
 						{
-							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 						}
 
 						static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -857,7 +859,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						}
 						catch (std::exception excep)
 						{
-							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 						}
 
 						static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -928,7 +930,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						}
 						catch (std::exception excep)
 						{
-							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 						}
 
 						static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -1006,7 +1008,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						}
 						catch (std::exception excep)
 						{
-							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 						}
 
 						static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -1078,7 +1080,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						}
 						catch (std::exception excep)
 						{
-							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 						}
 
 						target_ref.decr_awaited();
@@ -1158,7 +1160,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						}
 						catch (std::exception excep)
 						{
-							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 						}
 
 						target_ref.decr_awaited();
@@ -1233,7 +1235,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						}
 						catch (std::exception excep)
 						{
-							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 						}
 
 						target_ref.decr_awaited();
@@ -1315,7 +1317,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						}
 						catch (std::exception excep)
 						{
-							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+							cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 						}
 
 						target_ref.decr_awaited();
@@ -1382,7 +1384,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 					catch (std::exception excep)
 					{
-						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 					}
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
@@ -1458,7 +1460,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 					catch (std::exception excep)
 					{
-						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 					}
 
 					reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
@@ -1528,7 +1530,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 					catch (std::exception excep)
 					{
-						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 					}
 
 					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -1608,7 +1610,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 					catch (std::exception excep)
 					{
-						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 					}
 
 					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -1683,7 +1685,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 					catch (std::exception excep)
 					{
-						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 					}
 
 					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -1765,7 +1767,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 					catch (std::exception excep)
 					{
-						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 					}
 
 					static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -1841,7 +1843,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 					catch (std::exception excep)
 					{
-						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 					}
 
 					target_ref.decr_awaited();
@@ -1925,7 +1927,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 					catch (std::exception excep)
 					{
-						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 					}
 
 					target_ref.decr_awaited();
@@ -2004,7 +2006,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 					catch (std::exception excep)
 					{
-						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 					}
 
 					target_ref.decr_awaited();
@@ -2090,7 +2092,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 					catch (std::exception excep)
 					{
-						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+						cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 					}
 
 					target_ref.decr_awaited();
@@ -2390,7 +2392,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
@@ -2457,7 +2459,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
@@ -2556,7 +2558,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -2627,7 +2629,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -2731,7 +2733,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -2804,7 +2806,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -2909,7 +2911,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								target_ref.decr_awaited();
@@ -2984,7 +2986,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								target_ref.decr_awaited();
@@ -3092,7 +3094,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								target_ref.decr_awaited();
@@ -3169,7 +3171,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								target_ref.decr_awaited();
@@ -3271,7 +3273,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
@@ -3338,7 +3340,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
@@ -3439,7 +3441,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -3510,7 +3512,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -3616,7 +3618,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -3689,7 +3691,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								static_cast<cool::async_task_end*>(_task_ptr->m_target_ptr)->decr_awaited();
@@ -3796,7 +3798,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								target_ref.decr_awaited();
@@ -3871,7 +3873,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								target_ref.decr_awaited();
@@ -3981,7 +3983,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								target_ref.decr_awaited();
@@ -4058,7 +4060,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 								}
 								catch (std::exception excep)
 								{
-									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep);
+									cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_exception(excep, _task_ptr->m_function_ptr);
 								}
 
 								target_ref.decr_awaited();
@@ -4422,7 +4424,7 @@ inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 	this->m_thread_blocks_unaligned_data_ptr = nullptr;
 }
 
-inline void cool::threads_exception_handler::set(void(*on_exception)(const std::exception&, void*), void* exception_arg_ptr) noexcept
+inline void cool::threads_exception_handler::set(void(*on_exception)(const std::exception&, void(*)(void), void*), void* exception_arg_ptr) noexcept
 {
 	cool::_threads_base::exception_handler handler{ on_exception, exception_arg_ptr };
 	cool::_threads_base::get_exception_handler().store(handler, std::memory_order_seq_cst);
