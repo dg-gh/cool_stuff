@@ -173,12 +173,8 @@ namespace cool
 			masked(const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& rhs, const cool::_cvbits_proxy<bit_count, word_Ty, arg_Ty>& mask) noexcept;
 
 		// reinterpret address (should be called only at fixed addresses without other existing objects aliasing)
-		// address must be a multiple of alignof(word_Ty)
+		// WARNING : 'address' must be a multiple of alignof(word_Ty)
 
-		template <class uintptr_Ty>
-		static inline cool::bits<bit_count, word_Ty, arg_Ty>& bits_at(uintptr_Ty mem_address) noexcept;
-		template <class uintptr_Ty>
-		static inline const cool::bits<bit_count, word_Ty, arg_Ty>& const_bits_at(uintptr_Ty mem_address) noexcept;
 		template <class uintptr_Ty>
 		static inline volatile cool::bits<bit_count, word_Ty, arg_Ty>& volatile_bits_at(uintptr_Ty mem_address) noexcept;
 		template <class uintptr_Ty>
@@ -1466,22 +1462,6 @@ inline cool::_masked_proxy<bit_count, ptr_Ty1, ptr_Ty2>::_masked_proxy(ptr_Ty1 r
 	: m_rhs_ptr(rhs_ptr), m_mask_ptr(mask_ptr) {}
 
 // reinterpret address
-
-template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uintptr_Ty>
-inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::bits_at(uintptr_Ty mem_address) noexcept
-{
-	cool::bits<bit_count, word_Ty, arg_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty, arg_Ty>*>(static_cast<std::uintptr_t>(mem_address));
-	new (ptr) cool::bits<bit_count, word_Ty, arg_Ty>(cool::no_init);
-	return *ptr;
-}
-
-template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uintptr_Ty>
-inline const cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::const_bits_at(uintptr_Ty mem_address) noexcept
-{
-	cool::bits<bit_count, word_Ty, arg_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty, arg_Ty>*>(static_cast<std::uintptr_t>(mem_address));
-	new (ptr) cool::bits<bit_count, word_Ty, arg_Ty>(cool::no_init);
-	return *ptr;
-}
 
 template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uintptr_Ty>
 inline volatile cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::volatile_bits_at(uintptr_Ty mem_address) noexcept
