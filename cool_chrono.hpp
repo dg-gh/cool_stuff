@@ -178,7 +178,7 @@ namespace cool
 	};
 
 
-	template <class clock_Ty, std::intmax_t unit_mod_num = 1, std::intmax_t unit_mod_den = 1, class num_Ty>
+	template <class clock_Ty, class unit_mod_ratio_Ty = std::ratio<1, 1>, class num_Ty>
 	inline constexpr cool::duration<clock_Ty> make_duration(num_Ty time_duration, cool::duration_unit unit = cool::duration_unit::s) noexcept;
 
 	template <class num_Ty, class clock_Ty>
@@ -376,22 +376,21 @@ inline bool cool::time_point<clock_Ty>::operator>(cool::time_point<clock_Ty> rhs
 }
 
 
-template <class clock_Ty, std::intmax_t unit_mod_num, std::intmax_t unit_mod_den, class num_Ty>
+template <class clock_Ty, class unit_mod_ratio_Ty, class num_Ty>
 inline constexpr cool::duration<clock_Ty> cool::make_duration(num_Ty time_duration, cool::duration_unit unit) noexcept
 {
-	static_assert(unit_mod_num > 0 && unit_mod_den > 0, "cool::make_duration requirement : unit_mod_num > 0 and unit_mod_den > 0");
+	static_assert(unit_mod_ratio_Ty::num > 0 && unit_mod_ratio_Ty::den > 0, "cool::make_duration requirement : unit_mod_ratio::num > 0 and unit_mod_ratio::den > 0");
 
 	if (std::is_integral<num_Ty>::value)
 	{
-		typename cool::duration<clock_Ty>::ratio _ratio = cool::duration<clock_Ty>::template tick_per_duration_ratio<unit_mod_num, unit_mod_den>(unit);
+		typename cool::duration<clock_Ty>::ratio _ratio = cool::duration<clock_Ty>::template tick_per_duration_ratio<unit_mod_ratio_Ty>(unit);
 		return cool::duration<clock_Ty>(static_cast<typename clock_Ty::duration::rep>(
 			(_ratio.num * static_cast<std::intmax_t>(time_duration)) / _ratio.den));
 	}
 	else
 	{
 		return cool::duration<clock_Ty>(static_cast<typename clock_Ty::duration::rep>(
-			static_cast<num_Ty>(cool::duration<clock_Ty>::template tick_per_duration<num_Ty, unit_mod_num, unit_mod_den>(unit))
-			* time_duration));
+			static_cast<num_Ty>(cool::duration<clock_Ty>::template tick_per_duration<num_Ty, unit_mod_ratio_Ty>(unit)) * time_duration));
 	}
 }
 
@@ -802,27 +801,27 @@ inline constexpr num_Ty cool::duration<clock_Ty>::min(cool::duration_unit unit) 
 {
 	typename cool::duration<clock_Ty>::ratio _ratio = duration_per_tick_ratio<unit_mod_ratio_Ty>(unit);
 
-	if ((_ratio.num != 0) && (std::numeric_limits<typename clock_Ty::duration::rep>::min() < 0) && (std::numeric_limits<num_Ty>::min() < static_cast<num_Ty>(0)))
+	if ((_ratio.num != 0) && (std::numeric_limits<typename clock_Ty::duration::rep>::lowest() < 0) && (std::numeric_limits<num_Ty>::lowest() < static_cast<num_Ty>(0)))
 	{
 		if (std::is_integral<num_Ty>::value)
 		{
-			constexpr bool duration_rep_greater = std::numeric_limits<typename clock_Ty::duration::rep>::min() <= std::numeric_limits<num_Ty>::min();
+			constexpr bool duration_rep_greater = std::numeric_limits<typename clock_Ty::duration::rep>::lowest() <= std::numeric_limits<num_Ty>::lowest();
 
 			if (duration_rep_greater)
 			{
-				typename clock_Ty::duration::rep a = std::numeric_limits<typename clock_Ty::duration::rep>::min() / _ratio.den;
-				typename clock_Ty::duration::rep b = static_cast<typename clock_Ty::duration::rep>(std::numeric_limits<num_Ty>::min());
+				typename clock_Ty::duration::rep a = std::numeric_limits<typename clock_Ty::duration::rep>::lowest() / _ratio.den;
+				typename clock_Ty::duration::rep b = static_cast<typename clock_Ty::duration::rep>(std::numeric_limits<num_Ty>::lowest());
 				return (a > b) ? static_cast<num_Ty>(a) : static_cast<num_Ty>(b);
 			}
 			else
 			{
-				return static_cast<num_Ty>(std::numeric_limits<typename clock_Ty::duration::rep>::min() / _ratio.den);
+				return static_cast<num_Ty>(std::numeric_limits<typename clock_Ty::duration::rep>::lowest() / _ratio.den);
 			}
 		}
 		else
 		{
-			num_Ty a = duration_per_tick<num_Ty, unit_mod_ratio_Ty>(unit) * static_cast<num_Ty>(std::numeric_limits<typename clock_Ty::duration::rep>::min());
-			num_Ty b = std::numeric_limits<num_Ty>::min();
+			num_Ty a = duration_per_tick<num_Ty, unit_mod_ratio_Ty>(unit) * static_cast<num_Ty>(std::numeric_limits<typename clock_Ty::duration::rep>::lowest());
+			num_Ty b = std::numeric_limits<num_Ty>::lowest();
 			return (a > b) ? a : b;
 		}
 	}
@@ -870,7 +869,7 @@ inline constexpr num_Ty cool::duration<clock_Ty>::max(cool::duration_unit unit) 
 template <class clock_Ty>
 inline constexpr typename clock_Ty::duration::rep cool::duration<clock_Ty>::min_ticks() noexcept
 {
-	return std::numeric_limits<typename clock_Ty::duration::rep>::min();
+	return std::numeric_limits<typename clock_Ty::duration::rep>::lowest();
 }
 
 template <class clock_Ty>
