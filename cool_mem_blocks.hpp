@@ -32,30 +32,30 @@ namespace cool
 			void* data_ptr,
 			std::size_t _block_size,
 			std::size_t _block_count,
-			std::size_t _block_alignment = sizeof(void*)) noexcept;
+			std::size_t _block_alignment = sizeof(std::max_align_t)) noexcept;
 
 		static inline constexpr std::size_t eval_data_max_size(
 			std::size_t _block_size,
 			std::size_t _block_count,
-			std::size_t _block_alignment = sizeof(void*)) noexcept;
+			std::size_t _block_alignment = sizeof(std::max_align_t)) noexcept;
 
 		static inline const void* eval_data_end(
 			const void* data_ptr,
 			std::size_t _block_size,
 			std::size_t _block_count,
-			std::size_t _block_alignment = sizeof(void*)) noexcept;
+			std::size_t _block_alignment = sizeof(std::max_align_t)) noexcept;
 
 		static inline constexpr std::uintptr_t eval_data_address_end(
 			std::uintptr_t data_ptr_address,
 			std::size_t _block_size,
 			std::size_t _block_count,
-			std::size_t _block_alignment = sizeof(void*)) noexcept;
+			std::size_t _block_alignment = sizeof(std::max_align_t)) noexcept;
 
 		inline void* init_set_data(
 			void* data_ptr,
 			std::size_t _block_size,
 			std::size_t _block_count,
-			std::size_t _block_alignment = sizeof(void*)) noexcept;
+			std::size_t _block_alignment = sizeof(std::max_align_t)) noexcept;
 
 
 		inline void* allocate() noexcept;
@@ -107,7 +107,7 @@ namespace cool
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
-			std::size_t block_alignment = sizeof(void*)) noexcept;
+			std::size_t block_alignment = sizeof(std::max_align_t)) noexcept;
 		explicit inline mem_pools(
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
@@ -120,7 +120,7 @@ namespace cool
 		static inline constexpr std::size_t eval_data_max_size(
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
-			std::size_t block_alignment = sizeof(void*)) noexcept;
+			std::size_t block_alignment = sizeof(std::max_align_t)) noexcept;
 		static inline constexpr std::size_t eval_data_max_size(
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
@@ -130,7 +130,7 @@ namespace cool
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
-			std::size_t block_alignment = sizeof(void*)) noexcept;
+			std::size_t block_alignment = sizeof(std::max_align_t)) noexcept;
 		static inline void* eval_data_end(
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
@@ -141,7 +141,7 @@ namespace cool
 			std::uintptr_t data_ptr_address,
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
-			std::size_t block_alignment = sizeof(void*)) noexcept;
+			std::size_t block_alignment = sizeof(std::max_align_t)) noexcept;
 		static inline constexpr std::uintptr_t eval_data_address_end(
 			std::uintptr_t data_ptr_address,
 			std::initializer_list<std::size_t> block_sizes,
@@ -152,7 +152,7 @@ namespace cool
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
-			std::size_t block_alignment = sizeof(void*)) noexcept;
+			std::size_t block_alignment = sizeof(std::max_align_t)) noexcept;
 		inline void* init_set_data(
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
