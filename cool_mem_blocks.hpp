@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <climits>
 #include <initializer_list>
 #include <new>
 
@@ -32,30 +33,30 @@ namespace cool
 			void* data_ptr,
 			std::size_t _block_size,
 			std::size_t _block_count,
-			std::size_t _block_alignment = sizeof(std::max_align_t)) noexcept;
+			std::size_t _block_alignment = alignof(std::max_align_t)) noexcept;
 
 		static inline constexpr std::size_t eval_data_max_size(
 			std::size_t _block_size,
 			std::size_t _block_count,
-			std::size_t _block_alignment = sizeof(std::max_align_t)) noexcept;
+			std::size_t _block_alignment = alignof(std::max_align_t)) noexcept;
 
 		static inline const void* eval_data_end(
 			const void* data_ptr,
 			std::size_t _block_size,
 			std::size_t _block_count,
-			std::size_t _block_alignment = sizeof(std::max_align_t)) noexcept;
+			std::size_t _block_alignment = alignof(std::max_align_t)) noexcept;
 
 		static inline constexpr std::uintptr_t eval_data_address_end(
 			std::uintptr_t data_ptr_address,
 			std::size_t _block_size,
 			std::size_t _block_count,
-			std::size_t _block_alignment = sizeof(std::max_align_t)) noexcept;
+			std::size_t _block_alignment = alignof(std::max_align_t)) noexcept;
 
 		inline void* init_set_data(
 			void* data_ptr,
 			std::size_t _block_size,
 			std::size_t _block_count,
-			std::size_t _block_alignment = sizeof(std::max_align_t)) noexcept;
+			std::size_t _block_alignment = alignof(std::max_align_t)) noexcept;
 
 
 		inline void* allocate() noexcept;
@@ -84,6 +85,8 @@ namespace cool
 
 		template <std::size_t _pool_count, std::uintptr_t bad_alloc_address2> friend class cool::mem_pools;
 
+		static inline std::size_t _next_power_of_two(std::size_t n) noexcept;
+
 		std::size_t m_block_size;
 		void** m_next_block_ptr;
 		std::size_t m_blocks_remaining;
@@ -107,7 +110,7 @@ namespace cool
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
-			std::size_t block_alignment = sizeof(std::max_align_t)) noexcept;
+			std::size_t block_alignment = alignof(std::max_align_t)) noexcept;
 		explicit inline mem_pools(
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
@@ -120,7 +123,7 @@ namespace cool
 		static inline constexpr std::size_t eval_data_max_size(
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
-			std::size_t block_alignment = sizeof(std::max_align_t)) noexcept;
+			std::size_t block_alignment = alignof(std::max_align_t)) noexcept;
 		static inline constexpr std::size_t eval_data_max_size(
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
@@ -130,7 +133,7 @@ namespace cool
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
-			std::size_t block_alignment = sizeof(std::max_align_t)) noexcept;
+			std::size_t block_alignment = alignof(std::max_align_t)) noexcept;
 		static inline void* eval_data_end(
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
@@ -141,7 +144,7 @@ namespace cool
 			std::uintptr_t data_ptr_address,
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
-			std::size_t block_alignment = sizeof(std::max_align_t)) noexcept;
+			std::size_t block_alignment = alignof(std::max_align_t)) noexcept;
 		static inline constexpr std::uintptr_t eval_data_address_end(
 			std::uintptr_t data_ptr_address,
 			std::initializer_list<std::size_t> block_sizes,
@@ -152,7 +155,7 @@ namespace cool
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
-			std::size_t block_alignment = sizeof(std::max_align_t)) noexcept;
+			std::size_t block_alignment = alignof(std::max_align_t)) noexcept;
 		inline void* init_set_data(
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
@@ -231,15 +234,7 @@ inline cool::mem_blocks<bad_alloc_address>::mem_blocks(
 {
 	if ((_block_size != 0) && (_block_count != 0))
 	{
-		{
-			std::size_t block_alignment_remainder = _block_alignment % sizeof(void*);
-			if (block_alignment_remainder != 0)
-			{
-				_block_alignment += (sizeof(void*) - block_alignment_remainder);
-			}
-		}
-
-		std::size_t block_offset;
+		_block_alignment = _next_power_of_two(_block_alignment);
 
 		{
 			std::size_t block_size_remainder = _block_size % _block_alignment;
@@ -247,8 +242,9 @@ inline cool::mem_blocks<bad_alloc_address>::mem_blocks(
 			{
 				_block_size += (_block_alignment - block_size_remainder);
 			}
-			block_offset = _block_size / sizeof(void*);
 		}
+
+		std::size_t block_offset = _block_size / sizeof(void*);
 
 		{
 			std::uintptr_t ptr_remainder = reinterpret_cast<std::uintptr_t>(data_ptr) % _block_alignment;
@@ -297,13 +293,7 @@ inline constexpr std::size_t cool::mem_blocks<bad_alloc_address>::eval_data_max_
 {
 	if ((_block_size != 0) && (_block_count != 0))
 	{
-		{
-			std::size_t block_alignment_remainder = _block_alignment % sizeof(void*);
-			if (block_alignment_remainder != 0)
-			{
-				_block_alignment += (sizeof(void*) - block_alignment_remainder);
-			}
-		}
+		_block_alignment = _next_power_of_two(_block_alignment);
 
 		{
 			std::size_t block_size_remainder = _block_size % _block_alignment;
@@ -330,13 +320,7 @@ inline const void* cool::mem_blocks<bad_alloc_address>::eval_data_end(
 {
 	if ((_block_size != 0) && (_block_count != 0))
 	{
-		{
-			std::size_t block_alignment_remainder = _block_alignment % sizeof(void*);
-			if (block_alignment_remainder != 0)
-			{
-				_block_alignment += (sizeof(void*) - block_alignment_remainder);
-			}
-		}
+		_block_alignment = _next_power_of_two(_block_alignment);
 
 		{
 			std::size_t block_size_remainder = _block_size % _block_alignment;
@@ -371,13 +355,7 @@ inline constexpr std::uintptr_t cool::mem_blocks<bad_alloc_address>::eval_data_a
 {
 	if ((_block_size != 0) && (_block_count != 0))
 	{
-		{
-			std::size_t block_alignment_remainder = _block_alignment % sizeof(void*);
-			if (block_alignment_remainder != 0)
-			{
-				_block_alignment += (sizeof(void*) - block_alignment_remainder);
-			}
-		}
+		_block_alignment = _next_power_of_two(_block_alignment);
 
 		{
 			std::size_t block_size_remainder = _block_size % _block_alignment;
@@ -412,15 +390,7 @@ inline void* cool::mem_blocks<bad_alloc_address>::init_set_data(
 {
 	if ((_block_size != 0) && (_block_count != 0))
 	{
-		{
-			std::size_t block_alignment_remainder = _block_alignment % sizeof(void*);
-			if (block_alignment_remainder != 0)
-			{
-				_block_alignment += (sizeof(void*) - block_alignment_remainder);
-			}
-		}
-
-		std::size_t block_offset;
+		_block_alignment = _next_power_of_two(_block_alignment);
 
 		{
 			std::size_t block_size_remainder = _block_size % _block_alignment;
@@ -428,8 +398,9 @@ inline void* cool::mem_blocks<bad_alloc_address>::init_set_data(
 			{
 				_block_size += (_block_alignment - block_size_remainder);
 			}
-			block_offset = _block_size / sizeof(void*);
 		}
+
+		std::size_t block_offset = _block_size / sizeof(void*);
 
 		{
 			std::uintptr_t ptr_remainder = reinterpret_cast<std::uintptr_t>(data_ptr) % _block_alignment;
@@ -589,6 +560,24 @@ inline void cool::mem_blocks<bad_alloc_address>::deallocate_unchecked(void* ptr)
 	void* temp = static_cast<void*>(m_next_block_ptr);
 	m_next_block_ptr = static_cast<void**>(ptr);
 	new (static_cast<void**>(m_next_block_ptr)) void* (temp);
+}
+
+template <std::uintptr_t bad_alloc_address>
+inline std::size_t cool::mem_blocks<bad_alloc_address>::_next_power_of_two(std::size_t n) noexcept
+{
+	if (n <= alignof(void*))
+	{
+		return alignof(void*);
+	}
+	else
+	{
+		n--;
+		for (std::size_t m = 1; m < CHAR_BIT * sizeof(std::size_t); m *= 2)
+		{
+			n |= (n >> m);
+		}
+		return n + 1;
+	}
 }
 
 
