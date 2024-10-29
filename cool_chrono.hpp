@@ -799,6 +799,10 @@ inline constexpr bool cool::duration<clock_Ty>::valid_unit(cool::duration_unit u
 template <class clock_Ty> template <class num_Ty, class unit_mod_ratio_Ty>
 inline constexpr num_Ty cool::duration<clock_Ty>::min(cool::duration_unit unit) noexcept
 {
+	static_assert(std::is_arithmetic<typename clock_Ty::duration::rep>::value,
+		"cool::duration<...>::min requirement : clock rep type must be an arithmetic type");
+	static_assert(std::is_arithmetic<num_Ty>::value, "cool::duration<...>::min requirement : numeric type must be an arithmetic type");
+
 	typename cool::duration<clock_Ty>::ratio _ratio = duration_per_tick_ratio<unit_mod_ratio_Ty>(unit);
 
 	if ((_ratio.num != 0) && (std::numeric_limits<typename clock_Ty::duration::rep>::lowest() < 0) && (std::numeric_limits<num_Ty>::lowest() < static_cast<num_Ty>(0)))
@@ -834,6 +838,10 @@ inline constexpr num_Ty cool::duration<clock_Ty>::min(cool::duration_unit unit) 
 template <class clock_Ty> template <class num_Ty, class unit_mod_ratio_Ty>
 inline constexpr num_Ty cool::duration<clock_Ty>::max(cool::duration_unit unit) noexcept
 {
+	static_assert(std::is_arithmetic<typename clock_Ty::duration::rep>::value,
+		"cool::duration<...>::max requirement : clock rep type must be an arithmetic type");
+	static_assert(std::is_arithmetic<num_Ty>::value, "cool::duration<...>::max requirement : numeric type must be an arithmetic type");
+
 	typename cool::duration<clock_Ty>::ratio _ratio = duration_per_tick_ratio<unit_mod_ratio_Ty>(unit);
 
 	if (_ratio.num != 0)
@@ -869,12 +877,18 @@ inline constexpr num_Ty cool::duration<clock_Ty>::max(cool::duration_unit unit) 
 template <class clock_Ty>
 inline constexpr typename clock_Ty::duration::rep cool::duration<clock_Ty>::min_ticks() noexcept
 {
+	static_assert(std::is_arithmetic<typename clock_Ty::duration::rep>::value,
+		"cool::duration<...>::min_ticks requirement : clock rep type must be an arithmetic type");
+
 	return std::numeric_limits<typename clock_Ty::duration::rep>::lowest();
 }
 
 template <class clock_Ty>
 inline constexpr typename clock_Ty::duration::rep cool::duration<clock_Ty>::max_ticks() noexcept
 {
+	static_assert(std::is_arithmetic<typename clock_Ty::duration::rep>::value,
+		"cool::duration<...>::max_ticks requirement : clock rep type must be an arithmetic type");
+
 	return std::numeric_limits<typename clock_Ty::duration::rep>::max();
 }
 
