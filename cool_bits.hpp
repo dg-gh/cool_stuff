@@ -71,7 +71,7 @@ namespace cool
 		static constexpr std::size_t byte_capacity = bit_count / byte_size;
 		static constexpr std::size_t byte_count = (bit_count % byte_size == 0) ? bit_count / byte_size : bit_count / byte_size + 1;
 
-		static constexpr std::size_t word_size = CHAR_BIT * sizeof(word_Ty);
+		static constexpr std::size_t word_size = sizeof(word_Ty) * CHAR_BIT;
 		static constexpr std::size_t word_capacity = bit_count / word_size;
 		static constexpr std::size_t word_count = (bit_count % word_size == 0) ? bit_count / word_size : bit_count / word_size + 1;
 
@@ -503,7 +503,7 @@ namespace cool
 		static constexpr std::size_t byte_capacity = bit_count / byte_size;
 		static constexpr std::size_t byte_count = (bit_count % byte_size == 0) ? bit_count / byte_size : bit_count / byte_size + 1;
 
-		static constexpr std::size_t word_size = CHAR_BIT * sizeof(word_Ty);
+		static constexpr std::size_t word_size = sizeof(word_Ty) * CHAR_BIT;
 		static constexpr std::size_t word_capacity = bit_count / word_size;
 		static constexpr std::size_t word_count = (bit_count % word_size == 0) ? bit_count / word_size : bit_count / word_size + 1;
 
@@ -626,7 +626,7 @@ namespace cool
 		static constexpr std::size_t byte_capacity = bit_count / byte_size;
 		static constexpr std::size_t byte_count = (bit_count % byte_size == 0) ? bit_count / byte_size : bit_count / byte_size + 1;
 
-		static constexpr std::size_t word_size = CHAR_BIT * sizeof(word_Ty);
+		static constexpr std::size_t word_size = sizeof(word_Ty) * CHAR_BIT;
 		static constexpr std::size_t word_capacity = bit_count / word_size;
 		static constexpr std::size_t word_count = (bit_count % word_size == 0) ? bit_count / word_size : bit_count / word_size + 1;
 
@@ -1009,7 +1009,7 @@ inline constexpr std::size_t cool::bits<bit_count, word_Ty, arg_Ty>::count() con
 template <std::size_t bit_count, class word_Ty, class arg_Ty>
 inline constexpr bool cool::bits<bit_count, word_Ty, arg_Ty>::operator[](arg_Ty bit_offset) const noexcept
 {
-	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
+	constexpr bool no_word_offset = bit_count <= sizeof(word_Ty) * CHAR_BIT;
 
 	if (no_word_offset)
 	{
@@ -1026,7 +1026,7 @@ inline constexpr bool cool::bits<bit_count, word_Ty, arg_Ty>::operator[](arg_Ty 
 template <std::size_t bit_count, class word_Ty, class arg_Ty>
 inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy cool::bits<bit_count, word_Ty, arg_Ty>::operator[](arg_Ty bit_offset) noexcept
 {
-	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
+	constexpr bool no_word_offset = bit_count <= sizeof(word_Ty) * CHAR_BIT;
 
 	if (no_word_offset)
 	{
@@ -1045,7 +1045,7 @@ inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy cool::bits<bit
 template <std::size_t bit_count, class word_Ty, class arg_Ty>
 inline constexpr bool cool::bits<bit_count, word_Ty, arg_Ty>::bit(arg_Ty bit_offset) const noexcept
 {
-	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
+	constexpr bool no_word_offset = bit_count <= sizeof(word_Ty) * CHAR_BIT;
 
 	if (no_word_offset)
 	{
@@ -1062,7 +1062,7 @@ inline constexpr bool cool::bits<bit_count, word_Ty, arg_Ty>::bit(arg_Ty bit_off
 template <std::size_t bit_count, class word_Ty, class arg_Ty>
 inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy cool::bits<bit_count, word_Ty, arg_Ty>::bit(arg_Ty bit_offset) noexcept
 {
-	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
+	constexpr bool no_word_offset = bit_count <= sizeof(word_Ty) * CHAR_BIT;
 
 	if (no_word_offset)
 	{
@@ -1081,7 +1081,7 @@ inline typename cool::bits<bit_count, word_Ty, arg_Ty>::bit_proxy cool::bits<bit
 template <std::size_t bit_count, class word_Ty, class arg_Ty>
 inline bool cool::bits<bit_count, word_Ty, arg_Ty>::vbit(arg_Ty bit_offset) const volatile noexcept
 {
-	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
+	constexpr bool no_word_offset = bit_count <= sizeof(word_Ty) * CHAR_BIT;
 
 	if (no_word_offset)
 	{
@@ -1098,7 +1098,7 @@ inline bool cool::bits<bit_count, word_Ty, arg_Ty>::vbit(arg_Ty bit_offset) cons
 template <std::size_t bit_count, class word_Ty, class arg_Ty>
 inline typename cool::bits<bit_count, word_Ty, arg_Ty>::vbit_proxy cool::bits<bit_count, word_Ty, arg_Ty>::vbit(arg_Ty bit_offset) volatile noexcept
 {
-	constexpr bool no_word_offset = bit_count <= CHAR_BIT * sizeof(word_Ty);
+	constexpr bool no_word_offset = bit_count <= sizeof(word_Ty) * CHAR_BIT;
 
 	if (no_word_offset)
 	{

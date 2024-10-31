@@ -4514,7 +4514,7 @@ inline bool cool::async_task_end::sub_awaited(std::size_t number_of_tasks) noexc
 	std::ptrdiff_t _number_of_tasks = static_cast<std::ptrdiff_t>(number_of_tasks);
 	std::ptrdiff_t prev = m_tasks_awaited.fetch_sub(_number_of_tasks, std::memory_order_seq_cst);
 
-	if ((prev > 0) && (prev - _number_of_tasks <= 0))
+	if ((prev > 0) && (prev <= _number_of_tasks))
 	{
 		while (true)
 		{
@@ -4648,7 +4648,7 @@ inline bool cool::async_task_result<return_Ty>::sub_awaited(std::size_t number_o
 	std::ptrdiff_t _number_of_tasks = static_cast<std::ptrdiff_t>(number_of_tasks);
 	std::ptrdiff_t prev = m_tasks_awaited.fetch_sub(_number_of_tasks, std::memory_order_seq_cst);
 
-	if ((prev > 0) && (prev - _number_of_tasks <= 0))
+	if ((prev > 0) && (prev <= _number_of_tasks))
 	{
 		while (true)
 		{
@@ -4794,7 +4794,7 @@ inline void cool::async_task_result<return_Ty>::reset(std::size_t count)
 
 	for (std::size_t k = 0; k < count; k++)
 	{
-		*(m_stored_values_ptr + k) = return_Ty();
+		*(m_stored_values_ptr + k) = return_Ty{};
 	}
 }
 
@@ -4814,7 +4814,7 @@ inline void cool::async_task_result<return_Ty>::reset_unchecked(std::size_t coun
 {
 	for (std::size_t k = 0; k < count; k++)
 	{
-		*(m_stored_values_ptr + k) = return_Ty();
+		*(m_stored_values_ptr + k) = return_Ty{};
 	}
 }
 

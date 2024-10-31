@@ -572,7 +572,7 @@ inline std::size_t cool::mem_blocks<bad_alloc_address>::_next_power_of_two(std::
 	else
 	{
 		n--;
-		for (std::size_t m = 1; m < CHAR_BIT * sizeof(std::size_t); m *= 2)
+		for (std::size_t m = 1; m < sizeof(std::size_t) * CHAR_BIT; m *= 2)
 		{
 			n |= (n >> m);
 		}
