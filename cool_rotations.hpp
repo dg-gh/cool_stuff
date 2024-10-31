@@ -112,6 +112,8 @@ namespace cool
 #endif // xCOOL_AXIS_CONSTANTS
 
 
+	// WARNING : pointer arguments of rotation functions must not be nullptr
+
 	// 2D rotations
 
 	template <class Ty, std::size_t _dim_padded = 2, int _func_impl_number = 0,

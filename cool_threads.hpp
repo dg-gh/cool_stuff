@@ -240,14 +240,22 @@ namespace cool
 
 	// threads_exception_handler
 
+	// handles all exceptions from all instances of threads_sq and threads_mq
+
 	class threads_exception_handler
 	{
 
 	public:
 
-		// 'on_exception' must not throw
-		// 'on_exception' arguments are : exception thrown, task function pointer that produced the exception, optional pointer to buffer 'exception_arg_ptr'
-		// potential reads and writes to 'exception_arg_ptr' by 'on_exception' must be synchronized properly
+		// 'on_exception' arguments are :
+		// > const std::exception& : exception thrown
+		// > void(*)(void) : task function pointer that produced the exception
+		// > void* : optional pointer to buffer 'exception_arg_ptr'
+
+		// if 'on_exception' is a nullptr, then the exception handling will be the logical equivalent to a no-op
+
+		// WARNING : 'on_exception' must not throw any exception or the program will terminate
+		// WARNING : potential reads and writes to 'exception_arg_ptr' by 'on_exception' must be synchronized properly
 
 		static inline void set(void(*on_exception)(const std::exception&, void(*)(void), void*), void* exception_arg_ptr = nullptr) noexcept;
 		static inline void clear() noexcept;
