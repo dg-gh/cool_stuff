@@ -37,6 +37,7 @@ namespace cool
 {
 	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class threads_sq;
 	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class threads_mq;
+	class threads_init_result;
 	class threads_exception_handler;
 
 #ifndef xCOOL_NOT_TARGET_ENUM
@@ -75,7 +76,7 @@ namespace cool
 		static_assert(_arg_buffer_align >= alignof(std::max_align_t),
 			"cool::threads_sq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : arg_buffer_align must be greater or equal to alignof(std::max_align_t)");
 
-		threads_sq() noexcept = default;
+		threads_sq() = default;
 		threads_sq(const cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
 		cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>& operator=(const cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
 		threads_sq(cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&&) = delete;
@@ -150,7 +151,7 @@ namespace cool
 		template <class return_Ty, class function_Ty, class ... args_Ty>
 		inline bool try_priority_async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
 
-		inline bool init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size) noexcept;
+		inline cool::threads_init_result init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size) noexcept;
 		inline std::uint16_t thread_count() const noexcept;
 		inline std::size_t task_buffer_size() const noexcept;
 		inline void delete_threads() noexcept;
@@ -177,7 +178,7 @@ namespace cool
 		static_assert(_arg_buffer_align >= alignof(std::max_align_t),
 			"cool::threads_mq<cache_line_size, arg_buffer_size, arg_buffer_align> requirement : arg_buffer_align must be greater or equal to alignof(std::max_align_t)");
 
-		threads_mq() noexcept = default;
+		threads_mq() = default;
 		threads_mq(const cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
 		cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>& operator=(const cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
 		threads_mq(cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&&) = delete;
@@ -222,7 +223,7 @@ namespace cool
 		template <class return_Ty, class function_Ty, class ... args_Ty>
 		inline bool try_async(cool::_async_task_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
 
-		inline bool init_new_threads(
+		inline cool::threads_init_result init_new_threads(
 			std::uint16_t new_thread_count,
 			std::size_t new_task_buffer_size,
 			unsigned int _pop_tries = 1,
@@ -235,6 +236,39 @@ namespace cool
 		inline unsigned int push_tries() const noexcept;
 		inline std::uint16_t dispatch_interval() const noexcept;
 		inline void delete_threads() noexcept;
+	};
+
+
+	// threads_init_result
+
+	class threads_init_result
+	{
+
+	public:
+
+		static constexpr int success = 0;
+		static constexpr int bad_align = 1;
+		static constexpr int bad_parameters = 2;
+		static constexpr int bad_alloc = 3;
+		static constexpr int bad_thread = 4;
+
+		static constexpr int undefined = -1;
+
+		threads_init_result() = default;
+
+		inline operator bool() const noexcept; // returns true if threads init is successful
+		inline bool good() const noexcept; // returns true if threads init is successful
+		inline int value() const noexcept;
+		inline const char* message() const noexcept;
+
+	private:
+
+		inline threads_init_result(int result) noexcept;
+
+		int m_result = cool::threads_init_result::undefined;
+
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_sq;
+		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> friend class cool::threads_mq;
 	};
 
 
@@ -2147,71 +2181,75 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
-inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size) noexcept
+inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 
-	delete_threads();
-
-	this->m_stop_threads = false;
+	if (reinterpret_cast<std::uintptr_t>(this) % _cache_line_size != 0)
+	{
+		return cool::threads_init_result(cool::threads_init_result::bad_align);
+	}
+	else
+	{
+		delete_threads();
+		this->m_stop_threads = false;
+	}
 
 	if ((new_thread_count == 0) || (new_task_buffer_size == 0))
 	{
-		return false;
+		return cool::threads_init_result(cool::threads_init_result::bad_parameters);
 	}
 
-	std::size_t _new_thread_count = static_cast<std::size_t>(new_thread_count);
 
-	new_task_buffer_size = (_new_thread_count > new_task_buffer_size) ? _new_thread_count : new_task_buffer_size;
+	std::size_t _new_thread_count = static_cast<std::size_t>(new_thread_count);
+	this->m_thread_count = _new_thread_count;
 
 	std::size_t threads_constructed = 0;
 
-	xCOOL_THREADS_TRY
+	this->m_threads_data_ptr = static_cast<std::thread*>(::operator new(
+		_new_thread_count * sizeof(std::thread) + 2 * cache_line_size, std::nothrow));
+
+	if (this->m_threads_data_ptr == nullptr)
 	{
-		this->m_threads_data_ptr = static_cast<std::thread*>(::operator new(
-			_new_thread_count * sizeof(std::thread) + 2 * cache_line_size, std::nothrow));
+		this->delete_threads_detail(threads_constructed);
+		return cool::threads_init_result(cool::threads_init_result::bad_alloc);
+	}
+	else
+	{
+		this->m_threads_data_ptr = reinterpret_cast<std::thread*>(
+			reinterpret_cast<char*>(this->m_threads_data_ptr) + cache_line_size);
+	}
 
-		if (this->m_threads_data_ptr == nullptr)
-		{
-			this->delete_threads_detail(threads_constructed);
-			return false;
-		}
-		else
-		{
-			this->m_threads_data_ptr = reinterpret_cast<std::thread*>(
-				reinterpret_cast<char*>(this->m_threads_data_ptr) + cache_line_size);
-		}
+	constexpr std::size_t task_buffer_padding = (cache_line_size > arg_buffer_align) ? cache_line_size : arg_buffer_align;
+	std::size_t new_task_buffer_size_p1 = new_task_buffer_size + 1;
 
-		this->m_thread_count = _new_thread_count;
+	this->m_task_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(new_task_buffer_size_p1 * sizeof(_cool_thsq_task) + task_buffer_padding + cache_line_size, std::nothrow));
 
-		constexpr std::size_t task_buffer_padding = (cache_line_size > arg_buffer_align) ? cache_line_size : arg_buffer_align;
-		std::size_t new_task_buffer_size_p1 = new_task_buffer_size + 1;
+	if (this->m_task_buffer_unaligned_data_ptr == nullptr)
+	{
+		this->delete_threads_detail(threads_constructed);
+		return cool::threads_init_result(cool::threads_init_result::bad_alloc);
+	}
+	else
+	{
+		std::uintptr_t ptr_remainder = reinterpret_cast<std::uintptr_t>(this->m_task_buffer_unaligned_data_ptr) % static_cast<std::uintptr_t>(task_buffer_padding);
 
-		this->m_task_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(new_task_buffer_size_p1 * sizeof(_cool_thsq_task) + task_buffer_padding + cache_line_size, std::nothrow));
+		this->m_task_buffer_data_ptr = reinterpret_cast<_cool_thsq_task*>(this->m_task_buffer_unaligned_data_ptr
+			+ static_cast<std::size_t>(ptr_remainder != 0) * (task_buffer_padding - static_cast<std::size_t>(ptr_remainder)));
+	}
 
-		if (this->m_task_buffer_unaligned_data_ptr == nullptr)
-		{
-			this->delete_threads_detail(threads_constructed);
-			return false;
-		}
-		else
-		{
-			std::uintptr_t ptr_remainder = reinterpret_cast<std::uintptr_t>(this->m_task_buffer_unaligned_data_ptr) % static_cast<std::uintptr_t>(task_buffer_padding);
+	this->m_task_buffer_end_ptr = this->m_task_buffer_data_ptr + new_task_buffer_size_p1;
+	this->m_next_task_ptr = this->m_task_buffer_data_ptr;
+	this->m_last_task_ptr = this->m_task_buffer_data_ptr;
 
-			this->m_task_buffer_data_ptr = reinterpret_cast<_cool_thsq_task*>(this->m_task_buffer_unaligned_data_ptr
-				+ static_cast<std::size_t>(ptr_remainder != 0) * (task_buffer_padding - static_cast<std::size_t>(ptr_remainder)));
-		}
+	for (std::size_t k = 0; k < new_task_buffer_size_p1; k++)
+	{
+		new (this->m_task_buffer_data_ptr + k) _cool_thsq_task();
+	}
 
-		this->m_task_buffer_end_ptr = this->m_task_buffer_data_ptr + new_task_buffer_size_p1;
-		this->m_next_task_ptr = this->m_task_buffer_data_ptr;
-		this->m_last_task_ptr = this->m_task_buffer_data_ptr;
-
-		for (std::size_t k = 0; k < new_task_buffer_size_p1; k++)
-		{
-			new (this->m_task_buffer_data_ptr + k) _cool_thsq_task();
-		}
-
-		for (std::size_t k = 0; k < _new_thread_count; k++)
+	for (std::size_t k = 0; k < _new_thread_count; k++)
+	{
+		xCOOL_THREADS_TRY
 		{
 			new (this->m_threads_data_ptr + k) std::thread([this]()
 			{
@@ -2246,17 +2284,17 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					xCOOL_THREADS_CATCH(...) {}
 				}
 			});
-
-			threads_constructed++;
 		}
-	}
-	xCOOL_THREADS_CATCH(...)
-	{
-		this->delete_threads_detail(threads_constructed);
-		return false;
+		xCOOL_THREADS_CATCH(...)
+		{
+			this->delete_threads_detail(threads_constructed);
+			return cool::threads_init_result(cool::threads_init_result::bad_thread);
+		}
+
+		threads_constructed++;
 	}
 
-	return true;
+	return cool::threads_init_result(cool::threads_init_result::success);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
@@ -4120,7 +4158,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
-inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::init_new_threads(
+inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::init_new_threads(
 	std::uint16_t new_thread_count,
 	std::size_t new_task_buffer_size,
 	unsigned int _pop_tries,
@@ -4133,11 +4171,18 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
 
-	delete_threads();
-
-	if ((new_thread_count == 0) || (new_task_buffer_size == 0))
+	if (reinterpret_cast<std::uintptr_t>(this) % _cache_line_size != 0)
 	{
-		return false;
+		return cool::threads_init_result(cool::threads_init_result::bad_align);
+	}
+	else
+	{
+		delete_threads();
+	}
+
+	if ((new_thread_count == 0) || (new_task_buffer_size == 0) || (_pop_tries == 0) || (_push_tries == 0) || (dispatch_interval == 0))
+	{
+		return cool::threads_init_result(cool::threads_init_result::bad_parameters);
 	}
 
 	std::size_t _new_thread_count = static_cast<std::size_t>(new_thread_count);
@@ -4170,72 +4215,73 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	std::size_t threads_constructed = 0;
 	std::size_t threads_launched = 0;
 
-	xCOOL_THREADS_TRY
-	{
-		this->m_thread_blocks_unaligned_data_ptr = static_cast<char*>(::operator new(
-			_new_thread_count * sizeof(_cool_thmq_tblk) + 2 * cache_line_size, std::nothrow));
 
-		if (this->m_thread_blocks_unaligned_data_ptr == nullptr)
+	this->m_thread_blocks_unaligned_data_ptr = static_cast<char*>(::operator new(
+		_new_thread_count * sizeof(_cool_thmq_tblk) + 2 * cache_line_size, std::nothrow));
+
+	if (this->m_thread_blocks_unaligned_data_ptr == nullptr)
+	{
+		this->delete_threads_detail(threads_constructed, threads_launched);
+		return cool::threads_init_result(cool::threads_init_result::bad_alloc);
+	}
+	else
+	{
+		std::uintptr_t ptr_remainder = reinterpret_cast<std::uintptr_t>(this->m_thread_blocks_unaligned_data_ptr) % static_cast<std::uintptr_t>(cache_line_size);
+
+		this->m_thread_blocks_data_ptr = reinterpret_cast<_cool_thmq_tblk*>(this->m_thread_blocks_unaligned_data_ptr
+			+ static_cast<std::size_t>(ptr_remainder != 0) * (cache_line_size - static_cast<std::size_t>(ptr_remainder)));
+	}
+
+	for (std::size_t thread_num = 0; thread_num < _new_thread_count; thread_num++)
+	{
+		new (this->m_thread_blocks_data_ptr + thread_num) _cool_thmq_tblk();
+		if (!((this->m_thread_blocks_data_ptr + thread_num)->new_task_buffer(task_buffer_size_per_thread)))
 		{
 			this->delete_threads_detail(threads_constructed, threads_launched);
-			return false;
+			return cool::threads_init_result(cool::threads_init_result::bad_alloc);
 		}
-		else
-		{
-			std::uintptr_t ptr_remainder = reinterpret_cast<std::uintptr_t>(this->m_thread_blocks_unaligned_data_ptr) % static_cast<std::uintptr_t>(cache_line_size);
+		threads_constructed++;
+	}
 
-			this->m_thread_blocks_data_ptr = reinterpret_cast<_cool_thmq_tblk*>(this->m_thread_blocks_unaligned_data_ptr
-				+ static_cast<std::size_t>(ptr_remainder != 0) * (cache_line_size - static_cast<std::size_t>(ptr_remainder)));
+	if (new_thread_count != 1)
+	{
+		constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
+
+		this->m_mod_D = static_cast<_cool_thmq_uint2X>(new_thread_count);
+
+		_cool_thmq_uintX i = 0;
+		while ((static_cast<_cool_thmq_uint2X>(1) << i) < static_cast<_cool_thmq_uint2X>(new_thread_count))
+		{
+			i++;
 		}
+		this->m_mod_k = uintX_bitcount + i;
 
-		for (std::size_t thread_num = 0; thread_num < _new_thread_count; thread_num++)
+		_cool_thmq_uint2X temp = (static_cast<_cool_thmq_uint2X>(1) << this->m_mod_k) / this->m_mod_D;
+		if ((temp * this->m_mod_D) != (static_cast<_cool_thmq_uint2X>(1) << this->m_mod_k))
 		{
-			new (this->m_thread_blocks_data_ptr + thread_num) _cool_thmq_tblk();
-			if (!((this->m_thread_blocks_data_ptr + thread_num)->new_task_buffer(task_buffer_size_per_thread)))
-			{
-				this->delete_threads_detail(threads_constructed, threads_launched);
-				return false;
-			}
-			threads_constructed++;
-		}
-
-		if (new_thread_count != 1)
-		{
-			constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
-
-			this->m_mod_D = static_cast<_cool_thmq_uint2X>(new_thread_count);
-
-			_cool_thmq_uintX i = 0;
-			while ((static_cast<_cool_thmq_uint2X>(1) << i) < static_cast<_cool_thmq_uint2X>(new_thread_count))
-			{
-				i++;
-			}
-			this->m_mod_k = uintX_bitcount + i;
-
-			_cool_thmq_uint2X temp = (static_cast<_cool_thmq_uint2X>(1) << this->m_mod_k) / this->m_mod_D;
-			if ((temp * this->m_mod_D) != (static_cast<_cool_thmq_uint2X>(1) << this->m_mod_k))
-			{
-				temp++;
-			}
-
-			this->m_mod_a = temp - (static_cast<_cool_thmq_uint2X>(1) << uintX_bitcount);
-			this->m_mod_k -= (uintX_bitcount + 1);
-		}
-		else
-		{
-			constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
-
-			this->m_mod_D = 1;
-			this->m_mod_a = static_cast<_cool_thmq_uint2X>(1) << uintX_bitcount;
-			this->m_mod_k = 0;
+			temp++;
 		}
 
-		this->m_dispatch_interval = static_cast<_cool_thmq_uintX>(dispatch_interval);
+		this->m_mod_a = temp - (static_cast<_cool_thmq_uint2X>(1) << uintX_bitcount);
+		this->m_mod_k -= (uintX_bitcount + 1);
+	}
+	else
+	{
+		constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
 
-		for (std::size_t thread_num = 0; thread_num < _new_thread_count; thread_num++)
+		this->m_mod_D = 1;
+		this->m_mod_a = static_cast<_cool_thmq_uint2X>(1) << uintX_bitcount;
+		this->m_mod_k = 0;
+	}
+
+	this->m_dispatch_interval = static_cast<_cool_thmq_uintX>(dispatch_interval);
+
+	for (std::size_t thread_num = 0; thread_num < _new_thread_count; thread_num++)
+	{
+		(this->m_thread_blocks_data_ptr + thread_num)->m_stop_threads = false;
+
+		xCOOL_THREADS_TRY
 		{
-			(this->m_thread_blocks_data_ptr + thread_num)->m_stop_threads = false;
-
 			(this->m_thread_blocks_data_ptr + thread_num)->m_thread = std::thread([this, thread_num, _new_thread_count, _new_pop_rounds]()
 			{
 				while (true)
@@ -4325,17 +4371,17 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					xCOOL_THREADS_CATCH(...) {}
 				}
 			});
-
-			threads_launched++;
 		}
-	}
-	xCOOL_THREADS_CATCH(...)
-	{
-		this->delete_threads_detail(threads_constructed, threads_launched);
-		return false;
+		xCOOL_THREADS_CATCH(...)
+		{
+			this->delete_threads_detail(threads_constructed, threads_launched);
+			return cool::threads_init_result(cool::threads_init_result::bad_thread);
+		}
+
+		threads_launched++;
 	}
 
-	return true;
+	return cool::threads_init_result(cool::threads_init_result::success);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
@@ -4421,10 +4467,9 @@ inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 
 			if (k < threads_constructed)
 			{
+				ptr->delete_task_buffer();
 				ptr->~_thread_block();
 			}
-
-			ptr->delete_task_buffer();
 		}
 
 		::operator delete(this->m_thread_blocks_unaligned_data_ptr);
@@ -4443,6 +4488,36 @@ inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 	this->m_dispatch_interval = 1;
 	this->m_thread_blocks_unaligned_data_ptr = nullptr;
 }
+
+inline cool::threads_init_result::operator bool() const noexcept
+{
+	return m_result == threads_init_result::success;
+}
+
+inline bool cool::threads_init_result::good() const noexcept
+{
+	return m_result == threads_init_result::success;
+}
+
+inline int cool::threads_init_result::value() const noexcept
+{
+	return m_result;
+}
+
+inline const char* cool::threads_init_result::message() const noexcept
+{
+	switch (m_result)
+	{
+	case threads_init_result::success: return "cool threads init success"; break;
+	case threads_init_result::bad_align: return "cool threads init failed : bad alignment of threads_sq/threads_mq object"; break;
+	case threads_init_result::bad_parameters: return "cool threads init failed : bad parameters"; break;
+	case threads_init_result::bad_alloc: return "cool threads init failed : bad allocation"; break;
+	case threads_init_result::bad_thread: return "cool threads init failed : bad thread creation"; break;
+	default: return "cool threads init result undefined"; break;
+	}
+}
+
+inline cool::threads_init_result::threads_init_result(int result) noexcept : m_result(result) {}
 
 inline void cool::threads_exception_handler::set(void(*on_exception)(const std::exception&, void(*)(void), void*), void* exception_arg_ptr) noexcept
 {
