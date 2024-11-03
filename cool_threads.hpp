@@ -16,6 +16,7 @@
 #include <atomic>
 #include <tuple>
 #include <exception>
+#include <system_error>
 
 
 // to disable exceptions, #define COOL_THREADS_NOEXCEPTIONS
