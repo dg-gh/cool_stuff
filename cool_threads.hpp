@@ -25,10 +25,12 @@
 #define xCOOL_THREADS_TRY try
 #define xCOOL_THREADS_CATCH(expr) catch (expr)
 #define xCOOL_THREADS_EXCEPTION excep
+#define xCOOL_THREADS_SYSTEM_ERROR error
 #else // COOL_THREADS_NOEXCEPTIONS
 #define xCOOL_THREADS_TRY
 #define xCOOL_THREADS_CATCH(expr) if (false)
 #define xCOOL_THREADS_EXCEPTION std::exception{}
+#define xCOOL_THREADS_SYSTEM_ERROR std::system_error{}
 #endif // COOL_THREADS_NOEXCEPTIONS
 #endif // !defined(xCOOL_THREADS_TRY) && !defined(xCOOL_THREADS_CATCH) && !defined(xCOOL_THREADS_EXCEPTION)
 
@@ -291,7 +293,20 @@ namespace cool
 		// WARNING : 'on_exception' must not throw any exception or the program will terminate
 		// WARNING : potential reads and writes to 'exception_arg_ptr' by 'on_exception' must be synchronized properly
 
-		static inline void set(void(*on_exception)(const std::exception&, void(*)(void), void*), void* exception_arg_ptr = nullptr) noexcept;
+
+		// 'on_delete_thread_exception' arguments are :
+		// > const std::system_error& : exception thrown
+		// > void* : pointer to instance of object threads_sq/threads_mq that produced the exception
+		// > void* : optional pointer to buffer 'delete_thread_exception_arg_ptr'
+
+		// if 'on_delete_thread_exception' is a nullptr, then the exception handling will be the logical equivalent to a no-op
+
+		// WARNING : 'on_delete_thread_exception' must not throw any exception or the program will terminate
+		// WARNING : potential reads and writes to 'delete_thread_exception_arg_ptr' by 'on_delete_thread_exception' must be synchronized properly
+		// WARNING : 'on_delete_thread_exception' is called if a thread failed to join and the program should be considered to be unlikely to be left in a good state afterwards
+
+		static inline void set_on_exception(void(*on_exception)(const std::exception&, void(*)(void), void*), void* exception_arg_ptr = nullptr) noexcept;
+		static inline void set_on_delete_thread_exception(void(*on_delete_thread_exception)(const std::system_error&, void*, void*), void* delete_thread_exception_arg_ptr = nullptr) noexcept;
 		static inline void clear() noexcept;
 	};
 
@@ -490,6 +505,25 @@ namespace cool
 			exception_handler handler = get_exception_handler().load(std::memory_order_seq_cst);
 			if (handler.m_function != nullptr) {
 				handler.m_function(excep, task_function_ptr, handler.m_arg_ptr);
+			}
+		}
+
+		class delete_thread_exception_handler {
+		public:
+			inline delete_thread_exception_handler(void(*_function)(const std::system_error&, void*, void*), void* _arg_ptr) noexcept
+				: m_function(_function), m_arg_ptr(_arg_ptr) {};
+			void(*m_function)(const std::system_error&, void*, void*) = nullptr;
+			void* m_arg_ptr = nullptr;
+		};
+
+		static inline std::atomic<delete_thread_exception_handler>& get_delete_thread_exception_handler() noexcept {
+			static std::atomic<delete_thread_exception_handler> handler{ delete_thread_exception_handler{ nullptr, nullptr } };
+			return handler;
+		}
+		static inline void catch_delete_thread_exception(const std::system_error& error, void* threads_xq_instance) noexcept {
+			delete_thread_exception_handler handler = get_delete_thread_exception_handler().load(std::memory_order_seq_cst);
+			if (handler.m_function != nullptr) {
+				handler.m_function(error, threads_xq_instance, handler.m_arg_ptr);
 			}
 		}
 	};
@@ -2346,7 +2380,14 @@ inline void cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 		{
 			if ((this->m_threads_data_ptr + k)->joinable())
 			{
-				(this->m_threads_data_ptr + k)->join();
+				xCOOL_THREADS_TRY
+				{
+					(this->m_threads_data_ptr + k)->join();
+				}
+				xCOOL_THREADS_CATCH(const std::system_error& xCOOL_THREADS_SYSTEM_ERROR)
+				{
+					cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_delete_thread_exception(xCOOL_THREADS_SYSTEM_ERROR, this);
+				}
 			}
 			(this->m_threads_data_ptr + k)->~thread();
 		}
@@ -4461,7 +4502,14 @@ inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 
 				if (ptr->m_thread.joinable())
 				{
-					ptr->m_thread.join();
+					xCOOL_THREADS_TRY
+					{
+						ptr->m_thread.join();
+					}
+					xCOOL_THREADS_CATCH(const std::system_error& xCOOL_THREADS_SYSTEM_ERROR)
+					{
+						cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_delete_thread_exception(xCOOL_THREADS_SYSTEM_ERROR, this);
+					}
 				}
 			}
 
@@ -4519,16 +4567,25 @@ inline const char* cool::threads_init_result::message() const noexcept
 
 inline cool::threads_init_result::threads_init_result(int result) noexcept : m_result(result) {}
 
-inline void cool::threads_exception_handler::set(void(*on_exception)(const std::exception&, void(*)(void), void*), void* exception_arg_ptr) noexcept
+inline void cool::threads_exception_handler::set_on_exception(void(*on_exception)(const std::exception&, void(*)(void), void*), void* exception_arg_ptr) noexcept
 {
 	cool::_threads_base::exception_handler handler{ on_exception, exception_arg_ptr };
 	cool::_threads_base::get_exception_handler().store(handler, std::memory_order_seq_cst);
+}
+
+inline void cool::threads_exception_handler::set_on_delete_thread_exception(void(*on_delete_thread_exception)(const std::system_error&, void*, void*), void* delete_thread_exception_arg_ptr) noexcept
+{
+	cool::_threads_base::delete_thread_exception_handler handler{ on_delete_thread_exception, delete_thread_exception_arg_ptr };
+	cool::_threads_base::get_delete_thread_exception_handler().store(handler, std::memory_order_seq_cst);
 }
 
 inline void cool::threads_exception_handler::clear() noexcept
 {
 	cool::_threads_base::exception_handler handler{ nullptr, nullptr };
 	cool::_threads_base::get_exception_handler().store(handler, std::memory_order_seq_cst);
+
+	cool::_threads_base::delete_thread_exception_handler delete_thread_handler{ nullptr, nullptr };
+	cool::_threads_base::get_delete_thread_exception_handler().store(delete_thread_handler, std::memory_order_seq_cst);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
