@@ -322,7 +322,7 @@ namespace cool
 
 	public:
 
-		async_task_end() noexcept = default;
+		async_task_end() = default;
 		async_task_end(const cool::async_task_end& rhs) = delete;
 		cool::async_task_end& operator=(const cool::async_task_end& rhs) = delete;
 		async_task_end(cool::async_task_end&& rhs) = delete;
@@ -369,7 +369,7 @@ namespace cool
 		using size_type = std::size_t;
 		using difference_type = std::ptrdiff_t;
 
-		async_task_result() noexcept = default;
+		async_task_result() = default;
 		async_task_result(const cool::async_task_result<return_Ty>& rhs) = delete;
 		cool::async_task_result<return_Ty>& operator=(const cool::async_task_result<return_Ty>& rhs) = delete;
 		async_task_result(cool::async_task_result<return_Ty>&& rhs) = delete;
@@ -541,7 +541,7 @@ namespace cool
 
 		using _task = typename cool::_threads_base::_base_task<_arg_buffer_size, _arg_buffer_align>;
 
-		_threads_sq_data() noexcept = default;
+		_threads_sq_data() = default;
 		_threads_sq_data(const cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
 		cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>& operator=(const cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
 		_threads_sq_data(cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&&) = delete;
@@ -587,7 +587,7 @@ namespace cool
 		using _uint2X = std::uint32_t;
 #endif // UINT64_MAX
 
-		_threads_mq_data() noexcept = default;
+		_threads_mq_data() = default;
 		_threads_mq_data(const cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
 		cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>& operator=(const cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
 		_threads_mq_data(cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&&) = delete;
