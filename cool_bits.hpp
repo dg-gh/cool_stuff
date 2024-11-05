@@ -75,8 +75,8 @@ namespace cool
 		static constexpr std::size_t word_capacity = bit_count / word_size;
 		static constexpr std::size_t word_count = (bit_count % word_size == 0) ? bit_count / word_size : bit_count / word_size + 1;
 
-		bits() noexcept = default;
-		inline bits(cool::no_init_t) noexcept {};
+		constexpr bits() noexcept;
+		inline bits(cool::no_init_t) noexcept {}; // WARNING : use constructor with no_init argument only for volatile memory access
 		constexpr bits(const cool::bits<bit_count, word_Ty, arg_Ty>&) noexcept = default;
 		inline cool::bits<bit_count, word_Ty, arg_Ty>& operator=(const cool::bits<bit_count, word_Ty, arg_Ty>& rhs) noexcept;
 		bits(cool::bits<bit_count, word_Ty, arg_Ty>&&) noexcept = default;
@@ -872,7 +872,10 @@ inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, ar
 }
 
 template <std::size_t bit_count, class word_Ty, class arg_Ty>
-inline constexpr cool::bits<bit_count, word_Ty, arg_Ty>::bits(bool val) noexcept : m_field{ static_cast<word_Ty>(0) }
+inline constexpr cool::bits<bit_count, word_Ty, arg_Ty>::bits() noexcept : m_field{} {}
+
+template <std::size_t bit_count, class word_Ty, class arg_Ty>
+inline constexpr cool::bits<bit_count, word_Ty, arg_Ty>::bits(bool val) noexcept : m_field{}
 {
 	word_Ty word_val = val ? static_cast<word_Ty>(-1) : 0;
 	for (std::size_t n = 0; n < word_count; n++)
@@ -885,12 +888,11 @@ template <std::size_t bit_count, class word_Ty, class arg_Ty>
 inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::operator=(bool val) noexcept
 {
 	_assign_bool_op(static_cast<word_Ty*>(m_field), val);
-
 	return *this;
 }
 
 template <std::size_t bit_count, class word_Ty, class arg_Ty>
-inline constexpr cool::bits<bit_count, word_Ty, arg_Ty>::bits(std::initializer_list<bool> lst) noexcept : m_field{ static_cast<word_Ty>(0) }
+inline constexpr cool::bits<bit_count, word_Ty, arg_Ty>::bits(std::initializer_list<bool> lst) noexcept : m_field{}
 {
 	const bool* ptr = lst.begin();
 	for (std::size_t n = 0; n < word_capacity; n++)
