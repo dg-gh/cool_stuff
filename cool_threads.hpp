@@ -2288,12 +2288,12 @@ inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_
 		{
 			new (this->m_threads_data_ptr + k) std::thread([this]()
 			{
-				_cool_thsq_task current_task;
-
 				while (true)
 				{
 					xCOOL_THREADS_TRY
 					{
+						_cool_thsq_task current_task;
+
 						{
 							std::unique_lock<std::mutex> lock(this->m_mutex);
 
