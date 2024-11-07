@@ -3220,7 +3220,7 @@ inline void cool::bits<bit_count, word_Ty, arg_Ty>::_assign_bool_op(ptr_Ty data_
 		constexpr word_Ty zero_end_mask = ~end_mask;
 
 		word_Ty temp = *(data_ptr + word_capacity);
-		*(data_ptr + word_capacity) = val ? temp | end_mask : temp & ~zero_end_mask;
+		*(data_ptr + word_capacity) = val ? temp | end_mask : temp & zero_end_mask;
 	}
 }
 
