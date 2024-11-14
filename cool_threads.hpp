@@ -154,6 +154,8 @@ namespace cool
 		template <class return_Ty, class function_Ty, class ... args_Ty>
 		inline bool try_priority_async(cool::_async_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
 
+		// WARNING : 'init_new_threads' and 'delete_threads' must not be called in concurrency with any other method
+
 		inline cool::threads_init_result init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size) noexcept;
 		inline std::uint16_t thread_count() const noexcept;
 		inline std::size_t task_buffer_size() const noexcept;
@@ -225,6 +227,8 @@ namespace cool
 
 		template <class return_Ty, class function_Ty, class ... args_Ty>
 		inline bool try_async(cool::_async_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
+
+		// WARNING : 'init_new_threads' and 'delete_threads' must not be called in concurrency with any other method
 
 		inline cool::threads_init_result init_new_threads(
 			std::uint16_t new_thread_count,
@@ -2247,6 +2251,7 @@ inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_
 	if (this->m_threads_data_ptr == nullptr)
 	{
 		this->delete_threads_detail(threads_constructed);
+		std::atomic_signal_fence(std::memory_order_release);
 		return cool::threads_init_result(cool::threads_init_result::bad_alloc);
 	}
 	else
@@ -2263,6 +2268,7 @@ inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_
 	if (this->m_task_buffer_unaligned_data_ptr == nullptr)
 	{
 		this->delete_threads_detail(threads_constructed);
+		std::atomic_signal_fence(std::memory_order_release);
 		return cool::threads_init_result(cool::threads_init_result::bad_alloc);
 	}
 	else
@@ -2323,24 +2329,29 @@ inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_
 		xCOOL_THREADS_CATCH(...)
 		{
 			this->delete_threads_detail(threads_constructed);
+			std::atomic_signal_fence(std::memory_order_release);
 			return cool::threads_init_result(cool::threads_init_result::bad_thread);
 		}
 
 		threads_constructed++;
 	}
 
+	std::atomic_signal_fence(std::memory_order_release);
 	return cool::threads_init_result(cool::threads_init_result::success);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
 inline std::uint16_t cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::thread_count() const noexcept
 {
+	std::atomic_signal_fence(std::memory_order_acquire);
 	return static_cast<std::uint16_t>(this->m_thread_count);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
 inline std::size_t cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::task_buffer_size() const noexcept
 {
+	std::atomic_signal_fence(std::memory_order_acquire);
+
 	if (this->m_task_buffer_data_ptr != nullptr)
 	{
 		return static_cast<std::size_t>(this->m_task_buffer_end_ptr - this->m_task_buffer_data_ptr) - 1;
@@ -2355,6 +2366,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads() noexcept
 {
 	this->delete_threads_detail(this->m_thread_count);
+	std::atomic_signal_fence(std::memory_order_release);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
@@ -4264,6 +4276,7 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 	if (this->m_thread_blocks_unaligned_data_ptr == nullptr)
 	{
 		this->delete_threads_detail(threads_constructed, threads_launched);
+		std::atomic_signal_fence(std::memory_order_release);
 		return cool::threads_init_result(cool::threads_init_result::bad_alloc);
 	}
 	else
@@ -4280,6 +4293,7 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 		if (!((this->m_thread_blocks_data_ptr + thread_num)->new_task_buffer(task_buffer_size_per_thread)))
 		{
 			this->delete_threads_detail(threads_constructed, threads_launched);
+			std::atomic_signal_fence(std::memory_order_release);
 			return cool::threads_init_result(cool::threads_init_result::bad_alloc);
 		}
 		threads_constructed++;
@@ -4417,24 +4431,29 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 		xCOOL_THREADS_CATCH(...)
 		{
 			this->delete_threads_detail(threads_constructed, threads_launched);
+			std::atomic_signal_fence(std::memory_order_release);
 			return cool::threads_init_result(cool::threads_init_result::bad_thread);
 		}
 
 		threads_launched++;
 	}
 
+	std::atomic_signal_fence(std::memory_order_release);
 	return cool::threads_init_result(cool::threads_init_result::success);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
 inline std::uint16_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::thread_count() const noexcept
 {
+	std::atomic_signal_fence(std::memory_order_acquire);
 	return static_cast<std::uint16_t>(this->m_thread_count);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
 inline std::size_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::task_buffer_size() const noexcept
 {
+	std::atomic_signal_fence(std::memory_order_acquire);
+
 	if (this->m_thread_blocks_data_ptr != nullptr)
 	{
 		if (this->m_thread_blocks_data_ptr->m_task_buffer_data_ptr != nullptr)
@@ -4456,18 +4475,21 @@ inline std::size_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buf
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
 inline unsigned int cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::pop_tries() const noexcept
 {
+	std::atomic_signal_fence(std::memory_order_acquire);
 	return this->m_pop_rounds * static_cast<unsigned int>(this->m_thread_count);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
 inline unsigned int cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::push_tries() const noexcept
 {
+	std::atomic_signal_fence(std::memory_order_acquire);
 	return this->m_push_rounds * static_cast<unsigned int>(this->m_thread_count);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
 inline std::uint16_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::dispatch_interval() const noexcept
 {
+	std::atomic_signal_fence(std::memory_order_acquire);
 	return static_cast<std::uint16_t>(this->m_dispatch_interval);
 }
 
@@ -4475,6 +4497,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads() noexcept
 {
 	this->delete_threads_detail(this->m_thread_count, this->m_thread_count);
+	std::atomic_signal_fence(std::memory_order_release);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
