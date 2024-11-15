@@ -155,8 +155,10 @@ namespace cool
 		inline bool try_priority_async(cool::_async_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
 
 		// WARNING : 'init_new_threads' and 'delete_threads' must not be called in concurrency with any other method
+		// except the case of 'init_new_thread' with 'good'
 
 		inline cool::threads_init_result init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size) noexcept;
+		inline bool good() const noexcept; // true if 'init_new_threads' has finished successfully, must not be relied upon if a 'delete_threads' concurrent call is imminent
 		inline std::uint16_t thread_count() const noexcept;
 		inline std::size_t task_buffer_size() const noexcept;
 		inline void delete_threads() noexcept;
@@ -229,6 +231,7 @@ namespace cool
 		inline bool try_async(cool::_async_result_incr_proxy<return_Ty> target, function_Ty task, args_Ty ... args) noexcept;
 
 		// WARNING : 'init_new_threads' and 'delete_threads' must not be called in concurrency with any other method
+		// except the case of 'init_new_thread' with 'good'
 
 		inline cool::threads_init_result init_new_threads(
 			std::uint16_t new_thread_count,
@@ -237,6 +240,7 @@ namespace cool
 			unsigned int _push_tries = 32,
 			std::uint16_t dispatch_interval = 1
 		) noexcept;
+		inline bool good() const noexcept; // true if 'init_new_threads' has finished successfully, must not be relied upon if a 'delete_threads' concurrent call is imminent
 		inline std::uint16_t thread_count() const noexcept;
 		inline std::size_t task_buffer_size() const noexcept;
 		inline unsigned int pop_tries() const noexcept;
@@ -567,6 +571,7 @@ namespace cool
 		std::mutex m_mutex;
 
 		bool m_stop_threads = true;
+		std::atomic<bool> m_good{ false };
 
 		char* m_task_buffer_unaligned_data_ptr = nullptr;
 	};
@@ -606,6 +611,7 @@ namespace cool
 		std::size_t m_thread_count = 0;
 		unsigned int m_pop_rounds = 0;
 		unsigned int m_push_rounds = 0;
+		std::atomic<bool> m_good{ false };
 		
 		_uint2X m_mod_D = 1;
 		_uint2X m_mod_a = static_cast<_uint2X>(1) << (sizeof(_uintX) * CHAR_BIT);
@@ -2337,7 +2343,14 @@ inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_
 	}
 
 	std::atomic_signal_fence(std::memory_order_release);
+	this->m_good.store(true, std::memory_order_seq_cst);
 	return cool::threads_init_result(cool::threads_init_result::success);
+}
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::good() const noexcept
+{
+	return this->m_good.load(std::memory_order_seq_cst);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
@@ -2365,6 +2378,7 @@ inline std::size_t cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buf
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
 inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads() noexcept
 {
+	this->m_good.store(false, std::memory_order_seq_cst);
 	this->delete_threads_detail(this->m_thread_count);
 	std::atomic_signal_fence(std::memory_order_release);
 }
@@ -4439,7 +4453,14 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 	}
 
 	std::atomic_signal_fence(std::memory_order_release);
+	this->m_good.store(true, std::memory_order_seq_cst);
 	return cool::threads_init_result(cool::threads_init_result::success);
+}
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::good() const noexcept
+{
+	return this->m_good.load(std::memory_order_seq_cst);
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
@@ -4496,6 +4517,7 @@ inline std::uint16_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_b
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
 inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads() noexcept
 {
+	this->m_good.store(false, std::memory_order_seq_cst);
 	this->delete_threads_detail(this->m_thread_count, this->m_thread_count);
 	std::atomic_signal_fence(std::memory_order_release);
 }
