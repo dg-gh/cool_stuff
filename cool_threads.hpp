@@ -2486,8 +2486,6 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -2533,28 +2531,29 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return;
-			}
 		}
 
 		for (std::size_t k = this->m_thread_count - 1; k > first_thread; k--)
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -2600,20 +2599,23 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return;
-			}
 		}
 	}
 }
@@ -2651,8 +2653,6 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -2702,28 +2702,29 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return;
-			}
 		}
 
 		for (std::size_t k = this->m_thread_count - 1; k > first_thread; k--)
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -2773,20 +2774,23 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return;
-			}
 		}
 	}
 }
@@ -2823,8 +2827,6 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			k--;
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
-
-			bool success = false;
 			
 			xCOOL_THREADS_TRY
 			{
@@ -2877,27 +2879,28 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return;
-			}
 		}
 
 		for (std::size_t k = this->m_thread_count - 1; k > first_thread; k--)
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
-
-			bool success = false;
 
 			xCOOL_THREADS_TRY
 			{
@@ -2950,20 +2953,23 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return;
-			}
 		}
 	}
 }
@@ -3001,8 +3007,6 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -3056,28 +3060,29 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return;
-			}
 		}
 
 		for (std::size_t k = this->m_thread_count - 1; k > first_thread; k--)
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -3131,20 +3136,23 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return;
-			}
 		}
 	}
 }
@@ -3182,8 +3190,6 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -3239,28 +3245,29 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return;
-			}
 		}
 
 		for (std::size_t k = this->m_thread_count - 1; k > first_thread; k--)
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -3316,20 +3323,23 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return;
-			}
 		}
 	}
 }
@@ -3367,8 +3377,6 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -3414,28 +3422,29 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return true;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return true;
-			}
 		}
 
 		for (std::size_t k = this->m_thread_count - 1; k > first_thread; k--)
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -3481,20 +3490,23 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return true;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return true;
-			}
 		}
 	}
 
@@ -3534,8 +3546,6 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -3585,28 +3595,29 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return true;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return true;
-			}
 		}
 
 		for (std::size_t k = this->m_thread_count - 1; k > first_thread; k--)
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -3656,20 +3667,23 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return true;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return true;
-			}
 		}
 	}
 
@@ -3709,8 +3723,6 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -3762,28 +3774,29 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return true;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return true;
-			}
 		}
 
 		for (std::size_t k = this->m_thread_count - 1; k > first_thread; k--)
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -3835,20 +3848,23 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return true;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return true;
-			}
 		}
 	}
 
@@ -3888,8 +3904,6 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -3943,28 +3957,29 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return true;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return true;
-			}
 		}
 
 		for (std::size_t k = this->m_thread_count - 1; k > first_thread; k--)
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -4018,20 +4033,23 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return true;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return true;
-			}
 		}
 	}
 
@@ -4071,8 +4089,6 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -4128,28 +4144,29 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return true;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return true;
-			}
 		}
 
 		for (std::size_t k = this->m_thread_count - 1; k > first_thread; k--)
 		{
 			_cool_thmq_tblk* current_thread_ptr = this->m_thread_blocks_data_ptr + k;
 
-			bool success = false;
-
 			xCOOL_THREADS_TRY
 			{
 				std::unique_lock<std::mutex> lock(current_thread_ptr->m_mutex, std::try_to_lock);
@@ -4205,20 +4222,23 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							}
 						};
 
+						bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
+
 						current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
 							last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-						success = true;
+						lock.unlock();
+
+						if (notification_required)
+						{
+							current_thread_ptr->m_condition_var.notify_one();
+						}
+
+						return true;
 					}
 				}
 			}
 			xCOOL_THREADS_CATCH(...) {}
-
-			if (success)
-			{
-				current_thread_ptr->m_condition_var.notify_one();
-				return true;
-			}
 		}
 	}
 
