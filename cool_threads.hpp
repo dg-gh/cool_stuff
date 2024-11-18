@@ -4466,7 +4466,7 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 			}
 			else
 			{
-				(this->m_thread_blocks_data_ptr + thread_num)->m_thread = std::thread([this, thread_num, _new_thread_count, _new_pop_rounds]()
+				(this->m_thread_blocks_data_ptr + thread_num)->m_thread = std::thread([this, thread_num]()
 				{
 					while (true)
 					{
