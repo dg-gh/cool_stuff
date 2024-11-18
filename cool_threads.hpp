@@ -157,7 +157,7 @@ namespace cool
 		// WARNING : 'init_new_threads' and 'delete_threads' must not be called in concurrency with any other method
 		// except the case of 'init_new_thread' with 'good'
 
-		inline cool::threads_init_result init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size) noexcept;
+		inline cool::threads_init_result init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size) noexcept; // arguments must be > 0
 		inline bool good() const noexcept; // true if 'init_new_threads' has finished successfully, must not be relied upon if a 'delete_threads' concurrent call is imminent
 		inline std::uint16_t thread_count() const noexcept;
 		inline std::size_t task_buffer_size() const noexcept;
@@ -234,8 +234,8 @@ namespace cool
 		// except the case of 'init_new_thread' with 'good'
 
 		inline cool::threads_init_result init_new_threads(
-			std::uint16_t new_thread_count,
-			std::size_t new_task_buffer_size,
+			std::uint16_t new_thread_count, // must be > 0
+			std::size_t new_task_buffer_size, // must be > 0
 			unsigned int _pop_tries = 1,
 			unsigned int _push_tries = 32, // must be > 0
 			std::uint16_t dispatch_interval = 1 // must be > 0
