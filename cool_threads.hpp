@@ -627,7 +627,7 @@ namespace cool
 
 		public:
 
-			inline bool new_task_buffer(std::size_t new_task_buffer_size);
+			inline bool new_task_buffer(std::size_t new_task_buffer_size) noexcept;
 			inline void delete_task_buffer() noexcept;
 
 			_task* m_task_buffer_data_ptr = nullptr;
@@ -4696,7 +4696,7 @@ inline void cool::threads_exception_handler::clear() noexcept
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
-inline bool cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block::new_task_buffer(std::size_t new_task_buffer_size)
+inline bool cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block::new_task_buffer(std::size_t new_task_buffer_size) noexcept
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 
