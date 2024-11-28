@@ -4395,7 +4395,6 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 										if (lock.owns_lock() && (ptr->m_last_task_ptr != ptr->m_next_task_ptr))
 										{
 											ptr->m_next_task_ptr->m_callable(&current_task, ptr->m_next_task_ptr);
-											current_task = std::move(*(ptr->m_next_task_ptr));
 
 											_cool_thmq_task* next_task_ptr_p1 = ptr->m_next_task_ptr + 1;
 
