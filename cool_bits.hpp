@@ -894,29 +894,87 @@ inline cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, ar
 template <std::size_t bit_count, class word_Ty, class arg_Ty>
 inline constexpr cool::bits<bit_count, word_Ty, arg_Ty>::bits(std::initializer_list<bool> lst) noexcept : m_field{}
 {
-	const bool* ptr = lst.begin();
-	for (std::size_t n = 0; n < word_capacity; n++)
+	if (lst.size() >= bit_count)
 	{
-		word_Ty val = 0;
-		for (std::size_t m = 0; m < word_size; m++)
+		const bool* ptr = lst.begin();
+		for (std::size_t n = 0; n < word_capacity; n++)
 		{
-			val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+			word_Ty word_val = 0;
+			for (std::size_t m = 0; m < word_size; m++)
+			{
+				word_val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+			}
+			m_field[n] = word_val;
 		}
-		m_field[n] = val;
+
+		constexpr bool end_mask_needed = bit_count % word_size != 0;
+		if (end_mask_needed)
+		{
+			constexpr std::size_t word_count_m1 = word_count - 1;
+			constexpr std::size_t remainder = bit_count % word_size;
+
+			word_Ty word_val = 0;
+			for (std::size_t m = 0; m < remainder; m++)
+			{
+				word_val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+			}
+			m_field[word_count_m1] = word_val;
+		}
 	}
-
-	constexpr bool end_mask_needed = bit_count % word_size != 0;
-	if (end_mask_needed)
+	else
 	{
-		constexpr std::size_t word_count_m1 = word_count - 1;
-		constexpr std::size_t remainder = bit_count % word_size;
+		const bool* ptr = lst.begin();
+		std::size_t lst_size = lst.size();
+		std::size_t lst_word_capacity = lst_size / word_size;
 
-		word_Ty val = 0;
-		for (std::size_t m = 0; m < remainder; m++)
+		if (lst_word_capacity == word_capacity)
 		{
-			val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+			for (std::size_t n = 0; n < word_capacity; n++)
+			{
+				word_Ty word_val = 0;
+				for (std::size_t m = 0; m < word_size; m++)
+				{
+					word_val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+				}
+				m_field[n] = word_val;
+			}
+
+			constexpr bool end_mask_needed = bit_count % word_size != 0;
+			if (end_mask_needed)
+			{
+				constexpr std::size_t word_count_m1 = word_count - 1;
+				std::size_t remainder = lst_size % word_size;
+
+				word_Ty word_val = 0;
+				for (std::size_t m = 0; m < remainder; m++)
+				{
+					word_val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+				}
+				m_field[word_count_m1] = word_val;
+			}
 		}
-		m_field[word_count_m1] = val;
+		else
+		{
+			for (std::size_t n = 0; n < lst_word_capacity; n++)
+			{
+				word_Ty word_val = 0;
+				for (std::size_t m = 0; m < word_size; m++)
+				{
+					word_val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+				}
+				m_field[n] = word_val;
+			}
+
+			{
+				std::size_t lst_remainder = lst_size % word_size;
+				word_Ty word_val = 0;
+				for (std::size_t m = 0; m < lst_remainder; m++)
+				{
+					word_val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+				}
+				m_field[lst_word_capacity] = word_val;
+			}
+		}
 	}
 }
 template <std::size_t bit_count, class word_Ty, class arg_Ty>
@@ -3227,31 +3285,103 @@ inline void cool::bits<bit_count, word_Ty, arg_Ty>::_assign_bool_op(ptr_Ty data_
 template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class ptr_Ty>
 inline void cool::bits<bit_count, word_Ty, arg_Ty>::_assign_lst_op(ptr_Ty data_ptr, std::initializer_list<bool> lst) noexcept
 {
-	const bool* ptr = lst.begin();
-	for (std::size_t n = 0; n < word_capacity; n++)
+	if (lst.size() >= bit_count)
 	{
-		word_Ty word_val = 0;
-		for (std::size_t m = 0; m < word_size; m++)
+		const bool* ptr = lst.begin();
+		for (std::size_t n = 0; n < word_capacity; n++)
 		{
-			word_val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+			word_Ty word_val = 0;
+			for (std::size_t m = 0; m < word_size; m++)
+			{
+				word_val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+			}
+			*(data_ptr + n) = word_val;
 		}
-		*(data_ptr + n) = word_val;
+
+		constexpr bool end_mask_needed = bit_count % word_size != 0;
+		if (end_mask_needed)
+		{
+			constexpr word_Ty end_mask = ~(static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1);
+			constexpr std::size_t remainder = bit_count % word_size;
+
+			word_Ty word_val = 0;
+			for (std::size_t m = 0; m < remainder; m++)
+			{
+				word_val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+			}
+			word_Ty temp = *(data_ptr + word_capacity) & end_mask;
+			temp |= word_val;
+			*(data_ptr + word_capacity) = temp;
+		}
 	}
-
-	constexpr bool end_mask_needed = bit_count % word_size != 0;
-	if (end_mask_needed)
+	else
 	{
-		constexpr word_Ty end_mask = ~(static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1);
-		constexpr std::size_t remainder = bit_count % word_size;
+		const bool* ptr = lst.begin();
+		std::size_t lst_size = lst.size();
+		std::size_t lst_word_capacity = lst_size / word_size;
 
-		word_Ty word_val = 0;
-		for (std::size_t m = 0; m < remainder; m++)
+		if (lst_word_capacity == word_capacity)
 		{
-			word_val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+			for (std::size_t n = 0; n < word_capacity; n++)
+			{
+				word_Ty word_val = 0;
+				for (std::size_t m = 0; m < word_size; m++)
+				{
+					word_val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+				}
+				*(data_ptr + n) = word_val;
+			}
+
+			constexpr bool end_mask_needed = bit_count % word_size != 0;
+			if (end_mask_needed)
+			{
+				std::size_t remainder = lst_size % word_size;
+				constexpr word_Ty end_mask = ~(static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1);
+
+				word_Ty word_val = 0;
+				for (std::size_t m = 0; m < remainder; m++)
+				{
+					word_val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+				}
+				word_Ty temp = *(data_ptr + word_capacity) & end_mask;
+				temp |= word_val;
+				*(data_ptr + word_capacity) = temp;
+			}
 		}
-		word_Ty temp = *(data_ptr + word_capacity) & end_mask;
-		temp |= word_val;
-		*(data_ptr + word_capacity) = temp;
+		else
+		{
+			for (std::size_t n = 0; n < lst_word_capacity; n++)
+			{
+				word_Ty word_val = 0;
+				for (std::size_t m = 0; m < word_size; m++)
+				{
+					word_val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+				}
+				*(data_ptr + n) = word_val;
+			}
+
+			{
+				std::size_t lst_remainder = lst_size % word_size;
+				word_Ty word_val = 0;
+				for (std::size_t m = 0; m < lst_remainder; m++)
+				{
+					word_val |= *ptr++ ? static_cast<word_Ty>(static_cast<word_Ty>(1) << m) : 0;
+				}
+				*(data_ptr + lst_word_capacity) = word_val;
+			}
+
+			for (std::size_t n = lst_word_capacity + 1; n < word_capacity; n++)
+			{
+				*(data_ptr + n) = static_cast<word_Ty>(0);
+			}
+
+			constexpr bool end_mask_needed = bit_count % word_size != 0;
+			if (end_mask_needed)
+			{
+				constexpr word_Ty end_mask = ~(static_cast<word_Ty>(static_cast<word_Ty>(1) << (bit_count % word_size)) - 1);
+				*(data_ptr + word_capacity) &= end_mask;
+			}
+		}
 	}
 }
 
