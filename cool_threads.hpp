@@ -156,6 +156,8 @@ namespace cool
 		template <class return_Ty, class function_Ty, class ... arg_Ty>
 		inline bool try_priority_async(cool::_async_result_incr_proxy<return_Ty> target, function_Ty task, arg_Ty ... args) noexcept;
 
+		// 'arg_type_is_valid<arg_Ty>' returns true if arg_Ty parameter pack type can be called as an argument for 'task' in 'async' / 'priority_async' / 'try_async' / 'try_priority_async'
+
 		template <class ... arg_Ty>
 		static inline constexpr bool arg_type_is_valid() noexcept;
 
@@ -235,6 +237,8 @@ namespace cool
 
 		template <class return_Ty, class function_Ty, class ... arg_Ty>
 		inline bool try_async(cool::_async_result_incr_proxy<return_Ty> target, function_Ty task, arg_Ty ... args) noexcept;
+
+		// 'arg_type_is_valid<arg_Ty>' returns true if arg_Ty parameter pack type can be called as an argument for 'task' in 'async' / 'priority_async'
 
 		template <class ... arg_Ty>
 		static inline constexpr bool arg_type_is_valid() noexcept;
