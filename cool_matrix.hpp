@@ -1463,10 +1463,20 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 	if (_contiguous)
 	{
 		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t _size_padded = _rows_padded * _cols;
+		constexpr bool _padded = (_size != _size_padded);
 
 		for (std::size_t n = 0; n < _size; n++)
 		{
 			m_data[n] = rhs.m_data[n];
+		}
+
+		if (_padded)
+		{
+			for (std::size_t n = _size; n < _size_padded; n++)
+			{
+				m_data[n] = Ty{};
+			}
 		}
 	}
 	else
@@ -1476,6 +1486,11 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 			for (std::size_t i = 0; i < _rows; i++)
 			{
 				m_data[i + _rows_padded * j] = rhs.m_data[i + _rhs_rows_padded * j];
+			}
+
+			for (std::size_t i = _rows; i < _rows_padded; i++)
+			{
+				m_data[i + _rows_padded * j] = Ty{};
 			}
 		}
 	}
@@ -1492,10 +1507,20 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 	if (_contiguous)
 	{
 		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t _size_padded = _rows_padded * _cols;
+		constexpr bool _padded = (_size != _size_padded);
 
 		for (std::size_t n = 0; n < _size; n++)
 		{
 			m_data[n] = *(rhs_ptr + n);
+		}
+
+		if (_padded)
+		{
+			for (std::size_t n = _size; n < _size_padded; n++)
+			{
+				m_data[n] = Ty{};
+			}
 		}
 	}
 	else
@@ -1505,6 +1530,11 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 			for (std::size_t i = 0; i < _rows; i++)
 			{
 				m_data[i + _rows_padded * j] = *(rhs_ptr + i + _rhs_rows_padded * j);
+			}
+
+			for (std::size_t i = _rows; i < _rows_padded; i++)
+			{
+				m_data[i + _rows_padded * j] = Ty{};
 			}
 		}
 	}
@@ -1521,10 +1551,20 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 	if (_contiguous)
 	{
 		constexpr std::size_t _size = _rows * _cols;
+		constexpr std::size_t _size_padded = _rows_padded * _cols;
+		constexpr bool _padded = (_size != _size_padded);
 
 		for (std::size_t n = 0; n < _size; n++)
 		{
 			m_data[n] = *(rhs_ptr + n);
+		}
+
+		if (_padded)
+		{
+			for (std::size_t n = _size; n < _size_padded; n++)
+			{
+				m_data[n] = Ty{};
+			}
 		}
 	}
 	else
@@ -1534,6 +1574,11 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 			for (std::size_t i = 0; i < _rows; i++)
 			{
 				m_data[i + _rows_padded * j] = *(rhs_ptr + i + _rhs_rows_padded * j);
+			}
+
+			for (std::size_t i = _rows; i < _rows_padded; i++)
+			{
+				m_data[i + _rows_padded * j] = Ty{};
 			}
 		}
 	}
@@ -1630,9 +1675,20 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 
 		if (_contiguous)
 		{
+			constexpr std::size_t _size_padded = _rows_padded * _cols;
+			constexpr bool _padded = (_size != _size_padded);
+
 			for (std::size_t n = 0; n < _size; n++)
 			{
 				m_data[n] = *(rhs_ptr + n);
+			}
+
+			if (_padded)
+			{
+				for (std::size_t n = _size; n < _size_padded; n++)
+				{
+					m_data[n] = Ty{};
+				}
 			}
 		}
 		else
@@ -1640,6 +1696,11 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 			for (std::size_t j = 0; j < _cols; j++)
 			{
 				for (std::size_t i = 0; i < _rows; i++)
+				{
+					m_data[i + _rows_padded * j] = *(rhs_ptr + i + _rows * j);
+				}
+
+				for (std::size_t i = _rows; i < _rows_padded; i++)
 				{
 					m_data[i + _rows_padded * j] = *(rhs_ptr + i + _rows * j);
 				}
@@ -1652,12 +1713,12 @@ inline cool::_matrix_array<Ty, _rows, _cols, _rows_padded, _align>::_matrix_arra
 
 		if (_contiguous)
 		{
+			constexpr std::size_t _size_padded = _rows_padded * _cols;
+
 			for (std::size_t n = 0; n < rhs_size; n++)
 			{
 				m_data[n] = *(rhs_ptr + n);
 			}
-
-			constexpr std::size_t _size_padded = _rows_padded * _cols;
 
 			for (std::size_t n = rhs_size; n < _size_padded; n++)
 			{
