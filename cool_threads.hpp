@@ -162,13 +162,18 @@ namespace cool
 		static inline constexpr bool arg_type_is_valid() noexcept;
 
 		// WARNING : 'init_new_threads' and 'delete_threads' must not be called in concurrency with any other method
-		// except the case of 'init_new_thread' with 'good'
+		// except 'refresh_wait_conditions' or the case of 'init_new_thread' with 'good'
 
 		inline cool::threads_init_result init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size) noexcept; // arguments must be > 0
 		inline bool good() const noexcept; // true if 'init_new_threads' has finished successfully, must not be relied upon if a 'delete_threads' concurrent call is imminent
 		inline std::uint16_t thread_count() const noexcept;
 		inline std::size_t task_buffer_size() const noexcept;
 		inline void delete_threads() noexcept;
+
+		// 'refresh_wait_conditions' produces a spurious wake up of all the potential waits on a condition
+		// only call for safety (possibly cyclically although not in a high frequency loop) if threads_sq could be suspected of deadlocks
+
+		inline void refresh_wait_conditions() noexcept;
 	};
 
 	// threads_mq
@@ -244,7 +249,7 @@ namespace cool
 		static inline constexpr bool arg_type_is_valid() noexcept;
 
 		// WARNING : 'init_new_threads' and 'delete_threads' must not be called in concurrency with any other method
-		// except the case of 'init_new_thread' with 'good'
+		// except 'refresh_wait_conditions' or the case of 'init_new_thread' with 'good'
 
 		inline cool::threads_init_result init_new_threads(
 			std::uint16_t new_thread_count, // must be > 0
@@ -260,6 +265,11 @@ namespace cool
 		inline unsigned int push_tries() const noexcept;
 		inline std::uint16_t dispatch_interval() const noexcept;
 		inline void delete_threads() noexcept;
+
+		// 'refresh_wait_conditions' produces a spurious wake up of all the potential waits on a condition
+		// only call for safety (possibly cyclically although not in a high frequency loop) if threads_sq could be suspected of deadlocks
+
+		inline void refresh_wait_conditions() noexcept;
 	};
 
 
@@ -361,6 +371,11 @@ namespace cool
 
 		inline cool::_async_end_incr_proxy try_incr_awaited() noexcept;
 
+		// 'refresh_wait_conditions' produces a spurious wake up of all the potential waits on a condition
+		// only call for safety (possibly cyclically although not in a high frequency loop) if async_end could be suspected of deadlocks
+
+		inline void refresh_wait_conditions() noexcept;
+
 	private:
 
 		std::condition_variable m_finish_condition_var;
@@ -424,6 +439,11 @@ namespace cool
 		inline void set_data_unchecked(return_Ty* storage_ptr) noexcept;
 		inline void clear() noexcept;
 		inline void clear_unchecked() noexcept;
+
+		// 'refresh_wait_conditions' produces a spurious wake up of all the potential waits on a condition
+		// only call for safety (possibly cyclically although not in a high frequency loop) if async_result could be suspected of deadlocks
+
+		inline void refresh_wait_conditions() noexcept;
 
 	private:
 
@@ -627,6 +647,7 @@ namespace cool
 		unsigned int m_pop_rounds = 0;
 		unsigned int m_push_rounds = 0;
 		std::atomic<bool> m_good{ false };
+		std::atomic<bool> m_refresh_ready{ false };
 		
 		_uint2X m_mod_D = 1;
 		_uint2X m_mod_a = static_cast<_uint2X>(1) << (sizeof(_uintX) * CHAR_BIT);
@@ -2548,6 +2569,12 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	std::atomic_signal_fence(std::memory_order_release);
 }
 
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
+inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::refresh_wait_conditions() noexcept
+{
+	this->m_condition_var.notify_all();
+}
+
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
 inline void cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads_detail(std::size_t threads_constructed) noexcept
 {
@@ -2568,7 +2595,7 @@ inline void cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 
 	if (this->m_threads_data_ptr != nullptr)
 	{
-		for (size_t k = 0; k < threads_constructed; k++)
+		for (std::size_t k = 0; k < threads_constructed; k++)
 		{
 			if ((this->m_threads_data_ptr + k)->joinable())
 			{
@@ -2590,7 +2617,7 @@ inline void cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 	if (this->m_task_buffer_data_ptr != nullptr)
 	{
 		std::size_t task_buffer_size = static_cast<std::size_t>(this->m_task_buffer_end_ptr - this->m_task_buffer_data_ptr);
-		for (size_t k = 0; k < task_buffer_size; k++)
+		for (std::size_t k = 0; k < task_buffer_size; k++)
 		{
 			(this->m_task_buffer_data_ptr + k)->~_task();
 		}
@@ -4758,6 +4785,7 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 	}
 
 	std::atomic_signal_fence(std::memory_order_release);
+	this->m_refresh_ready.store(true, std::memory_order_release);
 	this->m_good.store(true, std::memory_order_seq_cst);
 	return cool::threads_init_result(cool::threads_init_result::success);
 }
@@ -4827,48 +4855,67 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	std::atomic_signal_fence(std::memory_order_release);
 }
 
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
+inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::refresh_wait_conditions() noexcept
+{
+	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
+
+	if (this->m_refresh_ready.exchange(false, std::memory_order_acquire))
+	{
+		_cool_thmq_tblk* ptr = this->m_thread_blocks_data_ptr;
+
+		for (std::size_t k = 0; k < this->m_thread_count; k++)
+		{
+			(ptr + k)->m_condition_var.notify_one();
+		}
+		this->m_refresh_ready.store(true, std::memory_order_release);
+	}
+}
+
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
 inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads_detail(std::size_t threads_constructed, std::size_t threads_launched) noexcept
 {
-	if (this->m_thread_blocks_data_ptr != nullptr)
+	_thread_block* ptr = this->m_thread_blocks_data_ptr;
+
+	if (ptr != nullptr)
 	{
-		for (size_t k = 0; k < this->m_thread_count; k++)
+		for (std::size_t k = 0; k < threads_launched; k++)
 		{
-			_thread_block* ptr = this->m_thread_blocks_data_ptr + k;
-
-			if (k < threads_launched)
+			while (true)
 			{
-				while (true)
+				xCOOL_THREADS_TRY
 				{
-					xCOOL_THREADS_TRY
-					{
-						std::lock_guard<std::mutex> lock(ptr->m_mutex);
-						ptr->m_stop_threads = true;
-						break;
-					}
-					xCOOL_THREADS_CATCH(...) {}
+					std::lock_guard<std::mutex> lock((ptr + k)->m_mutex);
+					(ptr + k)->m_stop_threads = true;
+					break;
 				}
-
-				ptr->m_condition_var.notify_one();
-
-				if (ptr->m_thread.joinable())
-				{
-					xCOOL_THREADS_TRY
-					{
-						ptr->m_thread.join();
-					}
-					xCOOL_THREADS_CATCH(const std::system_error& xCOOL_THREADS_SYSTEM_ERROR)
-					{
-						cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_delete_thread_exception(xCOOL_THREADS_SYSTEM_ERROR, this);
-					}
-				}
+				xCOOL_THREADS_CATCH(...) {}
 			}
 
-			if (k < threads_constructed)
+			(ptr + k)->m_condition_var.notify_one();
+
+			if ((ptr + k)->m_thread.joinable())
 			{
-				ptr->delete_task_buffer();
-				ptr->~_thread_block();
+				xCOOL_THREADS_TRY
+				{
+					(ptr + k)->m_thread.join();
+				}
+				xCOOL_THREADS_CATCH(const std::system_error& xCOOL_THREADS_SYSTEM_ERROR)
+				{
+					cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_delete_thread_exception(xCOOL_THREADS_SYSTEM_ERROR, this);
+				}
 			}
+		}
+
+		while (!(this->m_refresh_ready.load(std::memory_order_relaxed)) || !(this->m_refresh_ready.exchange(false, std::memory_order_acquire)))
+		{
+			std::this_thread::yield();
+		}
+
+		for (std::size_t k = 0; k < threads_constructed; k++)
+		{
+			(ptr + k)->delete_task_buffer();
+			(ptr + k)->~_thread_block();
 		}
 
 		::operator delete(this->m_thread_blocks_unaligned_data_ptr);
@@ -5118,6 +5165,11 @@ inline cool::_async_end_incr_proxy cool::async_end::try_incr_awaited() noexcept
 	return cool::_async_end_incr_proxy(this);
 }
 
+inline void cool::async_end::refresh_wait_conditions() noexcept
+{
+	m_finish_condition_var.notify_all();
+}
+
 
 // async_result detail
 
@@ -5354,6 +5406,12 @@ template <class return_Ty>
 inline void cool::async_result<return_Ty>::clear_unchecked() noexcept
 {
 	m_stored_values_ptr = nullptr;
+}
+
+template <class return_Ty>
+inline void cool::async_result<return_Ty>::refresh_wait_conditions() noexcept
+{
+	m_finish_condition_var.notify_all();
 }
 
 template <class return_Ty>
