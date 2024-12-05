@@ -162,7 +162,7 @@ namespace cool
 		static inline constexpr bool arg_type_is_valid() noexcept;
 
 		// WARNING : 'init_new_threads' and 'delete_threads' must not be called in concurrency with any other method
-		// except 'refresh_wait_conditions' or the case of 'init_new_thread' with 'good'
+		// except 'safety_refresh' or the case of 'init_new_thread' with 'good'
 
 		inline cool::threads_init_result init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size) noexcept; // arguments must be > 0
 		inline bool good() const noexcept; // true if 'init_new_threads' has finished successfully, must not be relied upon if a 'delete_threads' concurrent call is imminent
@@ -170,10 +170,10 @@ namespace cool
 		inline std::size_t task_buffer_size() const noexcept;
 		inline void delete_threads() noexcept;
 
-		// 'refresh_wait_conditions' produces a spurious wake up of all the potential waits on a condition
-		// only call for safety (possibly cyclically although not in a high frequency loop) if threads_sq could be suspected of deadlocks
+		// 'safety_refresh' produces a spurious wake up of all the potential waits on a condition and should only
+		// be called for safety (possibly cyclically although not in a high frequency loop) if threads_sq could be suspected of deadlocks
 
-		inline void refresh_wait_conditions() noexcept;
+		inline void safety_refresh() noexcept;
 	};
 
 	// threads_mq
@@ -249,7 +249,7 @@ namespace cool
 		static inline constexpr bool arg_type_is_valid() noexcept;
 
 		// WARNING : 'init_new_threads' and 'delete_threads' must not be called in concurrency with any other method
-		// except 'refresh_wait_conditions' or the case of 'init_new_thread' with 'good'
+		// except 'safety_refresh' or the case of 'init_new_thread' with 'good'
 
 		inline cool::threads_init_result init_new_threads(
 			std::uint16_t new_thread_count, // must be > 0
@@ -266,10 +266,10 @@ namespace cool
 		inline std::uint16_t dispatch_interval() const noexcept;
 		inline void delete_threads() noexcept;
 
-		// 'refresh_wait_conditions' produces a spurious wake up of all the potential waits on a condition
-		// only call for safety (possibly cyclically although not in a high frequency loop) if threads_sq could be suspected of deadlocks
+		// 'safety_refresh' produces a spurious wake up of all the potential waits on a condition and should only
+		// be called for safety (possibly cyclically although not in a high frequency loop) if threads_mq could be suspected of deadlocks
 
-		inline void refresh_wait_conditions() noexcept;
+		inline void safety_refresh() noexcept;
 	};
 
 
@@ -371,10 +371,10 @@ namespace cool
 
 		inline cool::_async_end_incr_proxy try_incr_awaited() noexcept;
 
-		// 'refresh_wait_conditions' produces a spurious wake up of all the potential waits on a condition
-		// only call for safety (possibly cyclically although not in a high frequency loop) if async_end could be suspected of deadlocks
+		// 'safety_refresh' produces a spurious wake up of all the potential waits on a condition and should only
+		// be called for safety (possibly cyclically although not in a high frequency loop) if async_end could be suspected of deadlocks
 
-		inline void refresh_wait_conditions() noexcept;
+		inline void safety_refresh() noexcept;
 
 	private:
 
@@ -440,10 +440,10 @@ namespace cool
 		inline void clear() noexcept;
 		inline void clear_unchecked() noexcept;
 
-		// 'refresh_wait_conditions' produces a spurious wake up of all the potential waits on a condition
-		// only call for safety (possibly cyclically although not in a high frequency loop) if async_result could be suspected of deadlocks
+		// 'safety_refresh' produces a spurious wake up of all the potential waits on a condition and should only
+		// be called for safety (possibly cyclically although not in a high frequency loop) if async_result could be suspected of deadlocks
 
-		inline void refresh_wait_conditions() noexcept;
+		inline void safety_refresh() noexcept;
 
 	private:
 
@@ -647,7 +647,7 @@ namespace cool
 		unsigned int m_pop_rounds = 0;
 		unsigned int m_push_rounds = 0;
 		std::atomic<bool> m_good{ false };
-		std::atomic<bool> m_refresh_ready{ false };
+		std::atomic<bool> m_can_refresh{ false };
 		
 		_uint2X m_mod_D = 1;
 		_uint2X m_mod_a = static_cast<_uint2X>(1) << (sizeof(_uintX) * CHAR_BIT);
@@ -2570,7 +2570,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::refresh_wait_conditions() noexcept
+inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::safety_refresh() noexcept
 {
 	this->m_condition_var.notify_all();
 }
@@ -4782,7 +4782,7 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 	}
 
 	std::atomic_signal_fence(std::memory_order_release);
-	this->m_refresh_ready.store(true, std::memory_order_release);
+	this->m_can_refresh.store(true, std::memory_order_release);
 	this->m_good.store(true, std::memory_order_seq_cst);
 	return cool::threads_init_result(cool::threads_init_result::success);
 }
@@ -4851,11 +4851,11 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::refresh_wait_conditions() noexcept
+inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::safety_refresh() noexcept
 {
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
 
-	if (this->m_refresh_ready.exchange(false, std::memory_order_acquire))
+	if (this->m_can_refresh.exchange(false, std::memory_order_acquire))
 	{
 		_cool_thmq_tblk* ptr = this->m_thread_blocks_data_ptr;
 
@@ -4863,7 +4863,8 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			(ptr + k)->m_condition_var.notify_one();
 		}
-		this->m_refresh_ready.store(true, std::memory_order_release);
+
+		this->m_can_refresh.store(true, std::memory_order_release);
 	}
 }
 
@@ -4906,7 +4907,7 @@ inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 
 		if (was_good)
 		{
-			while (!(this->m_refresh_ready.load(std::memory_order_relaxed)) || !(this->m_refresh_ready.exchange(false, std::memory_order_acquire)))
+			while (!(this->m_can_refresh.load(std::memory_order_relaxed)) || !(this->m_can_refresh.exchange(false, std::memory_order_acquire)))
 			{
 				std::this_thread::yield();
 			}
@@ -5167,7 +5168,7 @@ inline cool::_async_end_incr_proxy cool::async_end::try_incr_awaited() noexcept
 	return cool::_async_end_incr_proxy(this);
 }
 
-inline void cool::async_end::refresh_wait_conditions() noexcept
+inline void cool::async_end::safety_refresh() noexcept
 {
 	m_finish_condition_var.notify_all();
 }
@@ -5411,7 +5412,7 @@ inline void cool::async_result<return_Ty>::clear_unchecked() noexcept
 }
 
 template <class return_Ty>
-inline void cool::async_result<return_Ty>::refresh_wait_conditions() noexcept
+inline void cool::async_result<return_Ty>::safety_refresh() noexcept
 {
 	m_finish_condition_var.notify_all();
 }
