@@ -647,7 +647,6 @@ namespace cool
 		unsigned int m_pop_rounds = 0;
 		unsigned int m_push_rounds = 0;
 		std::atomic<bool> m_good{ false };
-		std::atomic<bool> m_can_refresh{ false };
 		
 		_uint2X m_mod_D = 1;
 		_uint2X m_mod_a = static_cast<_uint2X>(1) << (sizeof(_uintX) * CHAR_BIT);
@@ -657,6 +656,7 @@ namespace cool
 
 		alignas(_cache_line_size) std::atomic<_uintX> m_thread_dispatch{ 0 };
 
+		alignas(_cache_line_size) std::atomic<bool> m_can_refresh{ false };
 
 		class alignas(_cache_line_size) _thread_block
 		{
