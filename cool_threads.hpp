@@ -809,6 +809,8 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			}
 		}
 		xCOOL_THREADS_CATCH(...) {}
+
+		std::this_thread::yield();
 	}
 
 	this->m_condition_var.notify_one();
@@ -885,6 +887,8 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			}
 		}
 		xCOOL_THREADS_CATCH(...) {}
+
+		std::this_thread::yield();
 	}
 
 	this->m_condition_var.notify_one();
@@ -964,6 +968,8 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			}
 		}
 		xCOOL_THREADS_CATCH(...) {}
+
+		std::this_thread::yield();
 	}
 
 	this->m_condition_var.notify_one();
@@ -1044,6 +1050,8 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			}
 		}
 		xCOOL_THREADS_CATCH(...) {}
+
+		std::this_thread::yield();
 	}
 
 	this->m_condition_var.notify_one();
@@ -1125,6 +1133,8 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			}
 		}
 		xCOOL_THREADS_CATCH(...) {}
+
+		std::this_thread::yield();
 	}
 
 	this->m_condition_var.notify_one();
@@ -1207,6 +1217,8 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			}
 		}
 		xCOOL_THREADS_CATCH(...) {}
+
+		std::this_thread::yield();
 	}
 
 	this->m_condition_var.notify_one();
@@ -1290,6 +1302,8 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			}
 		}
 		xCOOL_THREADS_CATCH(...) {}
+
+		std::this_thread::yield();
 	}
 
 	this->m_condition_var.notify_one();
@@ -1374,6 +1388,8 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			}
 		}
 		xCOOL_THREADS_CATCH(...) {}
+
+		std::this_thread::yield();
 	}
 
 	this->m_condition_var.notify_one();
@@ -1459,6 +1475,8 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			}
 		}
 		xCOOL_THREADS_CATCH(...) {}
+
+		std::this_thread::yield();
 	}
 
 	this->m_condition_var.notify_one();
@@ -1545,6 +1563,8 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 			}
 		}
 		xCOOL_THREADS_CATCH(...) {}
+
+		std::this_thread::yield();
 	}
 
 	this->m_condition_var.notify_one();
