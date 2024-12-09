@@ -20,7 +20,7 @@
 #include <cassert>
 
 
-// to allow use of std::thread::native_handle, #define COOL_THREADS_NATIVE_HANDLE
+// to allow the use of std::thread::native_handle, #define COOL_THREADS_NATIVE_HANDLE
 
 // to disable exceptions, #define COOL_THREADS_NOEXCEPTIONS
 
@@ -338,6 +338,7 @@ namespace cool
 		// 'on_exception' arguments are :
 		// > const std::exception& : exception thrown
 		// > void(*)(void) : task function pointer that produced the exception
+		// > std::thread::id : id of the thread that produced the exception
 		// > void* : optional pointer to buffer 'exception_arg_ptr'
 
 		// if 'on_exception' is a nullptr, then the exception handling will be the logical equivalent to a no-op
