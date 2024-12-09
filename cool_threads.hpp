@@ -20,6 +20,8 @@
 #include <cassert>
 
 
+// to allow use of std::thread::native_handle, #define COOL_THREADS_NATIVE_HANDLE
+
 // to disable exceptions, #define COOL_THREADS_NOEXCEPTIONS
 
 #if !defined(xCOOL_THREADS_TRY) && !defined(xCOOL_THREADS_CATCH) && !defined(xCOOL_THREADS_EXCEPTION)
@@ -91,6 +93,8 @@ namespace cool
 		// 'function_Ty task' must be a function pointer
 		// 'function_Ty task' must pass arguments by copy
 		// 'arg_Ty ... args' must be movable or copyable without throwing exceptions
+
+		// sequentially consistent : task1 being submitted before task2 guarantees that task1 will start executing before task2
 
 		// if 'function_Ty task' throws an exception, the thread will call the exception handler and jump to the next task
 
@@ -174,6 +178,13 @@ namespace cool
 		// be called for safety (possibly cyclically although not in a high frequency loop) if threads_sq could be suspected of deadlocks
 
 		inline void safety_refresh() noexcept;
+
+		// WARNING : 'thread_id' / 'thread_native_handle' does not check wether threads have been initialized beforehand
+
+		std::thread::id thread_id(std::size_t thread_number) const noexcept;
+#ifdef COOL_THREADS_NATIVE_HANDLE
+		std::thread::native_handle_type thread_native_handle(std::size_t thread_number);
+#endif // COOL_THREADS_NATIVE_HANDLE
 	};
 
 	// threads_mq
@@ -208,6 +219,8 @@ namespace cool
 		// 'function_Ty task' must be a function pointer
 		// 'function_Ty task' must pass arguments by copy
 		// 'arg_Ty ... args' must be movable or copyable without throwing exceptions
+
+		// not sequentially consistent : task1 being submitted before task2 does not guarantee that task1 will start executing before task2
 
 		// if 'function_Ty task' throws an exception, the thread will call the exception handler and jump to the next task
 
@@ -270,6 +283,13 @@ namespace cool
 		// be called for safety (possibly cyclically although not in a high frequency loop) if threads_mq could be suspected of deadlocks
 
 		inline void safety_refresh() noexcept;
+
+		// WARNING : 'thread_id' / 'thread_native_handle' does not check wether threads have been initialized beforehand
+
+		std::thread::id thread_id(std::size_t thread_number) const noexcept;
+#ifdef COOL_THREADS_NATIVE_HANDLE
+		std::thread::native_handle_type thread_native_handle(std::size_t thread_number);
+#endif // COOL_THREADS_NATIVE_HANDLE
 	};
 
 
@@ -337,7 +357,7 @@ namespace cool
 		// WARNING : potential reads and writes to 'delete_thread_exception_arg_ptr' by 'on_delete_thread_exception' must be synchronized properly
 		// WARNING : 'on_delete_thread_exception' is called if a thread failed to join and the program should be considered to be unlikely to be left in a good state afterwards
 
-		static inline void set_on_exception(void(*on_exception)(const std::exception&, void(*)(void), void*), void* exception_arg_ptr = nullptr) noexcept;
+		static inline void set_on_exception(void(*on_exception)(const std::exception&, void(*)(void), std::thread::id, void*), void* exception_arg_ptr = nullptr) noexcept;
 		static inline void set_on_delete_thread_exception(void(*on_delete_thread_exception)(const std::system_error&, void*, void*), void* delete_thread_exception_arg_ptr = nullptr) noexcept;
 		static inline void clear() noexcept;
 	};
@@ -533,9 +553,9 @@ namespace cool
 
 		class exception_handler {
 		public:
-			inline exception_handler(void(*_function)(const std::exception&, void(*)(void), void*), void* _arg_ptr) noexcept
+			inline exception_handler(void(*_function)(const std::exception&, void(*)(void), std::thread::id, void*), void* _arg_ptr) noexcept
 				: m_function(_function), m_arg_ptr(_arg_ptr) {};
-			void(*m_function)(const std::exception&, void(*)(void), void*) = nullptr;
+			void(*m_function)(const std::exception&, void(*)(void), std::thread::id, void*) = nullptr;
 			void* m_arg_ptr = nullptr;
 		};
 
@@ -546,7 +566,7 @@ namespace cool
 		static inline void catch_exception(const std::exception& excep, void(*task_function_ptr)(void)) noexcept {
 			exception_handler handler = get_exception_handler().load(std::memory_order_seq_cst);
 			if (handler.m_function != nullptr) {
-				handler.m_function(excep, task_function_ptr, handler.m_arg_ptr);
+				handler.m_function(excep, task_function_ptr, std::this_thread::get_id(), handler.m_arg_ptr);
 			}
 		}
 
@@ -2594,6 +2614,20 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 {
 	this->m_condition_var.notify_all();
 }
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
+std::thread::id cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_id(std::size_t thread_number) const noexcept
+{
+	return (this->m_threads_data_ptr + thread_number)->get_id();
+}
+
+#ifdef COOL_THREADS_NATIVE_HANDLE
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
+std::thread::native_handle_type cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_native_handle(std::size_t thread_number)
+{
+	return (this->m_threads_data_ptr + thread_number)->native_handle();
+}
+#endif // COOL_THREADS_NATIVE_HANDLE
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
 inline void cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads_detail(std::size_t threads_constructed) noexcept
@@ -4888,6 +4922,20 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 	}
 }
 
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
+std::thread::id cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_id(std::size_t thread_number) const noexcept
+{
+	return (this->m_thread_blocks_data_ptr + thread_number)->m_thread.get_id();
+}
+
+#ifdef COOL_THREADS_NATIVE_HANDLE
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
+std::thread::native_handle_type cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_native_handle(std::size_t thread_number)
+{
+	return (this->m_thread_blocks_data_ptr + thread_number)->m_thread.native_handle();
+}
+#endif // COOL_THREADS_NATIVE_HANDLE
+
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
 inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::delete_threads_detail(std::size_t threads_constructed, std::size_t threads_launched) noexcept
 {
@@ -4988,7 +5036,7 @@ inline const char* cool::threads_init_result::message() const noexcept
 
 inline cool::threads_init_result::threads_init_result(int result) noexcept : m_result(result) {}
 
-inline void cool::threads_exception_handler::set_on_exception(void(*on_exception)(const std::exception&, void(*)(void), void*), void* exception_arg_ptr) noexcept
+inline void cool::threads_exception_handler::set_on_exception(void(*on_exception)(const std::exception&, void(*)(void), std::thread::id, void*), void* exception_arg_ptr) noexcept
 {
 	cool::_threads_base::exception_handler handler{ on_exception, exception_arg_ptr };
 	cool::_threads_base::get_exception_handler().store(handler, std::memory_order_seq_cst);
