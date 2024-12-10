@@ -20,22 +20,22 @@
 #include <cassert>
 
 
-// to allow the use of std::thread::native_handle, #define COOL_THREADS_NATIVE_HANDLE
+// to allow the use of std::thread::native_handle : #define COOL_THREADS_NATIVE_HANDLE
 
-// to disable exceptions, #define COOL_THREADS_NOEXCEPTIONS
+// to disable exceptions : #define COOL_THREADS_NO_EXCEPTIONS
 
 #if !defined(xCOOL_THREADS_TRY) && !defined(xCOOL_THREADS_CATCH) && !defined(xCOOL_THREADS_EXCEPTION)
-#ifndef COOL_THREADS_NOEXCEPTIONS
+#ifndef COOL_THREADS_NO_EXCEPTIONS
 #define xCOOL_THREADS_TRY try
 #define xCOOL_THREADS_CATCH(expr) catch (expr)
 #define xCOOL_THREADS_EXCEPTION excep
 #define xCOOL_THREADS_SYSTEM_ERROR error
-#else // COOL_THREADS_NOEXCEPTIONS
+#else // COOL_THREADS_NO_EXCEPTIONS
 #define xCOOL_THREADS_TRY
 #define xCOOL_THREADS_CATCH(expr) if (false)
 #define xCOOL_THREADS_EXCEPTION std::exception{}
 #define xCOOL_THREADS_SYSTEM_ERROR std::system_error{}
-#endif // COOL_THREADS_NOEXCEPTIONS
+#endif // COOL_THREADS_NO_EXCEPTIONS
 #endif // !defined(xCOOL_THREADS_TRY) && !defined(xCOOL_THREADS_CATCH) && !defined(xCOOL_THREADS_EXCEPTION)
 
 
