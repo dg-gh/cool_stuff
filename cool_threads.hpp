@@ -22,9 +22,12 @@
 
 // to allow the use of std::thread::native_handle : #define COOL_THREADS_NATIVE_HANDLE
 
+#ifndef COOL_THREADS_NATIVE_HANDLE
+#endif // COOL_THREADS_NATIVE_HANDLE
+
 // to disable exceptions : #define COOL_THREADS_NO_EXCEPTIONS
 
-#if !defined(xCOOL_THREADS_TRY) && !defined(xCOOL_THREADS_CATCH) && !defined(xCOOL_THREADS_EXCEPTION)
+#if !defined(xCOOL_THREADS_TRY) && !defined(xCOOL_THREADS_CATCH) && !defined(xCOOL_THREADS_EXCEPTION) && !defined(xCOOL_THREADS_SYSTEM_ERROR)
 #ifndef COOL_THREADS_NO_EXCEPTIONS
 #define xCOOL_THREADS_TRY try
 #define xCOOL_THREADS_CATCH(expr) catch (expr)
@@ -34,9 +37,9 @@
 #define xCOOL_THREADS_TRY
 #define xCOOL_THREADS_CATCH(expr) if (false)
 #define xCOOL_THREADS_EXCEPTION std::exception{}
-#define xCOOL_THREADS_SYSTEM_ERROR std::system_error{}
+#define xCOOL_THREADS_SYSTEM_ERROR std::system_error{ std::error_code{} }
 #endif // COOL_THREADS_NO_EXCEPTIONS
-#endif // !defined(xCOOL_THREADS_TRY) && !defined(xCOOL_THREADS_CATCH) && !defined(xCOOL_THREADS_EXCEPTION)
+#endif // !defined(xCOOL_THREADS_TRY) && !defined(xCOOL_THREADS_CATCH) && !defined(xCOOL_THREADS_EXCEPTION) && !defined(xCOOL_THREADS_SYSTEM_ERROR)
 
 
 namespace cool
@@ -181,9 +184,9 @@ namespace cool
 
 		// WARNING : 'thread_id' / 'thread_native_handle' does not check wether threads have been initialized beforehand
 
-		std::thread::id thread_id(std::size_t thread_number) const noexcept;
+		inline std::thread::id thread_id(std::size_t thread_number) const noexcept;
 #ifdef COOL_THREADS_NATIVE_HANDLE
-		std::thread::native_handle_type thread_native_handle(std::size_t thread_number);
+		inline std::thread::native_handle_type thread_native_handle(std::size_t thread_number);
 #endif // COOL_THREADS_NATIVE_HANDLE
 	};
 
@@ -286,9 +289,9 @@ namespace cool
 
 		// WARNING : 'thread_id' / 'thread_native_handle' does not check wether threads have been initialized beforehand
 
-		std::thread::id thread_id(std::size_t thread_number) const noexcept;
+		inline std::thread::id thread_id(std::size_t thread_number) const noexcept;
 #ifdef COOL_THREADS_NATIVE_HANDLE
-		std::thread::native_handle_type thread_native_handle(std::size_t thread_number);
+		inline std::thread::native_handle_type thread_native_handle(std::size_t thread_number);
 #endif // COOL_THREADS_NATIVE_HANDLE
 	};
 
@@ -2617,14 +2620,14 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-std::thread::id cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_id(std::size_t thread_number) const noexcept
+inline std::thread::id cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_id(std::size_t thread_number) const noexcept
 {
 	return (this->m_threads_data_ptr + thread_number)->get_id();
 }
 
 #ifdef COOL_THREADS_NATIVE_HANDLE
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-std::thread::native_handle_type cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_native_handle(std::size_t thread_number)
+inline std::thread::native_handle_type cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_native_handle(std::size_t thread_number)
 {
 	return (this->m_threads_data_ptr + thread_number)->native_handle();
 }
@@ -4924,14 +4927,14 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-std::thread::id cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_id(std::size_t thread_number) const noexcept
+inline std::thread::id cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_id(std::size_t thread_number) const noexcept
 {
 	return (this->m_thread_blocks_data_ptr + thread_number)->m_thread.get_id();
 }
 
 #ifdef COOL_THREADS_NATIVE_HANDLE
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-std::thread::native_handle_type cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_native_handle(std::size_t thread_number)
+inline std::thread::native_handle_type cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_native_handle(std::size_t thread_number)
 {
 	return (this->m_thread_blocks_data_ptr + thread_number)->m_thread.native_handle();
 }
