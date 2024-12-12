@@ -64,6 +64,14 @@ namespace cool
 	template <class Ty> class _async_result_to_proxy;
 	template <class Ty> class _async_result_incr_proxy;
 
+	template <class data_Ty> class _thread_iterator;
+	template <class _thread_iterator_Ty> class _thread_iterator_proxy;
+	class _thread_sq_id;
+	class _thread_sq_native_handle;
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class _thread_mq_id;
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class _thread_mq_native_handle;
+
+
 	// threads_sq
 
 	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align = alignof(std::max_align_t), bool _arg_type_static_check = true>
@@ -173,7 +181,7 @@ namespace cool
 
 		inline cool::threads_init_result init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size) noexcept; // arguments must be > 0
 		inline bool good() const noexcept; // true if 'init_new_threads' has finished successfully, must not be relied upon if a 'delete_threads' concurrent call is imminent
-		inline std::uint16_t thread_count() const noexcept;
+		inline std::size_t thread_count() const noexcept;
 		inline std::size_t task_buffer_size() const noexcept;
 		inline void delete_threads() noexcept;
 
@@ -185,8 +193,10 @@ namespace cool
 		// WARNING : 'thread_id' / 'thread_native_handle' does not check wether threads have been initialized beforehand
 
 		inline std::thread::id thread_id(std::size_t thread_number) const noexcept;
+		typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_id>> thread_ids() const noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
 #ifdef COOL_THREADS_NATIVE_HANDLE
 		inline std::thread::native_handle_type thread_native_handle(std::size_t thread_number);
+		typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_native_handle>> thread_native_handles() noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
 #endif // COOL_THREADS_NATIVE_HANDLE
 	};
 
@@ -275,7 +285,7 @@ namespace cool
 			std::uint16_t dispatch_interval = 1 // must be > 0
 		) noexcept;
 		inline bool good() const noexcept; // true if 'init_new_threads' has finished successfully, must not be relied upon if a 'delete_threads' concurrent call is imminent
-		inline std::uint16_t thread_count() const noexcept;
+		inline std::size_t thread_count() const noexcept;
 		inline std::size_t task_buffer_size() const noexcept;
 		inline unsigned int pop_tries() const noexcept;
 		inline unsigned int push_tries() const noexcept;
@@ -290,8 +300,10 @@ namespace cool
 		// WARNING : 'thread_id' / 'thread_native_handle' does not check wether threads have been initialized beforehand
 
 		inline std::thread::id thread_id(std::size_t thread_number) const noexcept;
+		typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> thread_ids() const noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
 #ifdef COOL_THREADS_NATIVE_HANDLE
 		inline std::thread::native_handle_type thread_native_handle(std::size_t thread_number);
+		typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_native_handle<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> thread_native_handles() noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
 #endif // COOL_THREADS_NATIVE_HANDLE
 	};
 
@@ -644,6 +656,8 @@ namespace cool
 
 		friend class cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, true>;
 		friend class cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, false>;
+		friend class cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>;
+		friend class cool::_thread_mq_native_handle<_cache_line_size, _arg_buffer_size, _arg_buffer_align>;
 
 		using _task = typename cool::_threads_base::_base_task<_arg_buffer_size, _arg_buffer_align>;
 
@@ -706,6 +720,8 @@ namespace cool
 		};
 	};
 
+	// target incr proxy
+
 	class _async_end_incr_proxy
 	{
 
@@ -752,6 +768,104 @@ namespace cool
 		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check> friend class cool::threads_mq;
 		template <class return_Ty2> friend class cool::_async_result_to_proxy;
 	};
+
+	// iterators
+
+	template <class data_Ty> class _thread_iterator : private data_Ty
+	{
+
+	public:
+
+		using data_Ty::data_Ty;
+		using value_type = typename data_Ty::value_type;
+		using pointer_type = typename data_Ty::pointer_type;
+
+		inline cool::_thread_iterator<data_Ty>& operator--() noexcept { this->m_ptr--; return *this; }
+		inline cool::_thread_iterator<data_Ty>& operator++() noexcept { this->m_ptr++; return *this; }
+		inline cool::_thread_iterator<data_Ty> operator--(int) noexcept { cool::_thread_iterator<data_Ty> ret = *this; this->m_ptr--; return ret; }
+		inline cool::_thread_iterator<data_Ty> operator++(int) noexcept { cool::_thread_iterator<data_Ty> ret = *this; this->m_ptr++; return ret; }
+		inline cool::_thread_iterator<data_Ty>& operator-=(std::ptrdiff_t offset) noexcept { this->m_ptr -= offset; return *this; }
+		inline cool::_thread_iterator<data_Ty>& operator+=(std::ptrdiff_t offset) noexcept { this->m_ptr += offset; return *this; }
+		inline cool::_thread_iterator<data_Ty> operator-(std::ptrdiff_t offset) const noexcept { return cool::_thread_iterator<data_Ty>(this->m_ptr - offset); }
+		inline cool::_thread_iterator<data_Ty> operator+(std::ptrdiff_t offset) const noexcept { return cool::_thread_iterator<data_Ty>(this->m_ptr + offset); }
+		inline std::ptrdiff_t operator-(const cool::_thread_iterator<data_Ty>& rhs) const noexcept { return this->m_ptr - rhs.m_ptr; }
+
+		inline bool operator==(const cool::_thread_iterator<data_Ty>& rhs) const noexcept { return this->m_ptr == rhs.m_ptr; }
+		inline bool operator!=(const cool::_thread_iterator<data_Ty>& rhs) const noexcept { return this->m_ptr != rhs.m_ptr; }
+		inline bool operator<=(const cool::_thread_iterator<data_Ty>& rhs) const noexcept { return this->m_ptr <= rhs.m_ptr; }
+		inline bool operator>=(const cool::_thread_iterator<data_Ty>& rhs) const noexcept { return this->m_ptr >= rhs.m_ptr; }
+		inline bool operator<(const cool::_thread_iterator<data_Ty>& rhs) const noexcept { return this->m_ptr < rhs.m_ptr; }
+		inline bool operator>(const cool::_thread_iterator<data_Ty>& rhs) const noexcept { return this->m_ptr > rhs.m_ptr; }
+
+		value_type operator*() const noexcept(data_Ty::indirection_is_noexcept) { return this->indirection_impl(); }
+		value_type operator[](std::ptrdiff_t offset) const noexcept(data_Ty::indirection_is_noexcept) { return this->indirection_impl(offset); }
+	};
+
+	template <class _thread_iterator_Ty> class _thread_iterator_proxy
+	{
+
+	public:
+
+		using pointer_type = typename _thread_iterator_Ty::pointer_type;
+
+		inline _thread_iterator_proxy(pointer_type begin_ptr, pointer_type end_ptr) noexcept : m_begin(begin_ptr), m_end(end_ptr) {}
+		inline _thread_iterator_Ty begin() const noexcept { return m_begin; }
+		inline _thread_iterator_Ty end() const noexcept { return m_end; }
+		inline _thread_iterator_Ty cbegin() const noexcept { return m_begin; }
+		inline _thread_iterator_Ty cend() const noexcept { return m_end; }
+
+	private:
+
+		_thread_iterator_Ty m_begin;
+		_thread_iterator_Ty m_end;
+	};
+
+	class _thread_sq_id {
+	public:
+		using value_type = std::thread::id;
+		using pointer_type = const std::thread*;
+		static constexpr bool indirection_is_noexcept = true;
+		_thread_sq_id(pointer_type ptr) noexcept : m_ptr(ptr) {}
+	protected:
+		inline value_type indirection_impl() const noexcept { return m_ptr->get_id(); }
+		inline value_type indirection_impl(std::ptrdiff_t offset) const noexcept { return (m_ptr + offset)->get_id(); }
+		pointer_type m_ptr;
+	};
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class _thread_mq_id {
+	public:
+		using value_type = std::thread::id;
+		using pointer_type = const typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block*;
+		static constexpr bool indirection_is_noexcept = true;
+		_thread_mq_id(pointer_type ptr) noexcept : m_ptr(ptr) {}
+	protected:
+		inline value_type indirection_impl() const noexcept { return m_ptr->m_thread.get_id(); }
+		inline value_type indirection_impl(std::ptrdiff_t offset) const noexcept { return (m_ptr + offset)->m_thread.get_id(); }
+		pointer_type m_ptr;
+	};
+#ifdef COOL_THREADS_NATIVE_HANDLE
+	class _thread_sq_native_handle {
+	public:
+		using value_type = std::thread::native_handle_type;
+		using pointer_type = std::thread*;
+		static constexpr bool indirection_is_noexcept = false;
+		_thread_sq_native_handle(pointer_type ptr) : m_ptr(ptr) {}
+	protected:
+		inline value_type indirection_impl() const { return m_ptr->native_handle(); }
+		inline value_type indirection_impl(std::ptrdiff_t offset) const { return (m_ptr + offset)->native_handle(); }
+		pointer_type m_ptr;
+	};
+	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class _thread_mq_native_handle {
+	public:
+		using value_type = std::thread::native_handle_type;
+		using pointer_type = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block*;
+		static constexpr bool indirection_is_noexcept = false;
+		_thread_mq_native_handle(pointer_type ptr) : m_ptr(ptr) {}
+	protected:
+		inline value_type indirection_impl() const { return m_ptr->m_thread.native_handle(); }
+		inline value_type indirection_impl(std::ptrdiff_t offset) const { return (m_ptr + offset)->m_thread.native_handle(); }
+		pointer_type m_ptr;
+	};
+#endif // COOL_THREADS_NATIVE_HANDLE
 }
 
 
@@ -2584,10 +2698,10 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline std::uint16_t cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_count() const noexcept
+inline std::size_t cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_count() const noexcept
 {
 	std::atomic_signal_fence(std::memory_order_acquire);
-	return static_cast<std::uint16_t>(this->m_thread_count);
+	return this->m_thread_count;
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
@@ -2625,11 +2739,23 @@ inline std::thread::id cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg
 	return (this->m_threads_data_ptr + thread_number)->get_id();
 }
 
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
+typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_id>> cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_ids() const noexcept
+{
+	return typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_id>>(this->m_threads_data_ptr, this->m_threads_data_ptr + this->m_thread_count);
+}
+
 #ifdef COOL_THREADS_NATIVE_HANDLE
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
 inline std::thread::native_handle_type cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_native_handle(std::size_t thread_number)
 {
 	return (this->m_threads_data_ptr + thread_number)->native_handle();
+}
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
+typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_native_handle>> cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_native_handles() noexcept
+{
+	return typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_native_handle>>(this->m_threads_data_ptr, this->m_threads_data_ptr + this->m_thread_count);
 }
 #endif // COOL_THREADS_NATIVE_HANDLE
 
@@ -4852,10 +4978,10 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline std::uint16_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_count() const noexcept
+inline std::size_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_count() const noexcept
 {
 	std::atomic_signal_fence(std::memory_order_acquire);
-	return static_cast<std::uint16_t>(this->m_thread_count);
+	return this->m_thread_count;
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
@@ -4932,11 +5058,23 @@ inline std::thread::id cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg
 	return (this->m_thread_blocks_data_ptr + thread_number)->m_thread.get_id();
 }
 
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
+typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_ids() const noexcept
+{
+	return typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>>(this->m_thread_blocks_data_ptr, this->m_thread_blocks_data_ptr + this->m_thread_count);
+}
+
 #ifdef COOL_THREADS_NATIVE_HANDLE
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
 inline std::thread::native_handle_type cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_native_handle(std::size_t thread_number)
 {
 	return (this->m_thread_blocks_data_ptr + thread_number)->m_thread.native_handle();
+}
+
+template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
+typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_native_handle<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_native_handles() noexcept
+{
+	return typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_native_handle<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>>(this->m_thread_blocks_data_ptr, this->m_thread_blocks_data_ptr + this->m_thread_count);
 }
 #endif // COOL_THREADS_NATIVE_HANDLE
 
