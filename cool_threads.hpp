@@ -192,11 +192,17 @@ namespace cool
 
 		// WARNING : 'thread_id' / 'thread_native_handle' does not check wether threads have been initialized beforehand
 
+		using thread_id_iterator = cool::_thread_iterator<cool::_thread_sq_id>;
+		using thread_id_iterator_proxy = cool::_thread_iterator_proxy<thread_id_iterator>;
+
 		inline std::thread::id thread_id(std::size_t thread_number) const noexcept;
-		inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_id>> thread_ids() const noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
+		inline thread_id_iterator_proxy thread_ids() const noexcept; // provides 'begin', 'end', 'cbegin', 'cend'
 #ifdef COOL_THREADS_NATIVE_HANDLE
+		using thread_native_handle_iterator = cool::_thread_iterator<cool::_thread_sq_native_handle>;
+		using thread_native_handle_iterator_proxy = cool::_thread_iterator_proxy<thread_native_handle_iterator>;
+
 		inline std::thread::native_handle_type thread_native_handle(std::size_t thread_number);
-		inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_native_handle>> thread_native_handles() noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
+		inline thread_native_handle_iterator_proxy thread_native_handles() noexcept; // provides 'begin', 'end', 'cbegin', 'cend'
 #endif // COOL_THREADS_NATIVE_HANDLE
 	};
 
@@ -299,11 +305,17 @@ namespace cool
 
 		// WARNING : 'thread_id' / 'thread_native_handle' does not check wether threads have been initialized beforehand
 
+		using thread_id_iterator = cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>;
+		using thread_id_iterator_proxy = cool::_thread_iterator_proxy<thread_id_iterator>;
+
 		inline std::thread::id thread_id(std::size_t thread_number) const noexcept;
-		inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> thread_ids() const noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
+		inline thread_id_iterator_proxy thread_ids() const noexcept; // provides 'begin', 'end', 'cbegin', 'cend'
 #ifdef COOL_THREADS_NATIVE_HANDLE
+		using thread_native_handle_iterator = cool::_thread_iterator<cool::_thread_mq_native_handle<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>;
+		using thread_native_handle_iterator_proxy = cool::_thread_iterator_proxy<thread_native_handle_iterator>;
+
 		inline std::thread::native_handle_type thread_native_handle(std::size_t thread_number);
-		inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_native_handle<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> thread_native_handles() noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
+		inline thread_native_handle_iterator_proxy thread_native_handles() noexcept; // provides 'begin', 'end', 'cbegin', 'cend'
 #endif // COOL_THREADS_NATIVE_HANDLE
 	};
 
