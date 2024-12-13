@@ -193,10 +193,10 @@ namespace cool
 		// WARNING : 'thread_id' / 'thread_native_handle' does not check wether threads have been initialized beforehand
 
 		inline std::thread::id thread_id(std::size_t thread_number) const noexcept;
-		typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_id>> thread_ids() const noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
+		inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_id>> thread_ids() const noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
 #ifdef COOL_THREADS_NATIVE_HANDLE
 		inline std::thread::native_handle_type thread_native_handle(std::size_t thread_number);
-		typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_native_handle>> thread_native_handles() noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
+		inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_native_handle>> thread_native_handles() noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
 #endif // COOL_THREADS_NATIVE_HANDLE
 	};
 
@@ -300,10 +300,10 @@ namespace cool
 		// WARNING : 'thread_id' / 'thread_native_handle' does not check wether threads have been initialized beforehand
 
 		inline std::thread::id thread_id(std::size_t thread_number) const noexcept;
-		typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> thread_ids() const noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
+		inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> thread_ids() const noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
 #ifdef COOL_THREADS_NATIVE_HANDLE
 		inline std::thread::native_handle_type thread_native_handle(std::size_t thread_number);
-		typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_native_handle<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> thread_native_handles() noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
+		inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_native_handle<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> thread_native_handles() noexcept; // gives methods 'begin', 'end', 'cbegin', 'cend'
 #endif // COOL_THREADS_NATIVE_HANDLE
 	};
 
@@ -2740,9 +2740,9 @@ inline std::thread::id cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_id>> cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_ids() const noexcept
+inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_id>> cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_ids() const noexcept
 {
-	return typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_id>>(this->m_threads_data_ptr, this->m_threads_data_ptr + this->m_thread_count);
+	return cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_id>>(this->m_threads_data_ptr, this->m_threads_data_ptr + this->m_thread_count);
 }
 
 #ifdef COOL_THREADS_NATIVE_HANDLE
@@ -2753,9 +2753,9 @@ inline std::thread::native_handle_type cool::threads_sq<_cache_line_size, _arg_b
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_native_handle>> cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_native_handles() noexcept
+inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_native_handle>> cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_native_handles() noexcept
 {
-	return typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_native_handle>>(this->m_threads_data_ptr, this->m_threads_data_ptr + this->m_thread_count);
+	return cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_native_handle>>(this->m_threads_data_ptr, this->m_threads_data_ptr + this->m_thread_count);
 }
 #endif // COOL_THREADS_NATIVE_HANDLE
 
@@ -5059,9 +5059,9 @@ inline std::thread::id cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_ids() const noexcept
+inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_ids() const noexcept
 {
-	return typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>>(this->m_thread_blocks_data_ptr, this->m_thread_blocks_data_ptr + this->m_thread_count);
+	return cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>>(this->m_thread_blocks_data_ptr, this->m_thread_blocks_data_ptr + this->m_thread_count);
 }
 
 #ifdef COOL_THREADS_NATIVE_HANDLE
@@ -5072,9 +5072,9 @@ inline std::thread::native_handle_type cool::threads_mq<_cache_line_size, _arg_b
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_native_handle<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_native_handles() noexcept
+inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_native_handle<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_native_handles() noexcept
 {
-	return typename cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_native_handle<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>>(this->m_thread_blocks_data_ptr, this->m_thread_blocks_data_ptr + this->m_thread_count);
+	return cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_native_handle<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>>(this->m_thread_blocks_data_ptr, this->m_thread_blocks_data_ptr + this->m_thread_count);
 }
 #endif // COOL_THREADS_NATIVE_HANDLE
 
