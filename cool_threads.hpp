@@ -843,7 +843,7 @@ namespace cool
 		using value_type = std::thread::id;
 		using pointer_type = const std::thread*;
 		static constexpr bool indirection_is_noexcept = true;
-		_thread_sq_id(pointer_type ptr) noexcept : m_ptr(ptr) {}
+		inline _thread_sq_id(pointer_type ptr) noexcept : m_ptr(ptr) {}
 	protected:
 		inline value_type indirection_impl() const noexcept { return m_ptr->get_id(); }
 		inline value_type indirection_impl(std::ptrdiff_t offset) const noexcept { return (m_ptr + offset)->get_id(); }
@@ -854,7 +854,7 @@ namespace cool
 		using value_type = std::thread::id;
 		using pointer_type = const typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block*;
 		static constexpr bool indirection_is_noexcept = true;
-		_thread_mq_id(pointer_type ptr) noexcept : m_ptr(ptr) {}
+		inline _thread_mq_id(pointer_type ptr) noexcept : m_ptr(ptr) {}
 	protected:
 		inline value_type indirection_impl() const noexcept { return m_ptr->m_thread.get_id(); }
 		inline value_type indirection_impl(std::ptrdiff_t offset) const noexcept { return (m_ptr + offset)->m_thread.get_id(); }
@@ -866,7 +866,7 @@ namespace cool
 		using value_type = std::thread::native_handle_type;
 		using pointer_type = std::thread*;
 		static constexpr bool indirection_is_noexcept = false;
-		_thread_sq_native_handle(pointer_type ptr) : m_ptr(ptr) {}
+		inline _thread_sq_native_handle(pointer_type ptr) noexcept : m_ptr(ptr) {}
 	protected:
 		inline value_type indirection_impl() const { return m_ptr->native_handle(); }
 		inline value_type indirection_impl(std::ptrdiff_t offset) const { return (m_ptr + offset)->native_handle(); }
@@ -877,7 +877,7 @@ namespace cool
 		using value_type = std::thread::native_handle_type;
 		using pointer_type = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block*;
 		static constexpr bool indirection_is_noexcept = false;
-		_thread_mq_native_handle(pointer_type ptr) : m_ptr(ptr) {}
+		inline _thread_mq_native_handle(pointer_type ptr) noexcept : m_ptr(ptr) {}
 	protected:
 		inline value_type indirection_impl() const { return m_ptr->m_thread.native_handle(); }
 		inline value_type indirection_impl(std::ptrdiff_t offset) const { return (m_ptr + offset)->m_thread.native_handle(); }
