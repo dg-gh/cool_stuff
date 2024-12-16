@@ -66,6 +66,7 @@ namespace cool
 
 	template <class data_Ty> class _thread_iterator;
 	template <class _thread_iterator_Ty> class _thread_iterator_proxy;
+	template <class _thread_iterator_Ty> class _thread_const_iterator_proxy;
 	class _thread_sq_id;
 	class _thread_sq_native_handle;
 	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class _thread_mq_id;
@@ -107,7 +108,8 @@ namespace cool
 
 		// sequentially consistent : task1 being submitted before task2 guarantees that task1 will start executing before task2
 
-		// if 'function_Ty task' throws an exception, the thread will call the exception handler and jump to the next task
+		// if 'function_Ty task' throws an std::exception, the thread will call the exception handler and jump to the next task
+		// WARNING : other unrelated types of exceptions will not be caught
 
 		// WARNING : queuing tasks with 'async' / 'priority_async' / 'try_async' / 'try_priority_async' does not check wether threads have been initialized beforehand
 
@@ -195,9 +197,9 @@ namespace cool
 		inline std::thread::id thread_id(std::size_t thread_number) const noexcept;
 
 		using thread_id_iterator = cool::_thread_iterator<cool::_thread_sq_id>;
-		using thread_id_iterator_proxy = cool::_thread_iterator_proxy<thread_id_iterator>;
+		using thread_id_iterator_proxy = cool::_thread_const_iterator_proxy<thread_id_iterator>;
 
-		inline thread_id_iterator_proxy thread_ids() const noexcept; // provides 'begin', 'end', 'cbegin', 'cend'
+		inline thread_id_iterator_proxy thread_ids() const noexcept; // provides access to 'begin', 'end', 'cbegin', 'cend'
 
 #ifdef COOL_THREADS_NATIVE_HANDLE
 		inline std::thread::native_handle_type thread_native_handle(std::size_t thread_number);
@@ -205,7 +207,7 @@ namespace cool
 		using thread_native_handle_iterator = cool::_thread_iterator<cool::_thread_sq_native_handle>;
 		using thread_native_handle_iterator_proxy = cool::_thread_iterator_proxy<thread_native_handle_iterator>;
 
-		inline thread_native_handle_iterator_proxy thread_native_handles() noexcept; // provides 'begin', 'end', 'cbegin', 'cend'
+		inline thread_native_handle_iterator_proxy thread_native_handles() noexcept; // provides access to 'begin', 'end'
 #endif // COOL_THREADS_NATIVE_HANDLE
 	};
 
@@ -244,7 +246,8 @@ namespace cool
 
 		// not sequentially consistent : task1 being submitted before task2 does not guarantee that task1 will start executing before task2
 
-		// if 'function_Ty task' throws an exception, the thread will call the exception handler and jump to the next task
+		// if 'function_Ty task' throws an std::exception, the thread will call the exception handler and jump to the next task
+		// WARNING : other unrelated types of exceptions will not be caught
 
 		// WARNING : queuing tasks with 'async' / 'try_async' does not check wether threads have been initialized beforehand
 
@@ -311,9 +314,9 @@ namespace cool
 		inline std::thread::id thread_id(std::size_t thread_number) const noexcept;
 
 		using thread_id_iterator = cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>;
-		using thread_id_iterator_proxy = cool::_thread_iterator_proxy<thread_id_iterator>;
+		using thread_id_iterator_proxy = cool::_thread_const_iterator_proxy<thread_id_iterator>;
 
-		inline thread_id_iterator_proxy thread_ids() const noexcept; // provides 'begin', 'end', 'cbegin', 'cend'
+		inline thread_id_iterator_proxy thread_ids() const noexcept; // provides access to 'begin', 'end', 'cbegin', 'cend'
 
 #ifdef COOL_THREADS_NATIVE_HANDLE
 		inline std::thread::native_handle_type thread_native_handle(std::size_t thread_number);
@@ -321,7 +324,7 @@ namespace cool
 		using thread_native_handle_iterator = cool::_thread_iterator<cool::_thread_mq_native_handle<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>;
 		using thread_native_handle_iterator_proxy = cool::_thread_iterator_proxy<thread_native_handle_iterator>;
 
-		inline thread_native_handle_iterator_proxy thread_native_handles() noexcept; // provides 'begin', 'end', 'cbegin', 'cend'
+		inline thread_native_handle_iterator_proxy thread_native_handles() noexcept; // provides access to 'begin', 'end'
 #endif // COOL_THREADS_NATIVE_HANDLE
 	};
 
@@ -382,7 +385,7 @@ namespace cool
 
 		// 'on_delete_thread_exception' arguments are :
 		// > const std::system_error& : exception thrown
-		// > void* : pointer to instance of object threads_sq/threads_mq that produced the exception
+		// > std::thread::id : id of the thread that produced the exception
 		// > void* : optional pointer to buffer 'delete_thread_exception_arg_ptr'
 
 		// if 'on_delete_thread_exception' is a nullptr, then the exception handling will be the logical equivalent to a no-op
@@ -392,7 +395,7 @@ namespace cool
 		// WARNING : 'on_delete_thread_exception' is called if a thread failed to join and the program should be considered to be unlikely to be left in a good state afterwards
 
 		static inline void set_on_exception(void(*on_exception)(const std::exception&, void(*)(void), std::thread::id, void*), void* exception_arg_ptr = nullptr) noexcept;
-		static inline void set_on_delete_thread_exception(void(*on_delete_thread_exception)(const std::system_error&, void*, void*), void* delete_thread_exception_arg_ptr = nullptr) noexcept;
+		static inline void set_on_delete_thread_exception(void(*on_delete_thread_exception)(const std::system_error&, std::thread::id, void*), void* delete_thread_exception_arg_ptr = nullptr) noexcept;
 		static inline void clear() noexcept;
 	};
 
@@ -606,9 +609,9 @@ namespace cool
 
 		class delete_thread_exception_handler {
 		public:
-			inline delete_thread_exception_handler(void(*_function)(const std::system_error&, void*, void*), void* _arg_ptr) noexcept
+			inline delete_thread_exception_handler(void(*_function)(const std::system_error&, std::thread::id, void*), void* _arg_ptr) noexcept
 				: m_function(_function), m_arg_ptr(_arg_ptr) {};
-			void(*m_function)(const std::system_error&, void*, void*) = nullptr;
+			void(*m_function)(const std::system_error&, std::thread::id, void*) = nullptr;
 			void* m_arg_ptr = nullptr;
 		};
 
@@ -616,10 +619,10 @@ namespace cool
 			static std::atomic<delete_thread_exception_handler> handler{ delete_thread_exception_handler{ nullptr, nullptr } };
 			return handler;
 		}
-		static inline void catch_delete_thread_exception(const std::system_error& error, void* threads_xq_instance) noexcept {
+		static inline void catch_delete_thread_exception(const std::system_error& error, std::thread::id thread_id) noexcept {
 			delete_thread_exception_handler handler = get_delete_thread_exception_handler().load(std::memory_order_seq_cst);
 			if (handler.m_function != nullptr) {
-				handler.m_function(error, threads_xq_instance, handler.m_arg_ptr);
+				handler.m_function(error, thread_id, handler.m_arg_ptr);
 			}
 		}
 	};
@@ -827,6 +830,23 @@ namespace cool
 		using pointer_type = typename _thread_iterator_Ty::pointer_type;
 
 		inline _thread_iterator_proxy(pointer_type begin_ptr, pointer_type end_ptr) noexcept : m_begin(begin_ptr), m_end(end_ptr) {}
+		inline _thread_iterator_Ty begin() const noexcept { return m_begin; }
+		inline _thread_iterator_Ty end() const noexcept { return m_end; }
+
+	private:
+
+		_thread_iterator_Ty m_begin;
+		_thread_iterator_Ty m_end;
+	};
+
+	template <class _thread_iterator_Ty> class _thread_const_iterator_proxy
+	{
+
+	public:
+
+		using pointer_type = typename _thread_iterator_Ty::pointer_type;
+
+		inline _thread_const_iterator_proxy(pointer_type begin_ptr, pointer_type end_ptr) noexcept : m_begin(begin_ptr), m_end(end_ptr) {}
 		inline _thread_iterator_Ty begin() const noexcept { return m_begin; }
 		inline _thread_iterator_Ty end() const noexcept { return m_end; }
 		inline _thread_iterator_Ty cbegin() const noexcept { return m_begin; }
@@ -2758,9 +2778,9 @@ inline std::thread::id cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_id>> cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_ids() const noexcept
+inline cool::_thread_const_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_id>> cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_ids() const noexcept
 {
-	return cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_id>>(this->m_threads_data_ptr, this->m_threads_data_ptr + this->m_thread_count);
+	return cool::_thread_const_iterator_proxy<cool::_thread_iterator<cool::_thread_sq_id>>(this->m_threads_data_ptr, this->m_threads_data_ptr + this->m_thread_count);
 }
 
 #ifdef COOL_THREADS_NATIVE_HANDLE
@@ -2801,13 +2821,15 @@ inline void cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 		{
 			if ((this->m_threads_data_ptr + k)->joinable())
 			{
+				std::thread::id thread_id = (this->m_threads_data_ptr + k)->get_id();
+
 				xCOOL_THREADS_TRY
 				{
 					(this->m_threads_data_ptr + k)->join();
 				}
 				xCOOL_THREADS_CATCH(const std::system_error& xCOOL_THREADS_SYSTEM_ERROR)
 				{
-					cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_delete_thread_exception(xCOOL_THREADS_SYSTEM_ERROR, this);
+					cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_delete_thread_exception(xCOOL_THREADS_SYSTEM_ERROR, thread_id);
 				}
 			}
 			(this->m_threads_data_ptr + k)->~thread();
@@ -5077,9 +5099,9 @@ inline std::thread::id cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_ids() const noexcept
+inline cool::_thread_const_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>> cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::thread_ids() const noexcept
 {
-	return cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>>(this->m_thread_blocks_data_ptr, this->m_thread_blocks_data_ptr + this->m_thread_count);
+	return cool::_thread_const_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_id<_cache_line_size, _arg_buffer_size, _arg_buffer_align>>>(this->m_thread_blocks_data_ptr, this->m_thread_blocks_data_ptr + this->m_thread_count);
 }
 
 #ifdef COOL_THREADS_NATIVE_HANDLE
@@ -5122,13 +5144,15 @@ inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 
 			if ((ptr + k)->m_thread.joinable())
 			{
+				std::thread::id thread_id = (ptr + k)->m_thread.get_id();
+
 				xCOOL_THREADS_TRY
 				{
 					(ptr + k)->m_thread.join();
 				}
 				xCOOL_THREADS_CATCH(const std::system_error& xCOOL_THREADS_SYSTEM_ERROR)
 				{
-					cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_delete_thread_exception(xCOOL_THREADS_SYSTEM_ERROR, this);
+					cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::catch_delete_thread_exception(xCOOL_THREADS_SYSTEM_ERROR, thread_id);
 				}
 			}
 		}
@@ -5202,7 +5226,7 @@ inline void cool::threads_exception_handler::set_on_exception(void(*on_exception
 	cool::_threads_base::get_exception_handler().store(handler, std::memory_order_seq_cst);
 }
 
-inline void cool::threads_exception_handler::set_on_delete_thread_exception(void(*on_delete_thread_exception)(const std::system_error&, void*, void*), void* delete_thread_exception_arg_ptr) noexcept
+inline void cool::threads_exception_handler::set_on_delete_thread_exception(void(*on_delete_thread_exception)(const std::system_error&, std::thread::id, void*), void* delete_thread_exception_arg_ptr) noexcept
 {
 	cool::_threads_base::delete_thread_exception_handler handler{ on_delete_thread_exception, delete_thread_exception_arg_ptr };
 	cool::_threads_base::get_delete_thread_exception_handler().store(handler, std::memory_order_seq_cst);
