@@ -5295,6 +5295,20 @@ inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_nati
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
 inline std::uint16_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::default_dispatch_interval(std::uint16_t new_thread_count) noexcept
 {
+	if (new_thread_count == 0)
+	{
+		return 0;
+	}
+
+	std::uint16_t max_dispatch_interval;
+
+	{
+		unsigned int _max_dispatch_interval = static_cast<unsigned int>(-1) / static_cast<unsigned int>(new_thread_count);
+		unsigned int _new_thread_count_d2 = static_cast<unsigned int>(new_thread_count) / 2;
+		max_dispatch_interval = (_max_dispatch_interval < _new_thread_count_d2) ?
+			static_cast<std::uint16_t>(_max_dispatch_interval) : static_cast<std::uint16_t>(_new_thread_count_d2);
+	}
+
 	std::uint16_t sqr = 0;
 
 	while (sqr * sqr <= new_thread_count)
@@ -5302,9 +5316,7 @@ inline std::uint16_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_b
 		sqr++;
 	}
 
-	std::uint16_t new_thread_count_d2 = new_thread_count / 2;
-
-	sqr = (sqr < new_thread_count_d2) ? sqr : new_thread_count_d2;
+	sqr = (sqr < max_dispatch_interval) ? sqr : max_dispatch_interval;
 
 	if (sqr == 0)
 	{
@@ -5323,7 +5335,7 @@ inline std::uint16_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_b
 			}
 		}
 
-		for (std::uint16_t ret = sqr; ret < new_thread_count_d2; ret++)
+		for (std::uint16_t ret = sqr; ret < max_dispatch_interval; ret++)
 		{
 			for (std::uint16_t divisor = ret; (ret % divisor != 0) || (new_thread_count % divisor != 0); divisor--)
 			{
@@ -5334,7 +5346,7 @@ inline std::uint16_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_b
 			}
 		}
 
-		return ((new_thread_count % 2 != 0) && (2 <= new_thread_count_d2)) ? 2 : 1;
+		return ((new_thread_count % 2 != 0) && (2 <= max_dispatch_interval)) ? 2 : 1;
 	}
 }
 
