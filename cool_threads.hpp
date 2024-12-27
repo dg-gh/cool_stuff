@@ -5295,38 +5295,47 @@ inline cool::_thread_iterator_proxy<cool::_thread_iterator<cool::_thread_mq_nati
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
 inline std::uint16_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::default_dispatch_interval(std::uint16_t new_thread_count) noexcept
 {
-	std::uint16_t ret = 0;
+	std::uint16_t sqr = 0;
 
-	if (new_thread_count > 12)
+	while (sqr * sqr <= new_thread_count)
 	{
-		while (ret * ret < new_thread_count)
-		{
-			ret++;
-		}
+		sqr++;
+	}
+
+	std::uint16_t new_thread_count_d2 = new_thread_count / 2;
+
+	sqr = (sqr < new_thread_count_d2) ? sqr : new_thread_count_d2;
+
+	if (sqr == 0)
+	{
+		return 0;
 	}
 	else
 	{
-		ret = new_thread_count / 2;
-	}
-
-	while (ret > 1)
-	{
-		std::uint16_t divisor = ret;
-
-		while ((ret % divisor != 0) || (new_thread_count % divisor != 0))
+		for (std::uint16_t ret = sqr; ret > 2; ret--)
 		{
-			divisor--;
-
-			if (divisor == 1)
+			for (std::uint16_t divisor = ret; (ret % divisor != 0) || (new_thread_count % divisor != 0); divisor--)
 			{
-				return ret;
+				if (divisor <= 2)
+				{
+					return ret;
+				}
 			}
 		}
 
-		ret--;
-	}
+		for (std::uint16_t ret = sqr; ret < new_thread_count_d2; ret++)
+		{
+			for (std::uint16_t divisor = ret; (ret % divisor != 0) || (new_thread_count % divisor != 0); divisor--)
+			{
+				if (divisor <= 2)
+				{
+					return ret;
+				}
+			}
+		}
 
-	return ret;
+		return ((new_thread_count % 2 != 0) && (2 <= new_thread_count_d2)) ? 2 : 1;
+	}
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
