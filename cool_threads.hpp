@@ -5307,16 +5307,15 @@ inline std::uint16_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_b
 		unsigned int _new_thread_count_d2 = static_cast<unsigned int>(new_thread_count) / 2;
 		max_dispatch_interval = (_max_dispatch_interval < _new_thread_count_d2) ?
 			static_cast<std::uint16_t>(_max_dispatch_interval) : static_cast<std::uint16_t>(_new_thread_count_d2);
+		max_dispatch_interval = (max_dispatch_interval < 32) ? max_dispatch_interval : 32;
 	}
 
 	std::uint16_t sqr = 0;
 
-	while (sqr * sqr <= new_thread_count)
+	while ((sqr < max_dispatch_interval) && (sqr * sqr <= new_thread_count))
 	{
 		sqr++;
 	}
-
-	sqr = (sqr < max_dispatch_interval) ? sqr : max_dispatch_interval;
 
 	if (sqr == 0)
 	{
