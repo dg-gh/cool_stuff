@@ -5303,8 +5303,10 @@ inline std::uint16_t cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_b
 	std::uint16_t max_dispatch_interval;
 
 	{
-		unsigned int _max_dispatch_interval = static_cast<unsigned int>(-1) / static_cast<unsigned int>(new_thread_count);
-		unsigned int _new_thread_count_d2 = static_cast<unsigned int>(new_thread_count) / 2;
+		using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
+
+		_cool_thmq_uintX _max_dispatch_interval = static_cast<_cool_thmq_uintX>(-1) / static_cast<_cool_thmq_uintX>(new_thread_count);
+		_cool_thmq_uintX _new_thread_count_d2 = static_cast<_cool_thmq_uintX>(new_thread_count) / 2;
 		max_dispatch_interval = (_max_dispatch_interval < _new_thread_count_d2) ?
 			static_cast<std::uint16_t>(_max_dispatch_interval) : static_cast<std::uint16_t>(_new_thread_count_d2);
 		max_dispatch_interval = (max_dispatch_interval < 32) ? max_dispatch_interval : 32;
