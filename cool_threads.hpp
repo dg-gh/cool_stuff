@@ -575,22 +575,17 @@ namespace cool
 
 		inline bool operator==(const cool::safety_refresh_proxy& rhs) const noexcept;
 		inline bool operator!=(const cool::safety_refresh_proxy& rhs) const noexcept;
+		inline bool operator<=(const cool::safety_refresh_proxy& rhs) const noexcept;
+		inline bool operator>=(const cool::safety_refresh_proxy& rhs) const noexcept;
+		inline bool operator<(const cool::safety_refresh_proxy & rhs) const noexcept;
+		inline bool operator>(const cool::safety_refresh_proxy& rhs) const noexcept;
 
-		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-		inline bool operator==(const cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& rhs) const noexcept;
-		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-		inline bool operator!=(const cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& rhs) const noexcept;
-
-		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-		inline bool operator==(const cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& rhs) const noexcept;
-		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-		inline bool operator!=(const cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& rhs) const noexcept;
-
-		inline bool operator==(const cool::async_end& rhs) const noexcept;
-		inline bool operator!=(const cool::async_end& rhs) const noexcept;
-
-		template <class return_Ty> inline bool operator==(const cool::async_result<return_Ty>& rhs) const noexcept;
-		template <class return_Ty> inline bool operator!=(const cool::async_result<return_Ty>& rhs) const noexcept;
+		template <class object_Ty> inline bool operator==(const object_Ty& rhs) const noexcept;
+		template <class object_Ty> inline bool operator!=(const object_Ty& rhs) const noexcept;
+		template <class object_Ty> inline bool operator<=(const object_Ty& rhs) const noexcept;
+		template <class object_Ty> inline bool operator>=(const object_Ty& rhs) const noexcept;
+		template <class object_Ty> inline bool operator<(const object_Ty& rhs) const noexcept;
+		template <class object_Ty> inline bool operator>(const object_Ty& rhs) const noexcept;
 
 	private:
 
@@ -598,21 +593,12 @@ namespace cool
 		void* m_object_ptr;
 	};
 
-	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-	inline bool operator==(const cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
-	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-	inline bool operator!=(const cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
-
-	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-	inline bool operator==(const cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
-	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-	inline bool operator!=(const cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
-
-	inline bool operator==(const cool::async_end& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
-	inline bool operator!=(const cool::async_end& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
-
-	template <class return_Ty> inline bool operator==(const cool::async_result<return_Ty>& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
-	template <class return_Ty> inline bool operator!=(const cool::async_result<return_Ty>& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
+	template <class object_Ty> inline bool operator==(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
+	template <class object_Ty> inline bool operator!=(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
+	template <class object_Ty> inline bool operator<=(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
+	template <class object_Ty> inline bool operator>=(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
+	template <class object_Ty> inline bool operator<(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
+	template <class object_Ty> inline bool operator>(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
 }
 
 
@@ -5976,73 +5962,67 @@ inline bool cool::safety_refresh_proxy::operator==(const cool::safety_refresh_pr
 inline bool cool::safety_refresh_proxy::operator!=(const cool::safety_refresh_proxy& rhs) const noexcept {
 	return m_object_ptr != rhs.m_object_ptr;
 }
+inline bool cool::safety_refresh_proxy::operator<=(const cool::safety_refresh_proxy& rhs) const noexcept {
+	return m_object_ptr <= rhs.m_object_ptr;
+}
+inline bool cool::safety_refresh_proxy::operator>=(const cool::safety_refresh_proxy& rhs) const noexcept {
+	return m_object_ptr >= rhs.m_object_ptr;
+}
+inline bool cool::safety_refresh_proxy::operator<(const cool::safety_refresh_proxy& rhs) const noexcept {
+	return m_object_ptr < rhs.m_object_ptr;
+}
+inline bool cool::safety_refresh_proxy::operator>(const cool::safety_refresh_proxy& rhs) const noexcept {
+	return m_object_ptr > rhs.m_object_ptr;
+}
 
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline bool cool::safety_refresh_proxy::operator==(const cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& rhs) const noexcept {
+template <class object_Ty>
+inline bool cool::safety_refresh_proxy::operator==(const object_Ty& rhs) const noexcept {
 	return m_object_ptr == &rhs;
 }
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline bool cool::safety_refresh_proxy::operator!=(const cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& rhs) const noexcept {
+template <class object_Ty>
+inline bool cool::safety_refresh_proxy::operator!=(const object_Ty& rhs) const noexcept {
 	return m_object_ptr != &rhs;
 }
-
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline bool cool::safety_refresh_proxy::operator==(const cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& rhs) const noexcept {
-	return m_object_ptr == &rhs;
+template <class object_Ty>
+inline bool cool::safety_refresh_proxy::operator<=(const object_Ty& rhs) const noexcept {
+	return m_object_ptr <= &rhs;
 }
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline bool cool::safety_refresh_proxy::operator!=(const cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& rhs) const noexcept {
-	return m_object_ptr != &rhs;
+template <class object_Ty>
+inline bool cool::safety_refresh_proxy::operator>=(const object_Ty& rhs) const noexcept {
+	return m_object_ptr >= &rhs;
 }
-
-inline bool cool::safety_refresh_proxy::operator==(const cool::async_end& rhs) const noexcept {
-	return m_object_ptr == &rhs;
+template <class object_Ty>
+inline bool cool::safety_refresh_proxy::operator<(const object_Ty& rhs) const noexcept {
+	return m_object_ptr < &rhs;
 }
-inline bool cool::safety_refresh_proxy::operator!=(const cool::async_end& rhs) const noexcept {
-	return m_object_ptr != &rhs;
-}
-
-template <class return_Ty>
-inline bool cool::safety_refresh_proxy::operator==(const cool::async_result<return_Ty>& rhs) const noexcept {
-	return m_object_ptr == &rhs;
-}
-template <class return_Ty>
-inline bool cool::safety_refresh_proxy::operator!=(const cool::async_result<return_Ty>& rhs) const noexcept {
-	return m_object_ptr != &rhs;
+template <class object_Ty>
+inline bool cool::safety_refresh_proxy::operator>(const object_Ty& rhs) const noexcept {
+	return m_object_ptr > &rhs;
 }
 
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline bool cool::operator==(const cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
+template <class object_Ty>
+inline bool cool::operator==(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
 	return rhs == lhs;
 }
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline bool cool::operator!=(const cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
+template <class object_Ty>
+inline bool cool::operator!=(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
 	return rhs != lhs;
 }
-
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline bool cool::operator==(const cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
-	return rhs == lhs;
+template <class object_Ty>
+inline bool cool::operator<=(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
+	return rhs >= lhs;
 }
-template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline bool cool::operator!=(const cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
-	return rhs != lhs;
+template <class object_Ty>
+inline bool cool::operator>=(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
+	return rhs <= lhs;
 }
-
-inline bool cool::operator==(const cool::async_end& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
-	return rhs == lhs;
+template <class object_Ty>
+inline bool cool::operator<(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
+	return rhs > lhs;
 }
-inline bool cool::operator!=(const cool::async_end& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
-	return rhs != lhs;
-}
-
-template <class return_Ty>
-inline bool cool::operator==(const cool::async_result<return_Ty>& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
-	return rhs == lhs;
-}
-template <class return_Ty>
-inline bool cool::operator!=(const cool::async_result<return_Ty>& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
-	return rhs != lhs;
+template <class object_Ty>
+inline bool cool::operator>(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
+	return rhs < lhs;
 }
 
 #endif // xCOOL_THREADS_HPP
