@@ -5921,6 +5921,9 @@ inline void cool::safety_refresh_proxy::safety_refresh() const noexcept
 	m_callable(m_object_ptr);
 }
 
+
+// safety_refresh_proxy detail
+
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
 inline cool::safety_refresh_proxy::safety_refresh_proxy(cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& rhs) noexcept : m_object_ptr(&rhs)
 {
