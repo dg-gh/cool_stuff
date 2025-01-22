@@ -74,6 +74,45 @@ namespace cool
 	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> class _thread_mq_native_handle;
 
 
+	// init types
+
+	class thread_count {
+	public:
+		thread_count() = delete;
+		constexpr explicit inline thread_count(std::uint16_t new_thread_count) noexcept;
+		inline std::uint16_t value() const noexcept;
+	private:
+		std::uint16_t m_value;
+	};
+
+	class task_buffer_size {
+	public:
+		task_buffer_size() = delete;
+		constexpr explicit inline task_buffer_size(std::size_t new_task_buffer_size) noexcept;
+		inline std::size_t value() const noexcept;
+	private:
+		std::size_t m_value;
+	};
+
+	class try_pop_count {
+	public:
+		try_pop_count() = delete;
+		constexpr explicit inline try_pop_count(unsigned int new_try_pop_count) noexcept;
+		inline unsigned int value() const noexcept;
+	private:
+		unsigned int m_value;
+	};
+
+	class dispatch_interval {
+	public:
+		dispatch_interval() = delete;
+		constexpr explicit inline dispatch_interval(std::uint16_t new_dispatch_interval) noexcept;
+		inline std::uint16_t value() const noexcept;
+	private:
+		std::uint16_t m_value;
+	};
+
+
 	// threads_sq
 
 	template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align = alignof(std::max_align_t), bool _arg_type_static_check = true>
@@ -184,7 +223,7 @@ namespace cool
 		// WARNING : 'init_new_threads' and 'delete_threads' must not be called in concurrency with any other method
 		// except 'safety_refresh' or the case of 'init_new_thread' with 'good'
 
-		inline cool::threads_init_result init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size) noexcept; // arguments must be > 0
+		inline cool::threads_init_result init_new_threads(cool::thread_count new_thread_count, cool::task_buffer_size new_task_buffer_size) noexcept; // arguments must be > 0
 		inline bool good() const noexcept; // true if 'init_new_threads' has finished successfully, must not be relied upon if a 'delete_threads' concurrent call is imminent
 		inline std::size_t thread_count() const noexcept;
 		inline std::size_t task_buffer_size() const noexcept;
@@ -296,10 +335,10 @@ namespace cool
 		// except 'safety_refresh' or the case of 'init_new_thread' with 'good'
 		
 		inline cool::threads_init_result init_new_threads(
-			std::uint16_t new_thread_count, // must be > 0
-			std::size_t new_task_buffer_size, // must be > 0
-			unsigned int new_try_pop_count = 1,
-			std::uint16_t new_dispatch_interval = 0 // 0 sets value for 'new_dispatch_interval' to default_dispatch_interval('new_thread_count')
+			cool::thread_count new_thread_count, // must be > 0
+			cool::task_buffer_size new_task_buffer_size, // must be > 0
+			cool::try_pop_count new_try_pop_count = cool::try_pop_count(1),
+			cool::dispatch_interval = cool::dispatch_interval(0) // 0 sets value for 'new_dispatch_interval' to default_dispatch_interval('new_thread_count')
 		) noexcept;
 		inline bool good() const noexcept; // true if 'init_new_threads' has finished successfully, must not be relied upon if a 'delete_threads' concurrent call is imminent
 		inline std::size_t thread_count() const noexcept;
@@ -985,6 +1024,21 @@ namespace cool
 	};
 #endif // COOL_THREADS_NATIVE_HANDLE
 }
+
+
+// init types detail
+
+constexpr inline cool::thread_count::thread_count(std::uint16_t new_thread_count) noexcept : m_value(new_thread_count) {}
+inline std::uint16_t cool::thread_count::value() const noexcept { return m_value; }
+
+constexpr inline cool::task_buffer_size::task_buffer_size(std::size_t new_task_buffer_size) noexcept : m_value(new_task_buffer_size) {}
+inline std::size_t cool::task_buffer_size::value() const noexcept { return m_value; }
+
+constexpr inline cool::try_pop_count::try_pop_count(unsigned int new_try_pop_count) noexcept : m_value(new_try_pop_count) {}
+inline unsigned int cool::try_pop_count::value() const noexcept { return m_value; }
+
+constexpr inline cool::dispatch_interval::dispatch_interval(std::uint16_t new_dispatch_interval) noexcept : m_value(new_dispatch_interval) {}
+inline std::uint16_t cool::dispatch_interval::value() const noexcept { return m_value; }
 
 
 // threads_sq detail
@@ -2664,7 +2718,7 @@ inline constexpr bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_
 }
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::init_new_threads(std::uint16_t new_thread_count, std::size_t new_task_buffer_size) noexcept
+inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::init_new_threads(cool::thread_count new_thread_count, cool::task_buffer_size new_task_buffer_size) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 
@@ -2678,13 +2732,13 @@ inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_
 		this->m_stop_threads = false;
 	}
 
-	if ((new_thread_count == 0) || (new_task_buffer_size == 0))
+	if ((new_thread_count.value() == 0) || (new_task_buffer_size.value() == 0))
 	{
 		return cool::threads_init_result(cool::threads_init_result::bad_parameters);
 	}
 
 
-	std::size_t _new_thread_count = static_cast<std::size_t>(new_thread_count);
+	std::size_t _new_thread_count = static_cast<std::size_t>(new_thread_count.value());
 	this->m_thread_count = _new_thread_count;
 
 	std::size_t threads_constructed = 0;
@@ -2705,7 +2759,7 @@ inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_
 	}
 
 	constexpr std::size_t task_buffer_padding = (cache_line_size > arg_buffer_align) ? cache_line_size : arg_buffer_align;
-	std::size_t new_task_buffer_size_p1 = new_task_buffer_size + 1;
+	std::size_t new_task_buffer_size_p1 = new_task_buffer_size.value() + 1;
 
 	this->m_task_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(new_task_buffer_size_p1 * sizeof(_cool_thsq_task) + task_buffer_padding + cache_line_size, std::nothrow));
 
@@ -4845,10 +4899,10 @@ inline constexpr bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
 inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::init_new_threads(
-	std::uint16_t new_thread_count,
-	std::size_t new_task_buffer_size,
-	unsigned int new_try_pop_count,
-	std::uint16_t new_dispatch_interval) noexcept
+	cool::thread_count new_thread_count,
+	cool::task_buffer_size new_task_buffer_size,
+	cool::try_pop_count new_try_pop_count,
+	cool::dispatch_interval new_dispatch_interval) noexcept
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
@@ -4865,28 +4919,28 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 		delete_threads();
 	}
 
-	if ((new_thread_count == 0) || (new_task_buffer_size == 0))
+	if ((new_thread_count.value() == 0) || (new_task_buffer_size.value() == 0))
 	{
 		return cool::threads_init_result(cool::threads_init_result::bad_parameters);
 	}
 
-	if (new_dispatch_interval == 0)
+	if (new_dispatch_interval.value() == 0)
 	{
-		new_dispatch_interval = default_dispatch_interval(new_thread_count);
+		new_dispatch_interval = cool::dispatch_interval(default_dispatch_interval(new_thread_count.value()));
 	}
 
-	std::size_t _new_thread_count = static_cast<std::size_t>(new_thread_count);
-	std::size_t task_buffer_size_per_thread = new_task_buffer_size / _new_thread_count;
-	if (_new_thread_count * task_buffer_size_per_thread != new_task_buffer_size)
+	std::size_t _new_thread_count = static_cast<std::size_t>(new_thread_count.value());
+	std::size_t task_buffer_size_per_thread = new_task_buffer_size.value() / _new_thread_count;
+	if (_new_thread_count * task_buffer_size_per_thread != new_task_buffer_size.value())
 	{
 		task_buffer_size_per_thread++;
 	}
 
 	this->m_thread_count = _new_thread_count;
 
-	unsigned int _new_pop_rounds = new_try_pop_count / static_cast<unsigned int>(new_thread_count);
-	if ((static_cast<unsigned int>(new_thread_count) * _new_pop_rounds != new_try_pop_count)
-		&& (static_cast<unsigned int>(new_thread_count) * (_new_pop_rounds + 1) >= new_try_pop_count))
+	unsigned int _new_pop_rounds = new_try_pop_count.value() / static_cast<unsigned int>(new_thread_count.value());
+	if ((static_cast<unsigned int>(new_thread_count.value()) * _new_pop_rounds != new_try_pop_count.value())
+		&& (static_cast<unsigned int>(new_thread_count.value()) * (_new_pop_rounds + 1) >= new_try_pop_count.value()))
 	{
 		_new_pop_rounds++;
 	}
@@ -4924,14 +4978,14 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 		threads_constructed++;
 	}
 
-	if (new_thread_count != 1)
+	if (new_thread_count.value() != 1)
 	{
 		constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
 
-		this->m_mod_D = static_cast<_cool_thmq_uint2X>(new_thread_count);
+		this->m_mod_D = static_cast<_cool_thmq_uint2X>(new_thread_count.value());
 
 		_cool_thmq_uintX i = 0;
-		while ((static_cast<_cool_thmq_uint2X>(1) << i) < static_cast<_cool_thmq_uint2X>(new_thread_count))
+		while ((static_cast<_cool_thmq_uint2X>(1) << i) < static_cast<_cool_thmq_uint2X>(new_thread_count.value()))
 		{
 			i++;
 		}
@@ -4955,7 +5009,7 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 		this->m_mod_k = 0;
 	}
 
-	this->m_dispatch_interval = static_cast<_cool_thmq_uintX>(new_dispatch_interval);
+	this->m_dispatch_interval = static_cast<_cool_thmq_uintX>(new_dispatch_interval.value());
 
 	for (std::size_t thread_num = 0; thread_num < _new_thread_count; thread_num++)
 	{
