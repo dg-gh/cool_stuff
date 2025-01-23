@@ -79,8 +79,8 @@ namespace cool
 	class thread_count {
 	public:
 		thread_count() = delete;
-		constexpr explicit inline thread_count(std::uint16_t new_thread_count) noexcept;
-		inline std::uint16_t value() const noexcept;
+		explicit inline constexpr thread_count(std::uint16_t new_thread_count) noexcept;
+		inline constexpr std::uint16_t value() const noexcept;
 	private:
 		std::uint16_t m_value;
 	};
@@ -88,8 +88,8 @@ namespace cool
 	class task_buffer_size {
 	public:
 		task_buffer_size() = delete;
-		constexpr explicit inline task_buffer_size(std::size_t new_task_buffer_size) noexcept;
-		inline std::size_t value() const noexcept;
+		explicit inline constexpr task_buffer_size(std::size_t new_task_buffer_size) noexcept;
+		inline constexpr std::size_t value() const noexcept;
 	private:
 		std::size_t m_value;
 	};
@@ -97,8 +97,8 @@ namespace cool
 	class try_pop_count {
 	public:
 		try_pop_count() = delete;
-		constexpr explicit inline try_pop_count(unsigned int new_try_pop_count) noexcept;
-		inline unsigned int value() const noexcept;
+		explicit inline constexpr try_pop_count(unsigned int new_try_pop_count) noexcept;
+		inline constexpr unsigned int value() const noexcept;
 	private:
 		unsigned int m_value;
 	};
@@ -106,8 +106,8 @@ namespace cool
 	class dispatch_interval {
 	public:
 		dispatch_interval() = delete;
-		constexpr explicit inline dispatch_interval(std::uint16_t new_dispatch_interval) noexcept;
-		inline std::uint16_t value() const noexcept;
+		explicit inline constexpr dispatch_interval(std::uint16_t new_dispatch_interval) noexcept;
+		inline constexpr std::uint16_t value() const noexcept;
 	private:
 		std::uint16_t m_value;
 	};
@@ -1028,17 +1028,17 @@ namespace cool
 
 // init types detail
 
-constexpr inline cool::thread_count::thread_count(std::uint16_t new_thread_count) noexcept : m_value(new_thread_count) {}
-inline std::uint16_t cool::thread_count::value() const noexcept { return m_value; }
+inline constexpr cool::thread_count::thread_count(std::uint16_t new_thread_count) noexcept : m_value(new_thread_count) {}
+inline constexpr std::uint16_t cool::thread_count::value() const noexcept { return m_value; }
 
-constexpr inline cool::task_buffer_size::task_buffer_size(std::size_t new_task_buffer_size) noexcept : m_value(new_task_buffer_size) {}
-inline std::size_t cool::task_buffer_size::value() const noexcept { return m_value; }
+inline constexpr cool::task_buffer_size::task_buffer_size(std::size_t new_task_buffer_size) noexcept : m_value(new_task_buffer_size) {}
+inline constexpr std::size_t cool::task_buffer_size::value() const noexcept { return m_value; }
 
-constexpr inline cool::try_pop_count::try_pop_count(unsigned int new_try_pop_count) noexcept : m_value(new_try_pop_count) {}
-inline unsigned int cool::try_pop_count::value() const noexcept { return m_value; }
+inline constexpr cool::try_pop_count::try_pop_count(unsigned int new_try_pop_count) noexcept : m_value(new_try_pop_count) {}
+inline constexpr unsigned int cool::try_pop_count::value() const noexcept { return m_value; }
 
-constexpr inline cool::dispatch_interval::dispatch_interval(std::uint16_t new_dispatch_interval) noexcept : m_value(new_dispatch_interval) {}
-inline std::uint16_t cool::dispatch_interval::value() const noexcept { return m_value; }
+inline constexpr cool::dispatch_interval::dispatch_interval(std::uint16_t new_dispatch_interval) noexcept : m_value(new_dispatch_interval) {}
+inline constexpr std::uint16_t cool::dispatch_interval::value() const noexcept { return m_value; }
 
 
 // threads_sq detail
