@@ -1623,9 +1623,7 @@ inline void cool::rotation2d<traits_Ty, _dim_padded, _layout >::get_angle(
 {
 	using _index_data = cool::_rotation_matrix_index_data<_dim_padded, 2, _layout>;
 
-	*angle_ptr = traits_Ty::atan2(
-		*(m2x2_rotation_ptr + _index_data::i10),
-		*(m2x2_rotation_ptr + _index_data::i00));
+	*angle_ptr = traits_Ty::atan2(*(m2x2_rotation_ptr + _index_data::i10), *(m2x2_rotation_ptr + _index_data::i00));
 }
 
 
@@ -2900,10 +2898,7 @@ inline cool::rotation_status cool::rotationX<traits_Ty, _dim_padded, _layout>::g
 {
 	using _index_data = cool::_rotation_matrix_index_data<_dim_padded, 3, _layout>;
 
-	*angle_ptr = traits_type::atan2(
-		*(m3x3_rotation_ptr + _index_data::i21),
-		*(m3x3_rotation_ptr + _index_data::i11)
-	);
+	*angle_ptr = traits_type::atan2(*(m3x3_rotation_ptr + _index_data::i21), *(m3x3_rotation_ptr + _index_data::i11));
 
 	return cool::rotation_status::regular;
 }
@@ -2953,10 +2948,7 @@ inline cool::rotation_status cool::rotationY<traits_Ty, _dim_padded, _layout>::g
 {
 	using _index_data = cool::_rotation_matrix_index_data<_dim_padded, 3, _layout>;
 
-	*angle_ptr = traits_type::atan2(
-		-*(m3x3_rotation_ptr + _index_data::i20),
-		*(m3x3_rotation_ptr + _index_data::i00)
-	);
+	*angle_ptr = traits_type::atan2(-*(m3x3_rotation_ptr + _index_data::i20), *(m3x3_rotation_ptr + _index_data::i00));
 
 	return cool::rotation_status::regular;
 }
@@ -3006,10 +2998,7 @@ inline cool::rotation_status cool::rotationZ<traits_Ty, _dim_padded, _layout>::g
 {
 	using _index_data = cool::_rotation_matrix_index_data<_dim_padded, 3, _layout>;
 
-	*angle_ptr = traits_type::atan2(
-		*(m3x3_rotation_ptr + _index_data::i10),
-		*(m3x3_rotation_ptr + _index_data::i00)
-	);
+	*angle_ptr = traits_type::atan2(*(m3x3_rotation_ptr + _index_data::i10), *(m3x3_rotation_ptr + _index_data::i00));
 
 	return cool::rotation_status::regular;
 }
@@ -3059,12 +3048,8 @@ inline cool::rotation_status cool::rotationXY<traits_Ty, _dim_padded, _layout>::
 {
 	using _index_data = cool::_rotation_matrix_index_data<_dim_padded, 3, _layout>;
 
-	value_type rY = traits_Ty::atan2( // rY
-		*(m3x3_rotation_ptr + _index_data::i02),
-		*(m3x3_rotation_ptr + _index_data::i00));
-	*v2_rXY_ptr = traits_Ty::atan2( // rX
-		*(m3x3_rotation_ptr + _index_data::i21),
-		*(m3x3_rotation_ptr + _index_data::i11));
+	value_type rY = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i02), *(m3x3_rotation_ptr + _index_data::i00));
+	*v2_rXY_ptr = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i21), *(m3x3_rotation_ptr + _index_data::i11)); // rX
 	*(v2_rXY_ptr + 1) = rY;
 
 	return cool::rotation_status::regular;
@@ -3115,12 +3100,8 @@ inline cool::rotation_status cool::rotationXZ<traits_Ty, _dim_padded, _layout>::
 {
 	using _index_data = cool::_rotation_matrix_index_data<_dim_padded, 3, _layout>;
 
-	value_type rZ = traits_Ty::atan2( // rZ
-		-*(m3x3_rotation_ptr + _index_data::i01),
-		*(m3x3_rotation_ptr + _index_data::i00));
-	*v2_rXZ_ptr = traits_Ty::atan2( // rX
-		-*(m3x3_rotation_ptr + _index_data::i12),
-		*(m3x3_rotation_ptr + _index_data::i22));
+	value_type rZ = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i01), *(m3x3_rotation_ptr + _index_data::i00));
+	*v2_rXZ_ptr = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i12), *(m3x3_rotation_ptr + _index_data::i22)); // rX
 	*(v2_rXZ_ptr + 1) = rZ;
 
 	return cool::rotation_status::regular;
@@ -3171,12 +3152,8 @@ inline cool::rotation_status cool::rotationYZ<traits_Ty, _dim_padded, _layout>::
 {
 	using _index_data = cool::_rotation_matrix_index_data<_dim_padded, 3, _layout>;
 
-	value_type rZ = traits_Ty::atan2( // rZ
-		*(m3x3_rotation_ptr + _index_data::i10),
-		*(m3x3_rotation_ptr + _index_data::i11));
-	*v2_rYZ_ptr = traits_Ty::atan2( // rY
-		*(m3x3_rotation_ptr + _index_data::i02),
-		*(m3x3_rotation_ptr + _index_data::i22));
+	value_type rZ = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i10), *(m3x3_rotation_ptr + _index_data::i11));
+	*v2_rYZ_ptr = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i02), *(m3x3_rotation_ptr + _index_data::i22)); // rY
 	*(v2_rYZ_ptr + 1) = rZ;
 
 	return cool::rotation_status::regular;
@@ -3227,12 +3204,8 @@ inline cool::rotation_status cool::rotationYX<traits_Ty, _dim_padded, _layout>::
 {
 	using _index_data = cool::_rotation_matrix_index_data<_dim_padded, 3, _layout>;
 
-	value_type rX = traits_Ty::atan2( // rX;
-		-*(m3x3_rotation_ptr + _index_data::i12),
-		*(m3x3_rotation_ptr + _index_data::i11));
-	*v2_rYX_ptr = traits_Ty::atan2( // rY
-		-*(m3x3_rotation_ptr + _index_data::i20),
-		*(m3x3_rotation_ptr + _index_data::i00));
+	value_type rX = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i12), *(m3x3_rotation_ptr + _index_data::i11));
+	*v2_rYX_ptr = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i20), *(m3x3_rotation_ptr + _index_data::i00)); // rY
 	*(v2_rYX_ptr + 1) = rX;
 
 	return cool::rotation_status::regular;
@@ -3283,12 +3256,8 @@ inline cool::rotation_status cool::rotationZX<traits_Ty, _dim_padded, _layout>::
 {
 	using _index_data = cool::_rotation_matrix_index_data<_dim_padded, 3, _layout>;
 
-	value_type rX = traits_Ty::atan2( // rX
-		*(m3x3_rotation_ptr + _index_data::i21),
-		*(m3x3_rotation_ptr + _index_data::i22));
-	*v2_rZX_ptr = traits_Ty::atan2( // rZ
-		*(m3x3_rotation_ptr + _index_data::i10),
-		*(m3x3_rotation_ptr + _index_data::i00));
+	value_type rX = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i21), *(m3x3_rotation_ptr + _index_data::i22));
+	*v2_rZX_ptr = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i10), *(m3x3_rotation_ptr + _index_data::i00)); // rZ
 	*(v2_rZX_ptr + 1) = rX;
 
 	return cool::rotation_status::regular;
@@ -3339,12 +3308,8 @@ inline cool::rotation_status cool::rotationZY<traits_Ty, _dim_padded, _layout>::
 {
 	using _index_data = cool::_rotation_matrix_index_data<_dim_padded, 3, _layout>;
 
-	value_type rY = traits_Ty::atan2( // rY
-		-*(m3x3_rotation_ptr + _index_data::i20),
-		*(m3x3_rotation_ptr + _index_data::i22));
-	*v2_rZY_ptr = traits_Ty::atan2( // rZ
-		-*(m3x3_rotation_ptr + _index_data::i01),
-		*(m3x3_rotation_ptr + _index_data::i11));
+	value_type rY = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i20), *(m3x3_rotation_ptr + _index_data::i22));
+	*v2_rZY_ptr = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i01), *(m3x3_rotation_ptr + _index_data::i11)); // rZ
 	*(v2_rZY_ptr + 1) = rY;
 
 	return cool::rotation_status::regular;
@@ -3404,13 +3369,9 @@ inline cool::rotation_status cool::rotationXYZ<traits_Ty, _dim_padded, _layout>:
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i02) && *(m3x3_rotation_ptr + _index_data::i02) < bound)
 	{
-		value_type rY = traits_Ty::asin(*(m3x3_rotation_ptr + _index_data::i02)); // rY
-		value_type rZ = traits_Ty::atan2( // rZ
-			-*(m3x3_rotation_ptr + _index_data::i01),
-			*(m3x3_rotation_ptr + _index_data::i00));
-		*v3_rXYZ_ptr = traits_Ty::atan2( // rX
-			-*(m3x3_rotation_ptr + _index_data::i12),
-			*(m3x3_rotation_ptr + _index_data::i22));
+		value_type rY = traits_Ty::asin(*(m3x3_rotation_ptr + _index_data::i02));
+		value_type rZ = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i01), *(m3x3_rotation_ptr + _index_data::i00));
+		*v3_rXYZ_ptr = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i12), *(m3x3_rotation_ptr + _index_data::i22)); // rX
 		*(v3_rXYZ_ptr + 1) = rY;
 		*(v3_rXYZ_ptr + 2) = rZ;
 
@@ -3418,9 +3379,7 @@ inline cool::rotation_status cool::rotationXYZ<traits_Ty, _dim_padded, _layout>:
 	}
 	else
 	{
-		value_type rZ0 = traits_Ty::atan2(
-			*(m3x3_rotation_ptr + _index_data::i10),
-			*(m3x3_rotation_ptr + _index_data::i11));
+		value_type rZ0 = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i10), *(m3x3_rotation_ptr + _index_data::i11));
 		bool Yneg = *(m3x3_rotation_ptr + _index_data::i02) < static_cast<value_type>(0);
 		*v3_rXYZ_ptr = rX_choice_if_singular; // rX
 		*(v3_rXYZ_ptr + 1) = Yneg ? singular_angle[0] : singular_angle[1]; // rY
@@ -3486,13 +3445,9 @@ inline cool::rotation_status cool::rotationXZY<traits_Ty, _dim_padded, _layout>:
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i01) && *(m3x3_rotation_ptr + _index_data::i01) < bound)
 	{
-		value_type rZ = -traits_Ty::asin(*(m3x3_rotation_ptr + _index_data::i01)); // rZ
-		value_type rY = traits_Ty::atan2( // rY
-			*(m3x3_rotation_ptr + _index_data::i02),
-			*(m3x3_rotation_ptr + _index_data::i00));
-		*v3_rXZY_ptr = traits_Ty::atan2( // rX
-			*(m3x3_rotation_ptr + _index_data::i21),
-			*(m3x3_rotation_ptr + _index_data::i11));
+		value_type rZ = -traits_Ty::asin(*(m3x3_rotation_ptr + _index_data::i01));
+		value_type rY = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i02), *(m3x3_rotation_ptr + _index_data::i00));
+		*v3_rXZY_ptr = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i21), *(m3x3_rotation_ptr + _index_data::i11)); // rX
 		*(v3_rXZY_ptr + 1) = rZ;
 		*(v3_rXZY_ptr + 2) = rY;
 
@@ -3500,9 +3455,7 @@ inline cool::rotation_status cool::rotationXZY<traits_Ty, _dim_padded, _layout>:
 	}
 	else
 	{
-		value_type rY0 = traits_Ty::atan2(
-			-*(m3x3_rotation_ptr + _index_data::i20),
-			*(m3x3_rotation_ptr + _index_data::i22));
+		value_type rY0 = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i20), *(m3x3_rotation_ptr + _index_data::i22));
 		bool Zneg = !(*(m3x3_rotation_ptr + _index_data::i01) < static_cast<value_type>(0));
 		*v3_rXZY_ptr = rX_choice_if_singular; // rX
 		*(v3_rXZY_ptr + 1) = Zneg ? singular_angle[0] : singular_angle[1]; // rZ
@@ -3568,13 +3521,9 @@ inline cool::rotation_status cool::rotationYZX<traits_Ty, _dim_padded, _layout>:
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i10) && *(m3x3_rotation_ptr + _index_data::i10) < bound)
 	{
-		value_type rZ = traits_Ty::asin(*(m3x3_rotation_ptr + _index_data::i10)); // rZ
-		value_type rX = traits_Ty::atan2( // rX
-			-*(m3x3_rotation_ptr + _index_data::i12),
-			*(m3x3_rotation_ptr + _index_data::i11));
-		*v3_rYZX_ptr = traits_Ty::atan2( // rY
-			-*(m3x3_rotation_ptr + _index_data::i20),
-			*(m3x3_rotation_ptr + _index_data::i00));
+		value_type rZ = traits_Ty::asin(*(m3x3_rotation_ptr + _index_data::i10));
+		value_type rX = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i12), *(m3x3_rotation_ptr + _index_data::i11));
+		*v3_rYZX_ptr = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i20), *(m3x3_rotation_ptr + _index_data::i00)); // rY
 		*(v3_rYZX_ptr + 1) = rZ;
 		*(v3_rYZX_ptr + 2) = rX;
 
@@ -3582,9 +3531,7 @@ inline cool::rotation_status cool::rotationYZX<traits_Ty, _dim_padded, _layout>:
 	}
 	else
 	{
-		value_type rX0 = traits_Ty::atan2(
-			*(m3x3_rotation_ptr + _index_data::i21),
-			*(m3x3_rotation_ptr + _index_data::i22));
+		value_type rX0 = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i21), *(m3x3_rotation_ptr + _index_data::i22));
 		bool Zneg = *(m3x3_rotation_ptr + _index_data::i10) < static_cast<value_type>(0);
 		*v3_rYZX_ptr = rY_choice_if_singular; // rY
 		*(v3_rYZX_ptr + 1) = Zneg ? singular_angle[0] : singular_angle[1]; // rZ
@@ -3650,13 +3597,9 @@ inline cool::rotation_status cool::rotationYXZ<traits_Ty, _dim_padded, _layout>:
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i12) && *(m3x3_rotation_ptr + _index_data::i12) < bound)
 	{
-		value_type rX = -traits_Ty::asin(*(m3x3_rotation_ptr + _index_data::i12)); // rX	
-		value_type rZ = traits_Ty::atan2( // rZ
-			*(m3x3_rotation_ptr + _index_data::i10),
-			*(m3x3_rotation_ptr + _index_data::i11));
-		*v3_rYXZ_ptr = traits_Ty::atan2( // rY
-			*(m3x3_rotation_ptr + _index_data::i02),
-			*(m3x3_rotation_ptr + _index_data::i22));
+		value_type rX = -traits_Ty::asin(*(m3x3_rotation_ptr + _index_data::i12));
+		value_type rZ = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i10), *(m3x3_rotation_ptr + _index_data::i11));
+		*v3_rYXZ_ptr = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i02), *(m3x3_rotation_ptr + _index_data::i22)); // rY
 		*(v3_rYXZ_ptr + 1) = rX;
 		*(v3_rYXZ_ptr + 2) = rZ;
 
@@ -3664,9 +3607,7 @@ inline cool::rotation_status cool::rotationYXZ<traits_Ty, _dim_padded, _layout>:
 	}
 	else
 	{
-		value_type rZ0 = traits_Ty::atan2(
-			-*(m3x3_rotation_ptr + _index_data::i01),
-			*(m3x3_rotation_ptr + _index_data::i00));
+		value_type rZ0 = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i01), *(m3x3_rotation_ptr + _index_data::i00));
 		bool Xneg = !(*(m3x3_rotation_ptr + _index_data::i12) < static_cast<value_type>(0));
 		*v3_rYXZ_ptr = rY_choice_if_singular; // rY
 		*(v3_rYXZ_ptr + 1) = Xneg ? singular_angle[0] : singular_angle[1]; // rX
@@ -3732,13 +3673,9 @@ inline cool::rotation_status cool::rotationZXY<traits_Ty, _dim_padded, _layout>:
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i21) && *(m3x3_rotation_ptr + _index_data::i21) < bound)
 	{
-		value_type rX = traits_Ty::asin(*(m3x3_rotation_ptr + _index_data::i21)); // rX
-		value_type rY = traits_Ty::atan2( // rY
-			-*(m3x3_rotation_ptr + _index_data::i20),
-			*(m3x3_rotation_ptr + _index_data::i22));
-		*v3_rZXY_ptr = traits_Ty::atan2( // rZ
-			-*(m3x3_rotation_ptr + _index_data::i01),
-			*(m3x3_rotation_ptr + _index_data::i11));
+		value_type rX = traits_Ty::asin(*(m3x3_rotation_ptr + _index_data::i21));
+		value_type rY = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i20), *(m3x3_rotation_ptr + _index_data::i22));
+		*v3_rZXY_ptr = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i01), *(m3x3_rotation_ptr + _index_data::i11)); // rZ
 		*(v3_rZXY_ptr + 1) = rX;
 		*(v3_rZXY_ptr + 2) = rY;
 
@@ -3746,9 +3683,7 @@ inline cool::rotation_status cool::rotationZXY<traits_Ty, _dim_padded, _layout>:
 	}
 	else
 	{
-		value_type rY0 = traits_Ty::atan2(
-			*(m3x3_rotation_ptr + _index_data::i02),
-			*(m3x3_rotation_ptr + _index_data::i00));
+		value_type rY0 = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i02), *(m3x3_rotation_ptr + _index_data::i00));
 		bool Xneg = *(m3x3_rotation_ptr + _index_data::i21) < static_cast<value_type>(0);
 		*v3_rZXY_ptr = rZ_choice_if_singular; // rZ
 		*(v3_rZXY_ptr + 1) = Xneg ? singular_angle[0] : singular_angle[1]; // rX
@@ -3814,13 +3749,9 @@ inline cool::rotation_status cool::rotationZYX<traits_Ty, _dim_padded, _layout>:
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i20) && *(m3x3_rotation_ptr + _index_data::i20) < bound)
 	{
-		value_type rY = -traits_Ty::asin(*(m3x3_rotation_ptr + _index_data::i20)); // rY
-		value_type rX = traits_Ty::atan2( // rX
-			*(m3x3_rotation_ptr + _index_data::i21),
-			*(m3x3_rotation_ptr + _index_data::i22));
-		*v3_rZYX_ptr = traits_Ty::atan2( // rZ
-			*(m3x3_rotation_ptr + _index_data::i10),
-			*(m3x3_rotation_ptr + _index_data::i00));
+		value_type rY = -traits_Ty::asin(*(m3x3_rotation_ptr + _index_data::i20));
+		value_type rX = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i21), *(m3x3_rotation_ptr + _index_data::i22));
+		*v3_rZYX_ptr = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i10), *(m3x3_rotation_ptr + _index_data::i00)); // rZ
 		*(v3_rZYX_ptr + 1) = rY;
 		*(v3_rZYX_ptr + 2) = rX;
 
@@ -3828,9 +3759,7 @@ inline cool::rotation_status cool::rotationZYX<traits_Ty, _dim_padded, _layout>:
 	}
 	else
 	{
-		value_type rX0 = traits_Ty::atan2(
-			-*(m3x3_rotation_ptr + _index_data::i12),
-			*(m3x3_rotation_ptr + _index_data::i11));
+		value_type rX0 = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i12), *(m3x3_rotation_ptr + _index_data::i11));
 		bool Yneg = !(*(m3x3_rotation_ptr + _index_data::i20) < static_cast<value_type>(0));
 		*v3_rZYX_ptr = rZ_choice_if_singular; // rZ
 		*(v3_rZYX_ptr + 1) = Yneg ? singular_angle[0] : singular_angle[1]; // rY
@@ -3896,14 +3825,10 @@ inline cool::rotation_status cool::rotationXYX2<traits_Ty, _dim_padded, _layout>
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i00) && *(m3x3_rotation_ptr + _index_data::i00) < bound)
 	{
-		value_type rYabs = traits_Ty::acos(*(m3x3_rotation_ptr + _index_data::i00)); // rY
+		value_type rYabs = traits_Ty::acos(*(m3x3_rotation_ptr + _index_data::i00));
 		value_type rYsgn = (*(m3x3_rotation_ptr + _index_data::i02) < static_cast<value_type>(0)) ? static_cast<value_type>(-1) : static_cast<value_type>(1);
-		value_type rX2 = traits_Ty::atan2( // rX2
-			rYsgn * *(m3x3_rotation_ptr + _index_data::i01),
-			rYsgn * *(m3x3_rotation_ptr + _index_data::i02));
-		*v3_rXYX2_ptr = traits_Ty::atan2( // rX
-			rYsgn * *(m3x3_rotation_ptr + _index_data::i10),
-			-rYsgn * *(m3x3_rotation_ptr + _index_data::i20));
+		value_type rX2 = traits_Ty::atan2(rYsgn * *(m3x3_rotation_ptr + _index_data::i01), rYsgn * *(m3x3_rotation_ptr + _index_data::i02));
+		*v3_rXYX2_ptr = traits_Ty::atan2(rYsgn * *(m3x3_rotation_ptr + _index_data::i10), -rYsgn * *(m3x3_rotation_ptr + _index_data::i20)); // rX
 		*(v3_rXYX2_ptr + 1) = rYsgn * rYabs;
 		*(v3_rXYX2_ptr + 2) = rX2;
 
@@ -3911,9 +3836,7 @@ inline cool::rotation_status cool::rotationXYX2<traits_Ty, _dim_padded, _layout>
 	}
 	else
 	{
-		value_type rX20 = traits_Ty::atan2(
-			-*(m3x3_rotation_ptr + _index_data::i12),
-			*(m3x3_rotation_ptr + _index_data::i11));
+		value_type rX20 = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i12), *(m3x3_rotation_ptr + _index_data::i11));
 		bool Yflipped = *(m3x3_rotation_ptr + _index_data::i00) < static_cast<value_type>(0);
 		*v3_rXYX2_ptr = rX_choice_if_singular; // rX
 		*(v3_rXYX2_ptr + 1) = Yflipped ? singular_angle[1] : singular_angle[0]; // rY
@@ -3979,14 +3902,10 @@ inline cool::rotation_status cool::rotationXZX2<traits_Ty, _dim_padded, _layout>
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i00) && *(m3x3_rotation_ptr + _index_data::i00) < bound)
 	{
-		value_type rZabs = traits_Ty::acos(*(m3x3_rotation_ptr + _index_data::i00)); // rZ
+		value_type rZabs = traits_Ty::acos(*(m3x3_rotation_ptr + _index_data::i00));
 		value_type rZsgn = (*(m3x3_rotation_ptr + _index_data::i01) < static_cast<value_type>(0)) ? static_cast<value_type>(1) : static_cast<value_type>(-1);
-		value_type rX2 = traits_Ty::atan2( // rX2
-			rZsgn * *(m3x3_rotation_ptr + _index_data::i02),
-			-rZsgn * *(m3x3_rotation_ptr + _index_data::i01));
-		*v3_rXZX2_ptr = traits_Ty::atan2( // rX
-			rZsgn * *(m3x3_rotation_ptr + _index_data::i20),
-			rZsgn * *(m3x3_rotation_ptr + _index_data::i10));
+		value_type rX2 = traits_Ty::atan2(rZsgn * *(m3x3_rotation_ptr + _index_data::i02), -rZsgn * *(m3x3_rotation_ptr + _index_data::i01));
+		*v3_rXZX2_ptr = traits_Ty::atan2(rZsgn * *(m3x3_rotation_ptr + _index_data::i20), rZsgn * *(m3x3_rotation_ptr + _index_data::i10)); // rX
 		*(v3_rXZX2_ptr + 1) = rZsgn * rZabs;
 		*(v3_rXZX2_ptr + 2) = rX2;
 
@@ -3994,9 +3913,7 @@ inline cool::rotation_status cool::rotationXZX2<traits_Ty, _dim_padded, _layout>
 	}
 	else
 	{
-		value_type rX20 = traits_Ty::atan2(
-			*(m3x3_rotation_ptr + _index_data::i21),
-			*(m3x3_rotation_ptr + _index_data::i22));
+		value_type rX20 = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i21), *(m3x3_rotation_ptr + _index_data::i22));
 		bool Zflipped = *(m3x3_rotation_ptr + _index_data::i00) < static_cast<value_type>(0);
 		*v3_rXZX2_ptr = rX_choice_if_singular; // rX
 		*(v3_rXZX2_ptr + 1) = Zflipped ? singular_angle[1] : singular_angle[0]; // rZ2
@@ -4062,14 +3979,10 @@ inline cool::rotation_status cool::rotationYZY2<traits_Ty, _dim_padded, _layout>
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i11) && *(m3x3_rotation_ptr + _index_data::i11) < bound)
 	{
-		value_type rZabs = traits_Ty::acos(*(m3x3_rotation_ptr + _index_data::i11)); // rZ
+		value_type rZabs = traits_Ty::acos(*(m3x3_rotation_ptr + _index_data::i11));
 		value_type rZsgn = (*(m3x3_rotation_ptr + _index_data::i10) < static_cast<value_type>(0)) ? static_cast<value_type>(-1) : static_cast<value_type>(1);
-		value_type rY2 = traits_Ty::atan2( // rY2
-			rZsgn * *(m3x3_rotation_ptr + _index_data::i12),
-			rZsgn * *(m3x3_rotation_ptr + _index_data::i10));
-		*v3_rYZY2_ptr = traits_Ty::atan2( // rY
-			rZsgn * *(m3x3_rotation_ptr + _index_data::i21),
-			-rZsgn * *(m3x3_rotation_ptr + _index_data::i01));
+		value_type rY2 = traits_Ty::atan2(rZsgn * *(m3x3_rotation_ptr + _index_data::i12), rZsgn * *(m3x3_rotation_ptr + _index_data::i10));
+		*v3_rYZY2_ptr = traits_Ty::atan2(rZsgn * *(m3x3_rotation_ptr + _index_data::i21), -rZsgn * *(m3x3_rotation_ptr + _index_data::i01)); // rY
 		*(v3_rYZY2_ptr + 1) = rZsgn * rZabs;
 		*(v3_rYZY2_ptr + 2) = rY2;
 
@@ -4077,9 +3990,7 @@ inline cool::rotation_status cool::rotationYZY2<traits_Ty, _dim_padded, _layout>
 	}
 	else
 	{
-		value_type rY20 = traits_Ty::atan2(
-			-*(m3x3_rotation_ptr + _index_data::i20),
-			*(m3x3_rotation_ptr + _index_data::i22));
+		value_type rY20 = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i20), *(m3x3_rotation_ptr + _index_data::i22));
 		bool Zflipped = *(m3x3_rotation_ptr + _index_data::i11) < static_cast<value_type>(0);
 		*v3_rYZY2_ptr = rY_choice_if_singular; // rY
 		*(v3_rYZY2_ptr + 1) = Zflipped ? singular_angle[1] : singular_angle[0]; // rZ
@@ -4145,14 +4056,10 @@ inline cool::rotation_status cool::rotationYXY2<traits_Ty, _dim_padded, _layout>
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i11) && *(m3x3_rotation_ptr + _index_data::i11) < bound)
 	{
-		value_type rXabs = traits_Ty::acos(*(m3x3_rotation_ptr + _index_data::i11)); // rX
+		value_type rXabs = traits_Ty::acos(*(m3x3_rotation_ptr + _index_data::i11));
 		value_type rXsgn = (*(m3x3_rotation_ptr + _index_data::i12) < static_cast<value_type>(0)) ? static_cast<value_type>(1) : static_cast<value_type>(-1);
-		value_type rY2 = traits_Ty::atan2( // rY2
-			rXsgn * *(m3x3_rotation_ptr + _index_data::i10),
-			-rXsgn * *(m3x3_rotation_ptr + _index_data::i12));
-		*v3_rYXY2_ptr = traits_Ty::atan2( // rY
-			rXsgn * *(m3x3_rotation_ptr + _index_data::i01),
-			rXsgn * *(m3x3_rotation_ptr + _index_data::i21));
+		value_type rY2 = traits_Ty::atan2(rXsgn * *(m3x3_rotation_ptr + _index_data::i10), -rXsgn * *(m3x3_rotation_ptr + _index_data::i12));
+		*v3_rYXY2_ptr = traits_Ty::atan2(rXsgn * *(m3x3_rotation_ptr + _index_data::i01), rXsgn * *(m3x3_rotation_ptr + _index_data::i21)); // rY
 		*(v3_rYXY2_ptr + 1) = rXsgn * rXabs;
 		*(v3_rYXY2_ptr + 2) = rY2;
 
@@ -4160,11 +4067,9 @@ inline cool::rotation_status cool::rotationYXY2<traits_Ty, _dim_padded, _layout>
 	}
 	else
 	{
-		*v3_rYXY2_ptr = rY_choice_if_singular; // rY
-		value_type rY20 = traits_Ty::atan2(
-			*(m3x3_rotation_ptr + _index_data::i02),
-			*(m3x3_rotation_ptr + _index_data::i00));
+		value_type rY20 = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i02), *(m3x3_rotation_ptr + _index_data::i00));
 		bool Xflipped = *(m3x3_rotation_ptr + _index_data::i11) < static_cast<value_type>(0);
+		*v3_rYXY2_ptr = rY_choice_if_singular; // rY
 		*(v3_rYXY2_ptr + 1) = Xflipped ? singular_angle[1] : singular_angle[0]; // rX
 		*(v3_rYXY2_ptr + 2) = Xflipped ? rY20 + rY_choice_if_singular : rY20 - rY_choice_if_singular; // rY2
 
@@ -4228,14 +4133,10 @@ inline cool::rotation_status cool::rotationZXZ2<traits_Ty, _dim_padded, _layout>
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i22) && *(m3x3_rotation_ptr + _index_data::i22) < bound)
 	{
-		value_type rXabs = traits_Ty::acos(*(m3x3_rotation_ptr + _index_data::i22)); // rX
+		value_type rXabs = traits_Ty::acos(*(m3x3_rotation_ptr + _index_data::i22));
 		value_type rXsgn = (*(m3x3_rotation_ptr + _index_data::i21) < static_cast<value_type>(0)) ? static_cast<value_type>(-1) : static_cast<value_type>(1);
-		value_type rZ2 = traits_Ty::atan2( // rZ2
-			rXsgn * *(m3x3_rotation_ptr + _index_data::i20),
-			rXsgn * *(m3x3_rotation_ptr + _index_data::i21));
-		*v3_rZXZ2_ptr = traits_Ty::atan2( // rZ
-			rXsgn * *(m3x3_rotation_ptr + _index_data::i02),
-			-rXsgn * *(m3x3_rotation_ptr + _index_data::i12));
+		value_type rZ2 = traits_Ty::atan2(rXsgn * *(m3x3_rotation_ptr + _index_data::i20), rXsgn * *(m3x3_rotation_ptr + _index_data::i21));
+		*v3_rZXZ2_ptr = traits_Ty::atan2(rXsgn * *(m3x3_rotation_ptr + _index_data::i02), -rXsgn * *(m3x3_rotation_ptr + _index_data::i12)); // rZ
 		*(v3_rZXZ2_ptr + 1) = rXsgn * rXabs;
 		*(v3_rZXZ2_ptr + 2) = rZ2;
 
@@ -4243,9 +4144,7 @@ inline cool::rotation_status cool::rotationZXZ2<traits_Ty, _dim_padded, _layout>
 	}
 	else
 	{
-		value_type rZ20 = traits_Ty::atan2(
-			-*(m3x3_rotation_ptr + _index_data::i01),
-			*(m3x3_rotation_ptr + _index_data::i00));
+		value_type rZ20 = traits_Ty::atan2(-*(m3x3_rotation_ptr + _index_data::i01), *(m3x3_rotation_ptr + _index_data::i00));
 		bool Xflipped = *(m3x3_rotation_ptr + _index_data::i22) < static_cast<value_type>(0);
 		*v3_rZXZ2_ptr = rZ_choice_if_singular; // rZ
 		*(v3_rZXZ2_ptr + 1) = Xflipped ? singular_angle[1] : singular_angle[0]; // rX
@@ -4311,14 +4210,10 @@ inline cool::rotation_status cool::rotationZYZ2<traits_Ty, _dim_padded, _layout>
 
 	if (-bound < *(m3x3_rotation_ptr + _index_data::i22) && *(m3x3_rotation_ptr + _index_data::i22) < bound)
 	{
-		value_type rYabs = traits_Ty::acos(*(m3x3_rotation_ptr + _index_data::i22)); // rY
+		value_type rYabs = traits_Ty::acos(*(m3x3_rotation_ptr + _index_data::i22));
 		value_type rYsgn = (*(m3x3_rotation_ptr + _index_data::i20) < static_cast<value_type>(0)) ? static_cast<value_type>(1) : static_cast<value_type>(-1);
-		value_type rZ2 = traits_Ty::atan2( // rZ2
-			rYsgn * *(m3x3_rotation_ptr + _index_data::i21),
-			-rYsgn * *(m3x3_rotation_ptr + _index_data::i20));
-		*v3_rZYZ2_ptr = traits_Ty::atan2( // rZ
-			rYsgn * *(m3x3_rotation_ptr + _index_data::i12),
-			rYsgn * *(m3x3_rotation_ptr + _index_data::i02));
+		value_type rZ2 = traits_Ty::atan2(rYsgn * *(m3x3_rotation_ptr + _index_data::i21), -rYsgn * *(m3x3_rotation_ptr + _index_data::i20));
+		*v3_rZYZ2_ptr = traits_Ty::atan2(rYsgn * *(m3x3_rotation_ptr + _index_data::i12), rYsgn * *(m3x3_rotation_ptr + _index_data::i02)); // rZ
 		*(v3_rZYZ2_ptr + 1) = rYsgn * rYabs;
 		*(v3_rZYZ2_ptr + 2) = rZ2;
 
@@ -4326,9 +4221,7 @@ inline cool::rotation_status cool::rotationZYZ2<traits_Ty, _dim_padded, _layout>
 	}
 	else
 	{
-		value_type rZ20 = traits_Ty::atan2(
-			*(m3x3_rotation_ptr + _index_data::i10),
-			*(m3x3_rotation_ptr + _index_data::i11));
+		value_type rZ20 = traits_Ty::atan2(*(m3x3_rotation_ptr + _index_data::i10), *(m3x3_rotation_ptr + _index_data::i11));
 		bool Yflipped = *(m3x3_rotation_ptr + _index_data::i22) < static_cast<value_type>(0);
 		*v3_rZYZ2_ptr = rZ_choice_if_singular; // rZ
 		*(v3_rZYZ2_ptr + 1) = Yflipped ? singular_angle[1] : singular_angle[0]; // rY
