@@ -124,13 +124,13 @@ namespace cool
 
 #ifndef xCOOL_AXIS_CONSTANTS
 #define xCOOL_AXIS_CONSTANTS
-	namespace axis
+	enum class axis : std::size_t
 	{
-		static constexpr std::size_t X = 0;
-		static constexpr std::size_t Y = 1;
-		static constexpr std::size_t Z = 2;
-		static constexpr std::size_t none = 3;
-	}
+		X = 0,
+		Y = 1,
+		Z = 2,
+		none = 3
+	};
 
 	namespace axis_index
 	{
@@ -423,11 +423,11 @@ namespace cool
 		inline cool::rotation_type rotation_type() const noexcept;
 
 		inline std::size_t axis_count() const noexcept;
-		inline std::size_t axis(std::size_t _index) const noexcept;
+		inline cool::axis axis(std::size_t _index) const noexcept;
 
-		inline std::size_t singular_axis() const noexcept;
+		inline cool::axis singular_axis() const noexcept;
 
-		inline std::size_t index(std::size_t _axis) const noexcept;
+		inline std::size_t index(cool::axis _axis) const noexcept;
 		inline std::size_t iX() const noexcept;
 		inline std::size_t iY() const noexcept;
 		inline std::size_t iZ() const noexcept;
@@ -630,9 +630,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_type::half_turn;
 
 		static constexpr std::size_t axis_count = 1;
-		static constexpr std::size_t axis[3] = { cool::axis::X, cool::axis::none, cool::axis::none };
+		static constexpr cool::axis axis[3] = { cool::axis::X, cool::axis::none, cool::axis::none };
 
-		static constexpr std::size_t singular_axis = cool::axis::none;
+		static constexpr cool::axis singular_axis = cool::axis::none;
 		static constexpr value_type singular_angle[2] = {};
 
 		static constexpr std::size_t iX = 0;
@@ -666,9 +666,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_type::half_turn;
 
 		static constexpr std::size_t axis_count = 1;
-		static constexpr std::size_t axis[3] = { cool::axis::Y, cool::axis::none, cool::axis::none };
+		static constexpr cool::axis axis[3] = { cool::axis::Y, cool::axis::none, cool::axis::none };
 
-		static constexpr std::size_t singular_axis = cool::axis::none;
+		static constexpr cool::axis singular_axis = cool::axis::none;
 		static constexpr value_type singular_angle[2] = {};
 
 		static constexpr std::size_t iX = cool::axis_index::none;
@@ -702,9 +702,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_type::half_turn;
 
 		static constexpr std::size_t axis_count = 1;
-		static constexpr std::size_t axis[3] = { cool::axis::Z, cool::axis::none, cool::axis::none };
+		static constexpr cool::axis axis[3] = { cool::axis::Z, cool::axis::none, cool::axis::none };
 
-		static constexpr std::size_t singular_axis = cool::axis::none;
+		static constexpr cool::axis singular_axis = cool::axis::none;
 		static constexpr value_type singular_angle[2] = {};
 
 		static constexpr std::size_t iX = cool::axis_index::none;
@@ -738,9 +738,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_type::half_turn;
 
 		static constexpr std::size_t axis_count = 2;
-		static constexpr std::size_t axis[3] = { cool::axis::X, cool::axis::Y, cool::axis::none };
+		static constexpr cool::axis axis[3] = { cool::axis::X, cool::axis::Y, cool::axis::none };
 
-		static constexpr std::size_t singular_axis = cool::axis::none;
+		static constexpr cool::axis singular_axis = cool::axis::none;
 		static constexpr value_type singular_angle[2] = {};
 
 		static constexpr std::size_t iX = 0;
@@ -774,9 +774,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_type::half_turn;
 
 		static constexpr std::size_t axis_count = 2;
-		static constexpr std::size_t axis[3] = { cool::axis::X, cool::axis::Z, cool::axis::none };
+		static constexpr cool::axis axis[3] = { cool::axis::X, cool::axis::Z, cool::axis::none };
 
-		static constexpr std::size_t singular_axis = cool::axis::none;
+		static constexpr cool::axis singular_axis = cool::axis::none;
 		static constexpr value_type singular_angle[2] = {};
 
 		static constexpr std::size_t iX = 0;
@@ -810,9 +810,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_type::half_turn;
 
 		static constexpr std::size_t axis_count = 2;
-		static constexpr std::size_t axis[3] = { cool::axis::Y, cool::axis::Z, cool::axis::none };
+		static constexpr cool::axis axis[3] = { cool::axis::Y, cool::axis::Z, cool::axis::none };
 
-		static constexpr std::size_t singular_axis = cool::axis::none;
+		static constexpr cool::axis singular_axis = cool::axis::none;
 		static constexpr value_type singular_angle[2] = {};
 
 		static constexpr std::size_t iX = cool::axis_index::none;
@@ -846,9 +846,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_type::half_turn;
 
 		static constexpr std::size_t axis_count = 2;
-		static constexpr std::size_t axis[3] = { cool::axis::Y, cool::axis::X, cool::axis::none };
+		static constexpr cool::axis axis[3] = { cool::axis::Y, cool::axis::X, cool::axis::none };
 
-		static constexpr std::size_t singular_axis = cool::axis::none;
+		static constexpr cool::axis singular_axis = cool::axis::none;
 		static constexpr value_type singular_angle[2] = {};
 
 		static constexpr std::size_t iX = 1;
@@ -882,9 +882,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_type::half_turn;
 
 		static constexpr std::size_t axis_count = 2;
-		static constexpr std::size_t axis[3] = { cool::axis::Z, cool::axis::X, cool::axis::none };
+		static constexpr cool::axis axis[3] = { cool::axis::Z, cool::axis::X, cool::axis::none };
 
-		static constexpr std::size_t singular_axis = cool::axis::none;
+		static constexpr cool::axis singular_axis = cool::axis::none;
 		static constexpr value_type singular_angle[2] = {};
 
 		static constexpr std::size_t iX = 1;
@@ -918,9 +918,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_type::half_turn;
 
 		static constexpr std::size_t axis_count = 2;
-		static constexpr std::size_t axis[3] = { cool::axis::Z, cool::axis::Y, cool::axis::none };
+		static constexpr cool::axis axis[3] = { cool::axis::Z, cool::axis::Y, cool::axis::none };
 
-		static constexpr std::size_t singular_axis = cool::axis::none;
+		static constexpr cool::axis singular_axis = cool::axis::none;
 		static constexpr value_type singular_angle[2] = {};
 
 		static constexpr std::size_t iX = cool::axis_index::none;
@@ -954,9 +954,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_Ty::half_turn;
 
 		static constexpr std::size_t axis_count = 3;
-		static constexpr std::size_t axis[3] = { cool::axis::X, cool::axis::Y, cool::axis::Z };
+		static constexpr cool::axis axis[3] = { cool::axis::X, cool::axis::Y, cool::axis::Z };
 
-		static constexpr std::size_t singular_axis = cool::axis::Y;
+		static constexpr cool::axis singular_axis = cool::axis::Y;
 		static constexpr value_type singular_angle[2] = { static_cast<value_type>(-0.5) * traits_Ty::half_turn, static_cast<value_type>(0.5) * traits_Ty::half_turn };
 
 		static constexpr std::size_t iX = 0;
@@ -990,9 +990,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_Ty::half_turn;
 
 		static constexpr std::size_t axis_count = 3;
-		static constexpr std::size_t axis[3] = { cool::axis::X, cool::axis::Z, cool::axis::Y };
+		static constexpr cool::axis axis[3] = { cool::axis::X, cool::axis::Z, cool::axis::Y };
 
-		static constexpr std::size_t singular_axis = cool::axis::Z;
+		static constexpr cool::axis singular_axis = cool::axis::Z;
 		static constexpr value_type singular_angle[2] = { static_cast<value_type>(-0.5) * traits_Ty::half_turn, static_cast<value_type>(0.5) * traits_Ty::half_turn };
 
 		static constexpr std::size_t iX = 0;
@@ -1026,9 +1026,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_Ty::half_turn;
 
 		static constexpr std::size_t axis_count = 3;
-		static constexpr std::size_t axis[3] = { cool::axis::Y, cool::axis::Z, cool::axis::X };
+		static constexpr cool::axis axis[3] = { cool::axis::Y, cool::axis::Z, cool::axis::X };
 
-		static constexpr std::size_t singular_axis = cool::axis::Z;
+		static constexpr cool::axis singular_axis = cool::axis::Z;
 		static constexpr value_type singular_angle[2] = { static_cast<value_type>(-0.5) * traits_Ty::half_turn, static_cast<value_type>(0.5) * traits_Ty::half_turn };
 
 		static constexpr std::size_t iX = 2;
@@ -1062,9 +1062,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_Ty::half_turn;
 
 		static constexpr std::size_t axis_count = 3;
-		static constexpr std::size_t axis[3] = { cool::axis::Y, cool::axis::X, cool::axis::Z };
+		static constexpr cool::axis axis[3] = { cool::axis::Y, cool::axis::X, cool::axis::Z };
 
-		static constexpr std::size_t singular_axis = cool::axis::X;
+		static constexpr cool::axis singular_axis = cool::axis::X;
 		static constexpr value_type singular_angle[2] = { static_cast<value_type>(-0.5) * traits_Ty::half_turn, static_cast<value_type>(0.5) * traits_Ty::half_turn };
 
 		static constexpr std::size_t iY = 0;
@@ -1098,9 +1098,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_Ty::half_turn;
 
 		static constexpr std::size_t axis_count = 3;
-		static constexpr std::size_t axis[3] = { cool::axis::Z, cool::axis::X, cool::axis::Y };
+		static constexpr cool::axis axis[3] = { cool::axis::Z, cool::axis::X, cool::axis::Y };
 
-		static constexpr std::size_t singular_axis = cool::axis::X;
+		static constexpr cool::axis singular_axis = cool::axis::X;
 		static constexpr value_type singular_angle[2] = { static_cast<value_type>(-0.5) * traits_Ty::half_turn, static_cast<value_type>(0.5) * traits_Ty::half_turn };
 
 		static constexpr std::size_t iX = 1;
@@ -1134,9 +1134,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_Ty::half_turn;
 
 		static constexpr std::size_t axis_count = 3;
-		static constexpr std::size_t axis[3] = { cool::axis::Z, cool::axis::Y, cool::axis::X };
+		static constexpr cool::axis axis[3] = { cool::axis::Z, cool::axis::Y, cool::axis::X };
 
-		static constexpr std::size_t singular_axis = cool::axis::Y;
+		static constexpr cool::axis singular_axis = cool::axis::Y;
 		static constexpr value_type singular_angle[2] = { static_cast<value_type>(-0.5) * traits_Ty::half_turn, static_cast<value_type>(0.5) * traits_Ty::half_turn };
 
 		static constexpr std::size_t iX = 2;
@@ -1170,9 +1170,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_Ty::half_turn;
 
 		static constexpr std::size_t axis_count = 3;
-		static constexpr std::size_t axis[3] = { cool::axis::X, cool::axis::Y, cool::axis::X };
+		static constexpr cool::axis axis[3] = { cool::axis::X, cool::axis::Y, cool::axis::X };
 
-		static constexpr std::size_t singular_axis = cool::axis::Y;
+		static constexpr cool::axis singular_axis = cool::axis::Y;
 		static constexpr value_type singular_angle[2] = { static_cast<value_type>(0), traits_Ty::half_turn };
 
 		static constexpr std::size_t iX = 0;
@@ -1206,9 +1206,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_Ty::half_turn;
 
 		static constexpr std::size_t axis_count = 3;
-		static constexpr std::size_t axis[3] = { cool::axis::X, cool::axis::Z, cool::axis::X };
+		static constexpr cool::axis axis[3] = { cool::axis::X, cool::axis::Z, cool::axis::X };
 
-		static constexpr std::size_t singular_axis = cool::axis::Z;
+		static constexpr cool::axis singular_axis = cool::axis::Z;
 		static constexpr value_type singular_angle[2] = { static_cast<value_type>(0), traits_Ty::half_turn };
 
 		static constexpr std::size_t iX = 0;
@@ -1242,9 +1242,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_Ty::half_turn;
 
 		static constexpr std::size_t axis_count = 3;
-		static constexpr std::size_t axis[3] = { cool::axis::Y, cool::axis::Z, cool::axis::Y };
+		static constexpr cool::axis axis[3] = { cool::axis::Y, cool::axis::Z, cool::axis::Y };
 
-		static constexpr std::size_t singular_axis = cool::axis::Z;
+		static constexpr cool::axis singular_axis = cool::axis::Z;
 		static constexpr value_type singular_angle[2] = { static_cast<value_type>(0), traits_Ty::half_turn };
 
 		static constexpr std::size_t iX = 2;
@@ -1278,9 +1278,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_Ty::half_turn;
 
 		static constexpr std::size_t axis_count = 3;
-		static constexpr std::size_t axis[3] = { cool::axis::Y, cool::axis::X, cool::axis::Y };
+		static constexpr cool::axis axis[3] = { cool::axis::Y, cool::axis::X, cool::axis::Y };
 
-		static constexpr std::size_t singular_axis = cool::axis::X;
+		static constexpr cool::axis singular_axis = cool::axis::X;
 		static constexpr value_type singular_angle[2] = { static_cast<value_type>(0), traits_Ty::half_turn };
 
 		static constexpr std::size_t iX = 1;
@@ -1314,9 +1314,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_Ty::half_turn;
 
 		static constexpr std::size_t axis_count = 3;
-		static constexpr std::size_t axis[3] = { cool::axis::Z, cool::axis::X, cool::axis::Z };
+		static constexpr cool::axis axis[3] = { cool::axis::Z, cool::axis::X, cool::axis::Z };
 
-		static constexpr std::size_t singular_axis = cool::axis::X;
+		static constexpr cool::axis singular_axis = cool::axis::X;
 		static constexpr value_type singular_angle[2] = { static_cast<value_type>(0), traits_Ty::half_turn };
 
 		static constexpr std::size_t iX = 1;
@@ -1350,9 +1350,9 @@ namespace cool
 		static constexpr value_type half_turn = traits_Ty::half_turn;
 
 		static constexpr std::size_t axis_count = 3;
-		static constexpr std::size_t axis[3] = { cool::axis::Z, cool::axis::Y, cool::axis::Z };
+		static constexpr cool::axis axis[3] = { cool::axis::Z, cool::axis::Y, cool::axis::Z };
 
-		static constexpr std::size_t singular_axis = cool::axis::Y;
+		static constexpr cool::axis singular_axis = cool::axis::Y;
 		static constexpr value_type singular_angle[2] = { static_cast<value_type>(0), traits_Ty::half_turn };
 
 		static constexpr std::size_t iX = 2;
@@ -2047,24 +2047,24 @@ inline std::size_t cool::polymorphic_rotation3d<Ty>::axis_count() const noexcept
 }
 
 template <class Ty>
-inline std::size_t cool::polymorphic_rotation3d<Ty>::axis(std::size_t _index) const noexcept
+inline cool::axis cool::polymorphic_rotation3d<Ty>::axis(std::size_t _index) const noexcept
 {
 	constexpr std::uint32_t mask = static_cast<std::uint32_t>(1) << 0 | static_cast<std::uint32_t>(1) << 1;
-	return static_cast<std::size_t>((static_cast<std::uint32_t>(m_rotation_type) >> (_index * 2 + 8)) & mask);
+	return static_cast<cool::axis>((static_cast<std::uint32_t>(m_rotation_type) >> (_index * 2 + 8)) & mask);
 }
 
 template <class Ty>
-inline std::size_t cool::polymorphic_rotation3d<Ty>::singular_axis() const noexcept
+inline cool::axis cool::polymorphic_rotation3d<Ty>::singular_axis() const noexcept
 {
 	constexpr std::uint32_t mask = static_cast<std::uint32_t>(1) << 0 | static_cast<std::uint32_t>(1) << 1;
-	return static_cast<std::size_t>((static_cast<std::uint32_t>(m_rotation_type) >> 14) & mask);
+	return static_cast<cool::axis>((static_cast<std::uint32_t>(m_rotation_type) >> 14) & mask);
 }
 
 template <class Ty>
-inline std::size_t cool::polymorphic_rotation3d<Ty>::index(std::size_t _axis) const noexcept
+inline std::size_t cool::polymorphic_rotation3d<Ty>::index(cool::axis _axis) const noexcept
 {
 	constexpr std::uint32_t mask = static_cast<std::uint32_t>(1) << 0 | static_cast<std::uint32_t>(1) << 1;
-	return static_cast<std::size_t>((static_cast<std::uint32_t>(m_rotation_type) >> (_axis * 2)) & mask);
+	return static_cast<std::size_t>((static_cast<std::uint32_t>(m_rotation_type) >> (static_cast<std::size_t>(_axis) * 2)) & mask);
 }
 
 template <class Ty>
