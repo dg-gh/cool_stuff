@@ -643,7 +643,7 @@ namespace cool
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* angle_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* angle_ptr) noexcept;
 		static inline cool::rotation_status get_angles(value_type* angle_ptr, const value_type* m3x3_rotation_ptr,
-			value_type, value_type) noexcept;
+			value_type = static_cast<value_type>(0), value_type = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type) noexcept;
 	};
@@ -679,7 +679,7 @@ namespace cool
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* angle_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* angle_ptr) noexcept;
 		static inline cool::rotation_status get_angles(value_type* angle_ptr, const value_type* m3x3_rotation_ptr,
-			value_type, value_type) noexcept;
+			value_type = static_cast<value_type>(0), value_type = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type) noexcept;
 	};
@@ -715,7 +715,7 @@ namespace cool
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* angle_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* angle_ptr) noexcept;
 		static inline cool::rotation_status get_angles(value_type* angle_ptr, const value_type* m3x3_rotation_ptr,
-			value_type, value_type) noexcept;
+			value_type = static_cast<value_type>(0), value_type = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type) noexcept;
 	};
@@ -751,7 +751,7 @@ namespace cool
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v2_rXY_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v2_rXY_ptr) noexcept;
 		static inline cool::rotation_status get_angles(value_type* v2_rXY_ptr, const value_type* m3x3_rotation_ptr,
-			value_type, value_type) noexcept;
+			value_type = static_cast<value_type>(0), value_type = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type) noexcept;
 	};
@@ -787,7 +787,7 @@ namespace cool
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v2_rXZ_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v2_rXZ_ptr) noexcept;
 		static inline cool::rotation_status get_angles(value_type* v2_rXZ_ptr, const value_type* m3x3_rotation_ptr,
-			value_type, value_type) noexcept;
+			value_type = static_cast<value_type>(0), value_type = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type) noexcept;
 	};
@@ -823,7 +823,7 @@ namespace cool
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v2_rYZ_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v2_rYZ_ptr) noexcept;
 		static inline cool::rotation_status get_angles(value_type* v2_rYZ_ptr, const value_type* m3x3_rotation_ptr,
-			value_type, value_type) noexcept;
+			value_type = static_cast<value_type>(0), value_type = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type) noexcept;
 	};
@@ -859,7 +859,7 @@ namespace cool
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v2_rYX_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v2_rYX_ptr) noexcept;
 		static inline cool::rotation_status get_angles(value_type* v2_rYX_ptr, const value_type* m3x3_rotation_ptr,
-			value_type, value_type) noexcept;
+			value_type = static_cast<value_type>(0), value_type = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type) noexcept;
 	};
@@ -895,7 +895,7 @@ namespace cool
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v2_rZX_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v2_rZX_ptr) noexcept;
 		static inline cool::rotation_status get_angles(value_type* v2_rZX_ptr, const value_type* m3x3_rotation_ptr,
-			value_type, value_type) noexcept;
+			value_type = static_cast<value_type>(0), value_type = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type) noexcept;
 	};
@@ -931,7 +931,7 @@ namespace cool
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v2_rZY_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v2_rZY_ptr) noexcept;
 		static inline cool::rotation_status get_angles(value_type* v2_rZY_ptr, const value_type* m3x3_rotation_ptr,
-			value_type, value_type) noexcept;
+			value_type = static_cast<value_type>(0), value_type = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type) noexcept;
 	};
@@ -966,7 +966,8 @@ namespace cool
 
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v3_rXYZ_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v3_rXYZ_ptr) noexcept;
-		static inline cool::rotation_status get_angles(value_type* v3_rXYZ_ptr, const value_type* m3x3_rotation_ptr, value_type angle_tol,
+		static inline cool::rotation_status get_angles(value_type* v3_rXYZ_ptr, const value_type* m3x3_rotation_ptr,
+			value_type angle_tol = static_cast<value_type>(0),
 			value_type rX_choice_if_singular = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type angle_tol) noexcept;
@@ -1002,7 +1003,8 @@ namespace cool
 
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v3_rXZY_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v3_rXZY_ptr) noexcept;
-		static inline cool::rotation_status get_angles(value_type* v3_rXZY_ptr, const value_type* m3x3_rotation, value_type angle_tol,
+		static inline cool::rotation_status get_angles(value_type* v3_rXZY_ptr, const value_type* m3x3_rotation,
+			value_type angle_tol = static_cast<value_type>(0),
 			value_type rX_choice_if_singular = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type angle_tol) noexcept;
@@ -1038,7 +1040,8 @@ namespace cool
 
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v3_rYZX_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v3_rYZX_ptr) noexcept;
-		static inline cool::rotation_status get_angles(value_type* v3_rYZX_ptr, const value_type* m3x3_rotation, value_type angle_tol,
+		static inline cool::rotation_status get_angles(value_type* v3_rYZX_ptr, const value_type* m3x3_rotation,
+			value_type angle_tol = static_cast<value_type>(0),
 			value_type rY_choice_if_singular = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type angle_tol) noexcept;
@@ -1074,7 +1077,8 @@ namespace cool
 
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v3_rYXZ_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v3_rYXZ_ptr) noexcept;
-		static inline cool::rotation_status get_angles(value_type* v3_rYXZ_ptr, const value_type* m3x3_rotation_ptr, value_type angle_tol,
+		static inline cool::rotation_status get_angles(value_type* v3_rYXZ_ptr, const value_type* m3x3_rotation_ptr,
+			value_type angle_tol = static_cast<value_type>(0),
 			value_type rY_choice_if_singular = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type angle_tol) noexcept;
@@ -1110,7 +1114,8 @@ namespace cool
 
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v3_rZXY_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v3_rZXY_ptr) noexcept;
-		static inline cool::rotation_status get_angles(value_type* v3_rZXY_ptr, const value_type* m3x3_rotation_ptr, value_type angle_tol,
+		static inline cool::rotation_status get_angles(value_type* v3_rZXY_ptr, const value_type* m3x3_rotation_ptr,
+			value_type angle_tol = static_cast<value_type>(0),
 			value_type rZ_choice_if_singular = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type angle_tol) noexcept;
@@ -1146,7 +1151,8 @@ namespace cool
 
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v3_rZYX_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v3_rZYX_ptr) noexcept;
-		static inline cool::rotation_status get_angles(value_type* v3_rZYX_ptr, const value_type* m3x3_rotation, value_type angle_tol,
+		static inline cool::rotation_status get_angles(value_type* v3_rZYX_ptr, const value_type* m3x3_rotation,
+			value_type angle_tol = static_cast<value_type>(0),
 			value_type rZ_choice_if_singular = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type angle_tol) noexcept;
@@ -1182,7 +1188,8 @@ namespace cool
 
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v3_rXYX2_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v3_rXYX2_ptr) noexcept;
-		static inline cool::rotation_status get_angles(value_type* v3_rXYX2_ptr, const value_type* m3x3_rotation_ptr, value_type angle_tol,
+		static inline cool::rotation_status get_angles(value_type* v3_rXYX2_ptr, const value_type* m3x3_rotation_ptr,
+			value_type angle_tol = static_cast<value_type>(0),
 			value_type rX_choice_if_singular = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type angle_tol) noexcept;
@@ -1218,7 +1225,8 @@ namespace cool
 
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v3_rXZX2_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v3_rXZX2_ptr) noexcept;
-		static inline cool::rotation_status get_angles(value_type* v3_rXZX2_ptr, const value_type* m3x3_rotation_ptr, value_type angle_tol,
+		static inline cool::rotation_status get_angles(value_type* v3_rXZX2_ptr, const value_type* m3x3_rotation_ptr,
+			value_type angle_tol = static_cast<value_type>(0),
 			value_type rX_choice_if_singular = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type angle_tol) noexcept;
@@ -1254,7 +1262,8 @@ namespace cool
 
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v3_rYZY2_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v3_rYZY2_ptr) noexcept;
-		static inline cool::rotation_status get_angles(value_type* v3_rYZY2_ptr, const value_type* m3x3_rotation_ptr, value_type angle_tol,
+		static inline cool::rotation_status get_angles(value_type* v3_rYZY2_ptr, const value_type* m3x3_rotation_ptr,
+			value_type angle_tol = static_cast<value_type>(0),
 			value_type rY_choice_if_singular = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type angle_tol) noexcept;
@@ -1290,7 +1299,8 @@ namespace cool
 
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v3_rYXY2_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v3_rYXY2_ptr) noexcept;
-		static inline cool::rotation_status get_angles(value_type* v3_rYXY2_ptr, const value_type* m3x3_rotation_ptr, value_type angle_tol,
+		static inline cool::rotation_status get_angles(value_type* v3_rYXY2_ptr, const value_type* m3x3_rotation_ptr,
+			value_type angle_tol = static_cast<value_type>(0),
 			value_type rY_choice_if_singular = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type angle_tol) noexcept;
@@ -1326,7 +1336,8 @@ namespace cool
 
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v3_rZXZ2_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v3_rZXZ2_ptr) noexcept;
-		static inline cool::rotation_status get_angles(value_type* v3_rZXZ2_ptr, const value_type* m3x3_rotation_ptr, value_type angle_tol,
+		static inline cool::rotation_status get_angles(value_type* v3_rZXZ2_ptr, const value_type* m3x3_rotation_ptr,
+			value_type angle_tol = static_cast<value_type>(0),
 			value_type rZ_choice_if_singular = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type angle_tol) noexcept;
@@ -1362,7 +1373,8 @@ namespace cool
 
 		static inline void get_matrix(value_type* m3x3_rotation_ptr, const value_type* v3_rZYZ2_ptr) noexcept;
 		static inline void get_matrix_inv(value_type* m3x3_rotation_ptr, const value_type* v3_rZYZ2_ptr) noexcept;
-		static inline cool::rotation_status get_angles(value_type* v3_rZYZ2_ptr, const value_type* m3x3_rotation_ptr, value_type angle_tol,
+		static inline cool::rotation_status get_angles(value_type* v3_rZYZ2_ptr, const value_type* m3x3_rotation_ptr,
+			value_type angle_tol = static_cast<value_type>(0),
 			value_type rZ_choice_if_singular = static_cast<value_type>(0)) noexcept;
 
 		static constexpr inline value_type required_epsilon(value_type angle_tol) noexcept;
