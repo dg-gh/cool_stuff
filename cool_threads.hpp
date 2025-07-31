@@ -1810,7 +1810,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
 				(this->m_next_task_ptr)--;
 
-				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuplestd::forward<arg_Ty>(args)...));
+				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::make_tuple(std::forward<arg_Ty>(args)...));
 				std::memcpy(&(this->m_next_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
 				this->m_next_task_ptr->m_address_data.m_target_ptr = static_cast<void*>(target.m_parent_ptr);
 				this->m_next_task_ptr->m_address_data.m_offset = target.m_offset;
