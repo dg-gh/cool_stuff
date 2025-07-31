@@ -821,12 +821,12 @@ namespace cool
 
 		class _thread_block;
 
-		_thread_block* m_thread_blocks_data_ptr = nullptr;
-		_uint2X m_mod_D = 1;
-		_uint2X m_mod_a = static_cast<_uint2X>(1) << (sizeof(_uintX) * CHAR_BIT);
-		_uintX m_mod_k = 0;
 		_uintX m_dispatch_interval = 1;
+		_uintX m_mod_k = 0;
+		_uint2X m_mod_a = static_cast<_uint2X>(1) << (sizeof(_uintX) * CHAR_BIT);
+		_uint2X m_mod_D = 1;
 		std::size_t m_thread_count = 0;
+		_thread_block* m_thread_blocks_data_ptr = nullptr;
 
 		std::atomic<bool> m_good{ false };
 		unsigned int m_pop_rounds = 0;
@@ -4206,9 +4206,45 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 		return cool::threads_init_result(cool::threads_init_result::bad_parameters);
 	}
 
-	if (new_dispatch_interval.value() == 0)
+	if (new_dispatch_interval.value() != 0)
 	{
-		new_dispatch_interval = cool::dispatch_interval(default_dispatch_interval(new_thread_count.value()));
+		this->m_dispatch_interval = static_cast<_cool_thmq_uintX>(new_dispatch_interval.value());
+	}
+	else
+	{
+		this->m_dispatch_interval = static_cast<_cool_thmq_uintX>(default_dispatch_interval(new_thread_count.value()));
+	}
+
+	if (new_thread_count.value() != 1)
+	{
+		constexpr _cool_thmq_uintX uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
+
+		_cool_thmq_uint2X mod_D = static_cast<_cool_thmq_uint2X>(new_thread_count.value());
+
+		_cool_thmq_uintX i = 0;
+		while ((static_cast<_cool_thmq_uint2X>(1) << i) < static_cast<_cool_thmq_uint2X>(new_thread_count.value()))
+		{
+			i++;
+		}
+
+		_cool_thmq_uintX temp = uintX_bitcount + i;
+		_cool_thmq_uint2X mod_a = (static_cast<_cool_thmq_uint2X>(1) << temp) / mod_D;
+		if ((mod_a * mod_D) != (static_cast<_cool_thmq_uint2X>(1) << temp))
+		{
+			mod_a++;
+		}
+
+		this->m_mod_k = i - 1;
+		this->m_mod_a = mod_a - (static_cast<_cool_thmq_uint2X>(1) << uintX_bitcount);
+		this->m_mod_D = mod_D;
+	}
+	else
+	{
+		constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
+
+		this->m_mod_k = 0;
+		this->m_mod_a = static_cast<_cool_thmq_uint2X>(1) << uintX_bitcount;
+		this->m_mod_D = 1;
 	}
 
 	std::size_t _new_thread_count = static_cast<std::size_t>(new_thread_count.value());
@@ -4259,39 +4295,6 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 		}
 		threads_constructed++;
 	}
-
-	if (new_thread_count.value() != 1)
-	{
-		constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
-
-		this->m_mod_D = static_cast<_cool_thmq_uint2X>(new_thread_count.value());
-
-		_cool_thmq_uintX i = 0;
-		while ((static_cast<_cool_thmq_uint2X>(1) << i) < static_cast<_cool_thmq_uint2X>(new_thread_count.value()))
-		{
-			i++;
-		}
-		this->m_mod_k = uintX_bitcount + i;
-
-		_cool_thmq_uint2X temp = (static_cast<_cool_thmq_uint2X>(1) << this->m_mod_k) / this->m_mod_D;
-		if ((temp * this->m_mod_D) != (static_cast<_cool_thmq_uint2X>(1) << this->m_mod_k))
-		{
-			temp++;
-		}
-
-		this->m_mod_a = temp - (static_cast<_cool_thmq_uint2X>(1) << uintX_bitcount);
-		this->m_mod_k -= (uintX_bitcount + 1);
-	}
-	else
-	{
-		constexpr std::size_t uintX_bitcount = sizeof(_cool_thmq_uintX) * CHAR_BIT;
-
-		this->m_mod_D = 1;
-		this->m_mod_a = static_cast<_cool_thmq_uint2X>(1) << uintX_bitcount;
-		this->m_mod_k = 0;
-	}
-
-	this->m_dispatch_interval = static_cast<_cool_thmq_uintX>(new_dispatch_interval.value());
 
 	for (std::size_t thread_num = 0; thread_num < _new_thread_count; thread_num++)
 	{
@@ -4753,12 +4756,12 @@ inline void cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 
 	constexpr std::size_t uintX_bitcount = sizeof(_uintX) * CHAR_BIT;
 
-	this->m_thread_blocks_data_ptr = nullptr;
-	this->m_mod_D = 1;
-	this->m_mod_a = static_cast<_uint2X>(1) << uintX_bitcount;
-	this->m_mod_k = 0;
 	this->m_dispatch_interval = 1;
+	this->m_mod_k = 0;
+	this->m_mod_a = static_cast<_uint2X>(1) << uintX_bitcount;
+	this->m_mod_D = 1;
 	this->m_thread_count = 0;
+	this->m_thread_blocks_data_ptr = nullptr;
 
 	this->m_pop_rounds = 0;
 
