@@ -1054,7 +1054,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::async(cool::no_target_t, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::async : task must be a function pointer");
@@ -1130,7 +1130,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::priority_async(cool::no_target_t, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::priority_async : task must be a function pointer");
@@ -1207,7 +1207,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::async(cool::async_end& target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::async : task must be a function pointer");
@@ -1286,7 +1286,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::priority_async(cool::async_end& target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::priority_async : task must be a function pointer");
@@ -1366,7 +1366,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::async(cool::_async_end_incr_proxy target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::async : task must be a function pointer");
@@ -1447,7 +1447,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::priority_async(cool::_async_end_incr_proxy target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::priority_async : task must be a function pointer");
@@ -1529,7 +1529,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::async(cool::_async_result_to_proxy<return_Ty> target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::async : task must be a function pointer");
@@ -1611,7 +1611,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::priority_async(cool::_async_result_to_proxy<return_Ty> target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::priority_async : task must be a function pointer");
@@ -1694,7 +1694,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::async(cool::_async_result_incr_proxy<return_Ty> target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::async : task must be a function pointer");
@@ -1778,7 +1778,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::priority_async(cool::_async_result_incr_proxy<return_Ty> target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::priority_async : task must be a function pointer");
@@ -1863,7 +1863,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::try_async(cool::no_target_t, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::try_async : task must be a function pointer");
@@ -1943,7 +1943,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::try_priority_async(cool::no_target_t, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
@@ -2024,7 +2024,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::try_async(cool::async_end& target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::try_async : task must be a function pointer");
@@ -2107,7 +2107,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::try_priority_async(cool::async_end& target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
@@ -2191,7 +2191,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::try_async(cool::_async_end_incr_proxy target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::try_async : task must be a function pointer");
@@ -2276,7 +2276,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::try_priority_async(cool::_async_end_incr_proxy target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
@@ -2362,7 +2362,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::try_async(cool::_async_result_to_proxy<return_Ty> target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::try_async : task must be a function pointer");
@@ -2448,7 +2448,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::try_priority_async(cool::_async_result_to_proxy<return_Ty> target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
@@ -2535,7 +2535,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::try_async(cool::_async_result_incr_proxy<return_Ty> target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::try_async : task must be a function pointer");
@@ -2623,7 +2623,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::try_priority_async(cool::_async_result_incr_proxy<return_Ty> target, function_Ty task, arg_Ty&& ... args) noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
 		"cool::threads_sq<...>::try_priority_async : task must be a function pointer");
@@ -2712,7 +2712,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline constexpr bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::arg_type_is_valid() noexcept
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thsq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thsq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	constexpr bool ret = (sizeof(_cool_thsq_pack) <= _arg_buffer_size) && (alignof(_cool_thsq_pack) <= alignof(_cool_thsq_task));
 	return ret;
@@ -2985,7 +2985,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
-	using _cool_thmq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thmq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
@@ -3100,7 +3100,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
-	using _cool_thmq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thmq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
@@ -3218,7 +3218,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
-	using _cool_thmq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thmq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
@@ -3338,7 +3338,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
-	using _cool_thmq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thmq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
@@ -3459,7 +3459,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
-	using _cool_thmq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thmq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
@@ -3582,7 +3582,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
-	using _cool_thmq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thmq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
@@ -3696,7 +3696,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
-	using _cool_thmq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thmq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
@@ -3813,7 +3813,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
-	using _cool_thmq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thmq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
@@ -3932,7 +3932,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
-	using _cool_thmq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thmq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
@@ -4052,7 +4052,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 	using _cool_thmq_tblk = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_thread_block;
-	using _cool_thmq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thmq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
@@ -4173,7 +4173,7 @@ template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_
 inline constexpr bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::arg_type_is_valid() noexcept
 {
 	using _cool_thmq_task = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
-	using _cool_thmq_pack = std::tuple<arg_Ty ...>;
+	using _cool_thmq_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
 
 	constexpr bool ret = (sizeof(_cool_thmq_pack) <= _arg_buffer_size) && (alignof(_cool_thmq_pack) <= alignof(_cool_thmq_task));
 	return ret;
