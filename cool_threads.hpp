@@ -670,17 +670,17 @@ namespace cool
 			public:
 				void* m_target_ptr;
 			};
-			class _address_with_offset : public _address_with_target {
+			class _address_with_target_and_offset : public _address_with_target {
 			public:
 				std::size_t m_offset;
 			};
 			
 			static constexpr std::size_t address_size = sizeof(_address);
 			static constexpr std::size_t address_with_target_size = sizeof(_address_with_target);
-			static constexpr std::size_t address_with_offset_size = sizeof(_address_with_offset);
+			static constexpr std::size_t address_with_target_and_offset_size = sizeof(_address_with_target_and_offset);
 
 			alignas(_arg_buffer_align) unsigned char m_arg_buffer[_arg_buffer_size_padded];
-			_address_with_offset m_address_data;
+			_address_with_target_and_offset m_address_data;
 		};
 
 		template <std::size_t ... _indices> class indices {};
@@ -1589,7 +1589,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
 						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 
-						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_offset_size);
+						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_target_and_offset_size);
 					}
 				};
 
@@ -1675,7 +1675,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
 						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 
-						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_offset_size);
+						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_target_and_offset_size);
 					}
 				};
 
@@ -1756,7 +1756,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
 						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 
-						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_offset_size);
+						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_target_and_offset_size);
 					}
 				};
 
@@ -1844,7 +1844,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
 						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 
-						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_offset_size);
+						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_target_and_offset_size);
 					}
 				};
 
@@ -2422,7 +2422,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
 						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 
-						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_offset_size);
+						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_target_and_offset_size);
 					}
 				};
 
@@ -2512,7 +2512,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
 						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 
-						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_offset_size);
+						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_target_and_offset_size);
 					}
 				};
 
@@ -2597,7 +2597,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
 						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 
-						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_offset_size);
+						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_target_and_offset_size);
 					}
 				};
 
@@ -2689,7 +2689,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 						new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::move(*reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)));
 						reinterpret_cast<_cool_thsq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thsq_pack();
 
-						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_offset_size);
+						std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thsq_task::address_with_target_and_offset_size);
 					}
 				};
 
@@ -3413,7 +3413,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thmq_pack(std::move(*reinterpret_cast<_cool_thmq_pack*>(_fetch_task_ptr->m_arg_buffer)));
 							reinterpret_cast<_cool_thmq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 
-							std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thmq_task::address_with_offset_size);
+							std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thmq_task::address_with_target_and_offset_size);
 						}
 					};
 
@@ -3536,7 +3536,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thmq_pack(std::move(*reinterpret_cast<_cool_thmq_pack*>(_fetch_task_ptr->m_arg_buffer)));
 							reinterpret_cast<_cool_thmq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 
-							std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thmq_task::address_with_offset_size);
+							std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thmq_task::address_with_target_and_offset_size);
 						}
 					};
 
@@ -4007,7 +4007,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thmq_pack(std::move(*reinterpret_cast<_cool_thmq_pack*>(_fetch_task_ptr->m_arg_buffer)));
 							reinterpret_cast<_cool_thmq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 
-							std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thmq_task::address_with_offset_size);
+							std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thmq_task::address_with_target_and_offset_size);
 						}
 					};
 
@@ -4129,7 +4129,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 							new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_thmq_pack(std::move(*reinterpret_cast<_cool_thmq_pack*>(_fetch_task_ptr->m_arg_buffer)));
 							reinterpret_cast<_cool_thmq_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_thmq_pack();
 
-							std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thmq_task::address_with_offset_size);
+							std::memcpy(&_task_ptr->m_address_data, &_fetch_task_ptr->m_address_data, _cool_thmq_task::address_with_target_and_offset_size);
 						}
 					};
 
