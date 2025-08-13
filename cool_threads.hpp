@@ -773,16 +773,16 @@ namespace cool
 		_task* m_last_task_ptr = nullptr;
 		_task* m_next_task_ptr = nullptr;
 
+		bool m_stop_threads = true;
+		char* m_task_buffer_unaligned_data_ptr = nullptr;
+
 		std::thread* m_threads_data_ptr = nullptr;
 		std::size_t m_thread_count = 0;
 
-		std::condition_variable m_condition_var;
+		alignas(_cache_line_size) std::condition_variable m_condition_var;
 		std::mutex m_mutex;
 
-		bool m_stop_threads = true;
 		std::atomic<bool> m_good{ false };
-
-		char* m_task_buffer_unaligned_data_ptr = nullptr;
 	};
 
 	// _threads_mq_data
@@ -851,13 +851,13 @@ namespace cool
 			_task* m_last_task_ptr = nullptr;
 			_task* m_next_task_ptr = nullptr;
 
-			std::condition_variable m_condition_var;
-			std::mutex m_mutex;
-			std::thread m_thread;
-
 			bool m_stop_threads = true;
 
+			std::thread m_thread;
 			char* m_task_buffer_unaligned_data_ptr = nullptr;
+
+			alignas(_cache_line_size) std::condition_variable m_condition_var;
+			std::mutex m_mutex;
 		};
 	};
 
