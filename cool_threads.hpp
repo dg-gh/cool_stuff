@@ -1074,11 +1074,9 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* last_task_ptr_p1 = (this->m_last_task_ptr + 1 != this->m_task_buffer_end_ptr) ? this->m_last_task_ptr + 1 : this->m_task_buffer_data_ptr;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (last_task_ptr_p1 != this->m_next_task_ptr)
 			{
 				new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_last_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -1112,8 +1110,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				};
 
-				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+				this->m_last_task_ptr = last_task_ptr_p1;
 
 				break;
 			}
@@ -1150,15 +1147,11 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* next_task_ptr_m1 = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ? this->m_next_task_ptr - 1 : this->m_task_buffer_end_ptr - 1;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (this->m_last_task_ptr != next_task_ptr_m1)
 			{
-				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-				(this->m_next_task_ptr)--;
+				this->m_next_task_ptr = next_task_ptr_m1;
 
 				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_next_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -1227,11 +1220,9 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* last_task_ptr_p1 = (this->m_last_task_ptr + 1 != this->m_task_buffer_end_ptr) ? this->m_last_task_ptr + 1 : this->m_task_buffer_data_ptr;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (last_task_ptr_p1 != this->m_next_task_ptr)
 			{
 				new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_last_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -1268,8 +1259,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				};
 
-				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+				this->m_last_task_ptr = last_task_ptr_p1;
 
 				break;
 			}
@@ -1306,15 +1296,11 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* next_task_ptr_m1 = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ? this->m_next_task_ptr - 1 : this->m_task_buffer_end_ptr - 1;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (this->m_last_task_ptr != next_task_ptr_m1)
 			{
-				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-				(this->m_next_task_ptr)--;
+				this->m_next_task_ptr = next_task_ptr_m1;
 
 				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_next_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -1386,11 +1372,9 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* last_task_ptr_p1 = (this->m_last_task_ptr + 1 != this->m_task_buffer_end_ptr) ? this->m_last_task_ptr + 1 : this->m_task_buffer_data_ptr;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (last_task_ptr_p1 != this->m_next_task_ptr)
 			{
 				target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
 
@@ -1429,8 +1413,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				};
 
-				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+				this->m_last_task_ptr = last_task_ptr_p1;
 
 				break;
 			}
@@ -1467,17 +1450,13 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* next_task_ptr_m1 = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ? this->m_next_task_ptr - 1 : this->m_task_buffer_end_ptr - 1;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (this->m_last_task_ptr != next_task_ptr_m1)
 			{
 				target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
 
-				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-				(this->m_next_task_ptr)--;
+				this->m_next_task_ptr = next_task_ptr_m1;
 
 				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_next_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -1549,11 +1528,9 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* last_task_ptr_p1 = (this->m_last_task_ptr + 1 != this->m_task_buffer_end_ptr) ? this->m_last_task_ptr + 1 : this->m_task_buffer_data_ptr;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (last_task_ptr_p1 != this->m_next_task_ptr)
 			{
 				new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_last_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -1593,8 +1570,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				};
 
-				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+				this->m_last_task_ptr = last_task_ptr_p1;
 
 				break;
 			}
@@ -1631,15 +1607,11 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* next_task_ptr_m1 = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ? this->m_next_task_ptr - 1 : this->m_task_buffer_end_ptr - 1;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (this->m_last_task_ptr != next_task_ptr_m1)
 			{
-				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-				(this->m_next_task_ptr)--;
+				this->m_next_task_ptr = next_task_ptr_m1;
 
 				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_next_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -1714,11 +1686,9 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* last_task_ptr_p1 = (this->m_last_task_ptr + 1 != this->m_task_buffer_end_ptr) ? this->m_last_task_ptr + 1 : this->m_task_buffer_data_ptr;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (last_task_ptr_p1 != this->m_next_task_ptr)
 			{
 				target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
 
@@ -1760,8 +1730,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				};
 
-				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+				this->m_last_task_ptr = last_task_ptr_p1;
 
 				break;
 			}
@@ -1798,17 +1767,13 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* next_task_ptr_m1 = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ? this->m_next_task_ptr - 1 : this->m_task_buffer_end_ptr - 1;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (this->m_last_task_ptr != next_task_ptr_m1)
 			{
 				target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
 
-				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-				(this->m_next_task_ptr)--;
+				this->m_next_task_ptr = next_task_ptr_m1;
 
 				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_next_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -1883,11 +1848,9 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* last_task_ptr_p1 = (this->m_last_task_ptr + 1 != this->m_task_buffer_end_ptr) ? this->m_last_task_ptr + 1 : this->m_task_buffer_data_ptr;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (last_task_ptr_p1 != this->m_next_task_ptr)
 			{
 				new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_last_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -1921,8 +1884,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				};
 
-				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+				this->m_last_task_ptr = last_task_ptr_p1;
 
 				break;
 			}
@@ -1963,15 +1925,11 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* next_task_ptr_m1 = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ? this->m_next_task_ptr - 1 : this->m_task_buffer_end_ptr - 1;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (this->m_last_task_ptr != next_task_ptr_m1)
 			{
-				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-				(this->m_next_task_ptr)--;
+				this->m_next_task_ptr = next_task_ptr_m1;
 
 				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_next_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -2044,11 +2002,9 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* last_task_ptr_p1 = (this->m_last_task_ptr + 1 != this->m_task_buffer_end_ptr) ? this->m_last_task_ptr + 1 : this->m_task_buffer_data_ptr;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (last_task_ptr_p1 != this->m_next_task_ptr)
 			{
 				new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_last_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -2085,8 +2041,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				};
 
-				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+				this->m_last_task_ptr = last_task_ptr_p1;
 
 				break;
 			}
@@ -2127,15 +2082,11 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* next_task_ptr_m1 = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ? this->m_next_task_ptr - 1 : this->m_task_buffer_end_ptr - 1;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (this->m_last_task_ptr != next_task_ptr_m1)
 			{
-				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-				(this->m_next_task_ptr)--;
+				this->m_next_task_ptr = next_task_ptr_m1;
 
 				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_next_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -2211,11 +2162,9 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* last_task_ptr_p1 = (this->m_last_task_ptr + 1 != this->m_task_buffer_end_ptr) ? this->m_last_task_ptr + 1 : this->m_task_buffer_data_ptr;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (last_task_ptr_p1 != this->m_next_task_ptr)
 			{
 				target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
 
@@ -2254,8 +2203,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				};
 
-				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+				this->m_last_task_ptr = last_task_ptr_p1;
 
 				break;
 			}
@@ -2296,17 +2244,13 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* next_task_ptr_m1 = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ? this->m_next_task_ptr - 1 : this->m_task_buffer_end_ptr - 1;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (this->m_last_task_ptr != next_task_ptr_m1)
 			{
 				target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
 
-				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-				(this->m_next_task_ptr)--;
+				this->m_next_task_ptr = next_task_ptr_m1;
 
 				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_next_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -2382,11 +2326,9 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* last_task_ptr_p1 = (this->m_last_task_ptr + 1 != this->m_task_buffer_end_ptr) ? this->m_last_task_ptr + 1 : this->m_task_buffer_data_ptr;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (last_task_ptr_p1 != this->m_next_task_ptr)
 			{
 				new (static_cast<void*>(this->m_last_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_last_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -2426,8 +2368,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				};
 
-				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+				this->m_last_task_ptr = last_task_ptr_p1;
 
 				break;
 			}
@@ -2468,15 +2409,11 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* next_task_ptr_m1 = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ? this->m_next_task_ptr - 1 : this->m_task_buffer_end_ptr - 1;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (this->m_last_task_ptr != next_task_ptr_m1)
 			{
-				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-				(this->m_next_task_ptr)--;
+				this->m_next_task_ptr = next_task_ptr_m1;
 
 				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_next_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -2555,11 +2492,9 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* last_task_ptr_p1 = (this->m_last_task_ptr + 1 != this->m_task_buffer_end_ptr) ? this->m_last_task_ptr + 1 : this->m_task_buffer_data_ptr;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (last_task_ptr_p1 != this->m_next_task_ptr)
 			{
 				target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
 
@@ -2601,8 +2536,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					}
 				};
 
-				this->m_last_task_ptr = (last_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-					last_task_ptr_p1 : this->m_task_buffer_data_ptr;
+				this->m_last_task_ptr = last_task_ptr_p1;
 
 				break;
 			}
@@ -2643,17 +2577,13 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		{
 			std::lock_guard<std::mutex> lock(this->m_mutex);
 
-			_cool_thsq_task* last_task_ptr_p1 = this->m_last_task_ptr + 1;
+			_cool_thsq_task* next_task_ptr_m1 = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ? this->m_next_task_ptr - 1 : this->m_task_buffer_end_ptr - 1;
 
-			if ((last_task_ptr_p1 != this->m_next_task_ptr)
-				&& ((this->m_task_buffer_data_ptr != this->m_next_task_ptr)
-					|| (last_task_ptr_p1 != this->m_task_buffer_end_ptr)))
+			if (this->m_last_task_ptr != next_task_ptr_m1)
 			{
 				target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
 
-				this->m_next_task_ptr = (this->m_next_task_ptr != this->m_task_buffer_data_ptr) ?
-					this->m_next_task_ptr : this->m_task_buffer_end_ptr;
-				(this->m_next_task_ptr)--;
+				this->m_next_task_ptr = next_task_ptr_m1;
 
 				new (static_cast<void*>(this->m_next_task_ptr->m_arg_buffer)) _cool_thsq_pack(std::forward<arg_Ty>(args)...);
 				std::memcpy(&(this->m_next_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -3020,11 +2950,10 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			if (lock.owns_lock())
 			{
-				_cool_thmq_task* last_task_ptr_p1 = current_thread_ptr->m_last_task_ptr + 1;
+				_cool_thmq_task* last_task_ptr_p1 = (current_thread_ptr->m_last_task_ptr + 1 != current_thread_ptr->m_task_buffer_end_ptr) ?
+					current_thread_ptr->m_last_task_ptr + 1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-				if ((last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
-					&& ((current_thread_ptr->m_task_buffer_data_ptr != current_thread_ptr->m_next_task_ptr)
-						|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
+				if (last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
 				{
 					new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _cool_thmq_pack(std::forward<arg_Ty>(args)...);
 					std::memcpy(&(current_thread_ptr->m_last_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -3059,10 +2988,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					};
 
 					bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
-
-					current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
-						last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
-
+					current_thread_ptr->m_last_task_ptr = last_task_ptr_p1;
 					lock.unlock();
 
 					if (notification_required)
@@ -3135,11 +3061,10 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			if (lock.owns_lock())
 			{
-				_cool_thmq_task* last_task_ptr_p1 = current_thread_ptr->m_last_task_ptr + 1;
+				_cool_thmq_task* last_task_ptr_p1 = (current_thread_ptr->m_last_task_ptr + 1 != current_thread_ptr->m_task_buffer_end_ptr) ?
+					current_thread_ptr->m_last_task_ptr + 1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-				if ((last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
-					&& ((current_thread_ptr->m_task_buffer_data_ptr != current_thread_ptr->m_next_task_ptr)
-						|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
+				if (last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
 				{
 					new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _cool_thmq_pack(std::forward<arg_Ty>(args)...);
 					std::memcpy(&(current_thread_ptr->m_last_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -3177,10 +3102,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					};
 
 					bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
-
-					current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
-						last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
-
+					current_thread_ptr->m_last_task_ptr = last_task_ptr_p1;
 					lock.unlock();
 
 					if (notification_required)
@@ -3253,11 +3175,10 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			if (lock.owns_lock())
 			{
-				_cool_thmq_task* last_task_ptr_p1 = current_thread_ptr->m_last_task_ptr + 1;
+				_cool_thmq_task* last_task_ptr_p1 = (current_thread_ptr->m_last_task_ptr + 1 != current_thread_ptr->m_task_buffer_end_ptr) ?
+					current_thread_ptr->m_last_task_ptr + 1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-				if ((last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
-					&& ((current_thread_ptr->m_task_buffer_data_ptr != current_thread_ptr->m_next_task_ptr)
-						|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
+				if (last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
 				{
 					target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
 
@@ -3297,10 +3218,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					};
 
 					bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
-
-					current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
-						last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
-
+					current_thread_ptr->m_last_task_ptr = last_task_ptr_p1;
 					lock.unlock();
 
 					if (notification_required)
@@ -3373,11 +3291,10 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			if (lock.owns_lock())
 			{
-				_cool_thmq_task* last_task_ptr_p1 = current_thread_ptr->m_last_task_ptr + 1;
+				_cool_thmq_task* last_task_ptr_p1 = (current_thread_ptr->m_last_task_ptr + 1 != current_thread_ptr->m_task_buffer_end_ptr) ?
+					current_thread_ptr->m_last_task_ptr + 1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-				if ((last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
-					&& ((current_thread_ptr->m_task_buffer_data_ptr != current_thread_ptr->m_next_task_ptr)
-						|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
+				if (last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
 				{
 					new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _cool_thmq_pack(std::forward<arg_Ty>(args)...);
 					std::memcpy(&(current_thread_ptr->m_last_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -3418,10 +3335,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					};
 
 					bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
-
-					current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
-						last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
-
+					current_thread_ptr->m_last_task_ptr = last_task_ptr_p1;
 					lock.unlock();
 
 					if (notification_required)
@@ -3494,11 +3408,10 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			if (lock.owns_lock())
 			{
-				_cool_thmq_task* last_task_ptr_p1 = current_thread_ptr->m_last_task_ptr + 1;
+				_cool_thmq_task* last_task_ptr_p1 = (current_thread_ptr->m_last_task_ptr + 1 != current_thread_ptr->m_task_buffer_end_ptr) ?
+					current_thread_ptr->m_last_task_ptr + 1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-				if ((last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
-					&& ((current_thread_ptr->m_task_buffer_data_ptr != current_thread_ptr->m_next_task_ptr)
-						|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
+				if (last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
 				{
 					target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
 
@@ -3541,10 +3454,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					};
 
 					bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
-
-					current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
-						last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
-
+					current_thread_ptr->m_last_task_ptr = last_task_ptr_p1;
 					lock.unlock();
 
 					if (notification_required)
@@ -3617,11 +3527,10 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			if (lock.owns_lock())
 			{
-				_cool_thmq_task* last_task_ptr_p1 = current_thread_ptr->m_last_task_ptr + 1;
+				_cool_thmq_task* last_task_ptr_p1 = (current_thread_ptr->m_last_task_ptr + 1 != current_thread_ptr->m_task_buffer_end_ptr) ?
+					current_thread_ptr->m_last_task_ptr + 1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-				if ((last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
-					&& ((current_thread_ptr->m_task_buffer_data_ptr != current_thread_ptr->m_next_task_ptr)
-						|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
+				if (last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
 				{
 					new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _cool_thmq_pack(std::forward<arg_Ty>(args)...);
 					std::memcpy(&(current_thread_ptr->m_last_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -3656,10 +3565,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					};
 
 					bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
-
-					current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
-						last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
-
+					current_thread_ptr->m_last_task_ptr = last_task_ptr_p1;
 					lock.unlock();
 
 					if (notification_required)
@@ -3731,11 +3637,10 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			if (lock.owns_lock())
 			{
-				_cool_thmq_task* last_task_ptr_p1 = current_thread_ptr->m_last_task_ptr + 1;
+				_cool_thmq_task* last_task_ptr_p1 = (current_thread_ptr->m_last_task_ptr + 1 != current_thread_ptr->m_task_buffer_end_ptr) ?
+					current_thread_ptr->m_last_task_ptr + 1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-				if ((last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
-					&& ((current_thread_ptr->m_task_buffer_data_ptr != current_thread_ptr->m_next_task_ptr)
-						|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
+				if (last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
 				{
 					new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _cool_thmq_pack(std::forward<arg_Ty>(args)...);
 					std::memcpy(&(current_thread_ptr->m_last_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -3773,10 +3678,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					};
 
 					bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
-
-					current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
-						last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
-
+					current_thread_ptr->m_last_task_ptr = last_task_ptr_p1;
 					lock.unlock();
 
 					if (notification_required)
@@ -3848,11 +3750,10 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			if (lock.owns_lock())
 			{
-				_cool_thmq_task* last_task_ptr_p1 = current_thread_ptr->m_last_task_ptr + 1;
+				_cool_thmq_task* last_task_ptr_p1 = (current_thread_ptr->m_last_task_ptr + 1 != current_thread_ptr->m_task_buffer_end_ptr) ?
+					current_thread_ptr->m_last_task_ptr + 1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-				if ((last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
-					&& ((current_thread_ptr->m_task_buffer_data_ptr != current_thread_ptr->m_next_task_ptr)
-						|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
+				if (last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
 				{
 					target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
 
@@ -3892,10 +3793,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					};
 
 					bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
-
-					current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
-						last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
-
+					current_thread_ptr->m_last_task_ptr = last_task_ptr_p1;
 					lock.unlock();
 
 					if (notification_required)
@@ -3967,11 +3865,10 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			if (lock.owns_lock())
 			{
-				_cool_thmq_task* last_task_ptr_p1 = current_thread_ptr->m_last_task_ptr + 1;
+				_cool_thmq_task* last_task_ptr_p1 = (current_thread_ptr->m_last_task_ptr + 1 != current_thread_ptr->m_task_buffer_end_ptr) ?
+					current_thread_ptr->m_last_task_ptr + 1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-				if ((last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
-					&& ((current_thread_ptr->m_task_buffer_data_ptr != current_thread_ptr->m_next_task_ptr)
-						|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
+				if (last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
 				{
 					new (static_cast<void*>(current_thread_ptr->m_last_task_ptr->m_arg_buffer)) _cool_thmq_pack(std::forward<arg_Ty>(args)...);
 					std::memcpy(&(current_thread_ptr->m_last_task_ptr->m_address_data.m_function_ptr), &task, sizeof(void(*)(void)));
@@ -4012,10 +3909,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					};
 
 					bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
-
-					current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
-						last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
-
+					current_thread_ptr->m_last_task_ptr = last_task_ptr_p1;
 					lock.unlock();
 
 					if (notification_required)
@@ -4087,11 +3981,10 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 			if (lock.owns_lock())
 			{
-				_cool_thmq_task* last_task_ptr_p1 = current_thread_ptr->m_last_task_ptr + 1;
+				_cool_thmq_task* last_task_ptr_p1 = (current_thread_ptr->m_last_task_ptr + 1 != current_thread_ptr->m_task_buffer_end_ptr) ?
+					current_thread_ptr->m_last_task_ptr + 1 : current_thread_ptr->m_task_buffer_data_ptr;
 
-				if ((last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
-					&& ((current_thread_ptr->m_task_buffer_data_ptr != current_thread_ptr->m_next_task_ptr)
-						|| (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr)))
+				if (last_task_ptr_p1 != current_thread_ptr->m_next_task_ptr)
 				{
 					target.m_parent_ptr->m_tasks_awaited.fetch_add(1, std::memory_order_relaxed);
 
@@ -4134,10 +4027,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 					};
 
 					bool notification_required = (current_thread_ptr->m_last_task_ptr == current_thread_ptr->m_next_task_ptr);
-
-					current_thread_ptr->m_last_task_ptr = (last_task_ptr_p1 != current_thread_ptr->m_task_buffer_end_ptr) ?
-						last_task_ptr_p1 : current_thread_ptr->m_task_buffer_data_ptr;
-
+					current_thread_ptr->m_last_task_ptr = last_task_ptr_p1;
 					lock.unlock();
 
 					if (notification_required)
