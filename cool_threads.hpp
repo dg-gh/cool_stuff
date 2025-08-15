@@ -607,11 +607,11 @@ namespace cool
 		inline void safety_refresh() const noexcept;
 
 		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-		inline safety_refresh_proxy(cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& rhs) noexcept;
+		explicit inline safety_refresh_proxy(cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& rhs) noexcept;
 		template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-		inline safety_refresh_proxy(cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& rhs) noexcept;
-		inline safety_refresh_proxy(cool::async_end& rhs) noexcept;
-		template <class return_Ty> inline safety_refresh_proxy(cool::async_result<return_Ty>& rhs) noexcept;
+		explicit inline safety_refresh_proxy(cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>& rhs) noexcept;
+		explicit inline safety_refresh_proxy(cool::async_end& rhs) noexcept;
+		template <class return_Ty> explicit inline safety_refresh_proxy(cool::async_result<return_Ty>& rhs) noexcept;
 
 		inline bool operator==(const cool::safety_refresh_proxy& rhs) const noexcept;
 		inline bool operator!=(const cool::safety_refresh_proxy& rhs) const noexcept;
@@ -620,12 +620,12 @@ namespace cool
 		inline bool operator<(const cool::safety_refresh_proxy & rhs) const noexcept;
 		inline bool operator>(const cool::safety_refresh_proxy& rhs) const noexcept;
 
-		template <class object_Ty> inline bool operator==(const object_Ty& rhs) const noexcept;
-		template <class object_Ty> inline bool operator!=(const object_Ty& rhs) const noexcept;
-		template <class object_Ty> inline bool operator<=(const object_Ty& rhs) const noexcept;
-		template <class object_Ty> inline bool operator>=(const object_Ty& rhs) const noexcept;
-		template <class object_Ty> inline bool operator<(const object_Ty& rhs) const noexcept;
-		template <class object_Ty> inline bool operator>(const object_Ty& rhs) const noexcept;
+		inline bool operator==(const void* rhs_ptr) const noexcept;
+		inline bool operator!=(const void* rhs_ptr) const noexcept;
+		inline bool operator<=(const void* rhs_ptr) const noexcept;
+		inline bool operator>=(const void* rhs_ptr) const noexcept;
+		inline bool operator<(const void* rhs_ptr) const noexcept;
+		inline bool operator>(const void* rhs_ptr) const noexcept;
 
 	private:
 
@@ -633,12 +633,12 @@ namespace cool
 		void* m_object_ptr;
 	};
 
-	template <class object_Ty> inline bool operator==(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
-	template <class object_Ty> inline bool operator!=(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
-	template <class object_Ty> inline bool operator<=(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
-	template <class object_Ty> inline bool operator>=(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
-	template <class object_Ty> inline bool operator<(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
-	template <class object_Ty> inline bool operator>(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept;
+	inline bool operator==(const void* lhs_ptr, const cool::safety_refresh_proxy& rhs) noexcept;
+	inline bool operator!=(const void* lhs_ptr, const cool::safety_refresh_proxy& rhs) noexcept;
+	inline bool operator<=(const void* lhs_ptr, const cool::safety_refresh_proxy& rhs) noexcept;
+	inline bool operator>=(const void* lhs_ptr, const cool::safety_refresh_proxy& rhs) noexcept;
+	inline bool operator<(const void* lhs_ptr, const cool::safety_refresh_proxy& rhs) noexcept;
+	inline bool operator>(const void* lhs_ptr, const cool::safety_refresh_proxy& rhs) noexcept;
 }
 
 
@@ -5207,54 +5207,42 @@ inline bool cool::safety_refresh_proxy::operator>(const cool::safety_refresh_pro
 	return m_object_ptr > rhs.m_object_ptr;
 }
 
-template <class object_Ty>
-inline bool cool::safety_refresh_proxy::operator==(const object_Ty& rhs) const noexcept {
-	return m_object_ptr == &rhs;
+inline bool cool::safety_refresh_proxy::operator==(const void* rhs_ptr) const noexcept {
+	return m_object_ptr == rhs_ptr;
 }
-template <class object_Ty>
-inline bool cool::safety_refresh_proxy::operator!=(const object_Ty& rhs) const noexcept {
-	return m_object_ptr != &rhs;
+inline bool cool::safety_refresh_proxy::operator!=(const void* rhs_ptr) const noexcept {
+	return m_object_ptr != rhs_ptr;
 }
-template <class object_Ty>
-inline bool cool::safety_refresh_proxy::operator<=(const object_Ty& rhs) const noexcept {
-	return m_object_ptr <= &rhs;
+inline bool cool::safety_refresh_proxy::operator<=(const void* rhs_ptr) const noexcept {
+	return m_object_ptr <= rhs_ptr;
 }
-template <class object_Ty>
-inline bool cool::safety_refresh_proxy::operator>=(const object_Ty& rhs) const noexcept {
-	return m_object_ptr >= &rhs;
+inline bool cool::safety_refresh_proxy::operator>=(const void* rhs_ptr) const noexcept {
+	return m_object_ptr >= rhs_ptr;
 }
-template <class object_Ty>
-inline bool cool::safety_refresh_proxy::operator<(const object_Ty& rhs) const noexcept {
-	return m_object_ptr < &rhs;
+inline bool cool::safety_refresh_proxy::operator<(const void* rhs_ptr) const noexcept {
+	return m_object_ptr < rhs_ptr;
 }
-template <class object_Ty>
-inline bool cool::safety_refresh_proxy::operator>(const object_Ty& rhs) const noexcept {
-	return m_object_ptr > &rhs;
+inline bool cool::safety_refresh_proxy::operator>(const void* rhs_ptr) const noexcept {
+	return m_object_ptr > rhs_ptr;
 }
 
-template <class object_Ty>
-inline bool cool::operator==(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
-	return rhs == lhs;
+inline bool cool::operator==(const void* lhs_ptr, const cool::safety_refresh_proxy& rhs) noexcept {
+	return rhs == lhs_ptr;
 }
-template <class object_Ty>
-inline bool cool::operator!=(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
-	return rhs != lhs;
+inline bool cool::operator!=(const void* lhs_ptr, const cool::safety_refresh_proxy& rhs) noexcept {
+	return rhs != lhs_ptr;
 }
-template <class object_Ty>
-inline bool cool::operator<=(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
-	return rhs >= lhs;
+inline bool cool::operator<=(const void* lhs_ptr, const cool::safety_refresh_proxy& rhs) noexcept {
+	return rhs >= lhs_ptr;
 }
-template <class object_Ty>
-inline bool cool::operator>=(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
-	return rhs <= lhs;
+inline bool cool::operator>=(const void* lhs_ptr, const cool::safety_refresh_proxy& rhs) noexcept {
+	return rhs <= lhs_ptr;
 }
-template <class object_Ty>
-inline bool cool::operator<(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
-	return rhs > lhs;
+inline bool cool::operator<(const void* lhs_ptr, const cool::safety_refresh_proxy& rhs) noexcept {
+	return rhs > lhs_ptr;
 }
-template <class object_Ty>
-inline bool cool::operator>(const object_Ty& lhs, const cool::safety_refresh_proxy& rhs) noexcept {
-	return rhs < lhs;
+inline bool cool::operator>(const void* lhs_ptr, const cool::safety_refresh_proxy& rhs) noexcept {
+	return rhs < lhs_ptr;
 }
 
 #endif // xCOOL_THREADS_HPP
