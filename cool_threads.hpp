@@ -3012,12 +3012,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		}
 		xCOOL_THREADS_CATCH(...) {}
 
-		if (thread_num == 0)
-		{
-			thread_num = this->m_thread_count;
-		}
-
-		thread_num--;
+		thread_num = (thread_num != 0) ? thread_num - 1 : this->m_thread_count - 1;
 	}
 }
 
@@ -3126,12 +3121,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		}
 		xCOOL_THREADS_CATCH(...) {}
 
-		if (thread_num == 0)
-		{
-			thread_num = this->m_thread_count;
-		}
-
-		thread_num--;
+		thread_num = (thread_num != 0) ? thread_num - 1 : this->m_thread_count - 1;
 	}
 }
 
@@ -3242,12 +3232,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		}
 		xCOOL_THREADS_CATCH(...) {}
 
-		if (thread_num == 0)
-		{
-			thread_num = this->m_thread_count;
-		}
-
-		thread_num--;
+		thread_num = (thread_num != 0) ? thread_num - 1 : this->m_thread_count - 1;
 	}
 }
 
@@ -3359,12 +3344,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		}
 		xCOOL_THREADS_CATCH(...) {}
 
-		if (thread_num == 0)
-		{
-			thread_num = this->m_thread_count;
-		}
-
-		thread_num--;
+		thread_num = (thread_num != 0) ? thread_num - 1 : this->m_thread_count - 1;
 	}
 }
 
@@ -3478,12 +3458,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		}
 		xCOOL_THREADS_CATCH(...) {}
 
-		if (thread_num == 0)
-		{
-			thread_num = this->m_thread_count;
-		}
-
-		thread_num--;
+		thread_num = (thread_num != 0) ? thread_num - 1 : this->m_thread_count - 1;
 	}
 }
 
@@ -3588,12 +3563,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		}
 		xCOOL_THREADS_CATCH(...) {}
 
-		if (thread_num == 0)
-		{
-			thread_num = this->m_thread_count;
-		}
-
-		thread_num--;
+		thread_num = (thread_num != 0) ? thread_num - 1 : this->m_thread_count - 1;
 	}
 }
 
@@ -3701,12 +3671,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		}
 		xCOOL_THREADS_CATCH(...) {}
 
-		if (thread_num == 0)
-		{
-			thread_num = this->m_thread_count;
-		}
-
-		thread_num--;
+		thread_num = (thread_num != 0) ? thread_num - 1 : this->m_thread_count - 1;
 	}
 }
 
@@ -3816,12 +3781,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		}
 		xCOOL_THREADS_CATCH(...) {}
 
-		if (thread_num == 0)
-		{
-			thread_num = this->m_thread_count;
-		}
-
-		thread_num--;
+		thread_num = (thread_num != 0) ? thread_num - 1 : this->m_thread_count - 1;
 	}
 }
 
@@ -3932,12 +3892,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		}
 		xCOOL_THREADS_CATCH(...) {}
 
-		if (thread_num == 0)
-		{
-			thread_num = this->m_thread_count;
-		}
-
-		thread_num--;
+		thread_num = (thread_num != 0) ? thread_num - 1 : this->m_thread_count - 1;
 	}
 }
 
@@ -4050,12 +4005,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 		}
 		xCOOL_THREADS_CATCH(...) {}
 
-		if (thread_num == 0)
-		{
-			thread_num = this->m_thread_count;
-		}
-
-		thread_num--;
+		thread_num = (thread_num != 0) ? thread_num - 1 : this->m_thread_count - 1;
 	}
 }
 
