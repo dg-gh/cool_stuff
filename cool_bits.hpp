@@ -1521,7 +1521,7 @@ inline cool::_masked_proxy<bit_count, ptr_Ty1, ptr_Ty2>::_masked_proxy(ptr_Ty1 r
 template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uintptr_Ty>
 inline volatile cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::volatile_bits_at(uintptr_Ty mem_address) noexcept
 {
-	assert((static_cast<std::uintptr_t>(mem_address) % alignof(word_Ty) == 0) && "cool::bits<...>::volatile_bits_at : mem_address must be aligned in memory");
+	assert((static_cast<std::uintptr_t>(mem_address) % alignof(word_Ty) == 0) && "cool::bits<...>::volatile_bits_at : mem_address location must be aligned in memory");
 
 	cool::bits<bit_count, word_Ty, arg_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty, arg_Ty>*>(static_cast<std::uintptr_t>(mem_address));
 	new (ptr) cool::bits<bit_count, word_Ty, arg_Ty>(cool::no_init);
@@ -1531,7 +1531,7 @@ inline volatile cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, wo
 template <std::size_t bit_count, class word_Ty, class arg_Ty> template <class uintptr_Ty>
 inline const volatile cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_count, word_Ty, arg_Ty>::const_volatile_bits_at(uintptr_Ty mem_address) noexcept
 {
-	assert((static_cast<std::uintptr_t>(mem_address) % alignof(word_Ty) == 0) && "cool::bits<...>::const_volatile_bits_at : mem_address must be aligned in memory");
+	assert((static_cast<std::uintptr_t>(mem_address) % alignof(word_Ty) == 0) && "cool::bits<...>::const_volatile_bits_at : mem_address location must be aligned in memory");
 
 	cool::bits<bit_count, word_Ty, arg_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty, arg_Ty>*>(static_cast<std::uintptr_t>(mem_address));
 	new (ptr) cool::bits<bit_count, word_Ty, arg_Ty>(cool::no_init);
@@ -1541,7 +1541,7 @@ inline const volatile cool::bits<bit_count, word_Ty, arg_Ty>& cool::bits<bit_cou
 template <std::size_t bit_count, class word_Ty, class arg_Ty, class uintptr_Ty>
 inline volatile cool::bits<bit_count, word_Ty, arg_Ty>& cool::volatile_bits_at(uintptr_Ty mem_address) noexcept
 {
-	assert((static_cast<std::uintptr_t>(mem_address) % alignof(word_Ty) == 0) && "cool::volatile_bits_at : mem_address must be aligned in memory");
+	assert((static_cast<std::uintptr_t>(mem_address) % alignof(word_Ty) == 0) && "cool::volatile_bits_at : mem_address location must be aligned in memory");
 
 	cool::bits<bit_count, word_Ty, arg_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty, arg_Ty>*>(static_cast<std::uintptr_t>(mem_address));
 	new (ptr) cool::bits<bit_count, word_Ty, arg_Ty>(cool::no_init);
@@ -1551,7 +1551,7 @@ inline volatile cool::bits<bit_count, word_Ty, arg_Ty>& cool::volatile_bits_at(u
 template <std::size_t bit_count, class word_Ty, class arg_Ty, class uintptr_Ty>
 inline const volatile cool::bits<bit_count, word_Ty, arg_Ty>& cool::const_volatile_bits_at(uintptr_Ty mem_address) noexcept
 {
-	assert((static_cast<std::uintptr_t>(mem_address) % alignof(word_Ty) == 0) && "cool::const_volatile_bits_at : mem_address must be aligned in memory");
+	assert((static_cast<std::uintptr_t>(mem_address) % alignof(word_Ty) == 0) && "cool::const_volatile_bits_at : mem_address location must be aligned in memory");
 
 	cool::bits<bit_count, word_Ty, arg_Ty>* ptr = reinterpret_cast<cool::bits<bit_count, word_Ty, arg_Ty>*>(static_cast<std::uintptr_t>(mem_address));
 	new (ptr) cool::bits<bit_count, word_Ty, arg_Ty>(cool::no_init);

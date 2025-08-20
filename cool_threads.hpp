@@ -2653,7 +2653,7 @@ inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 
-	assert((reinterpret_cast<std::uintptr_t>(this) % _cache_line_size == 0) && "cool::threads_sq<...> : object must be aligned in memory");
+	assert((reinterpret_cast<std::uintptr_t>(this) % _cache_line_size == 0) && "cool::threads_sq<...> : object location must be aligned in memory");
 
 	if (reinterpret_cast<std::uintptr_t>(this) % _cache_line_size != 0)
 	{
@@ -4033,7 +4033,7 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
 
-	assert((reinterpret_cast<std::uintptr_t>(this) % _cache_line_size == 0) && "cool::threads_mq<...> : object must be aligned in memory");
+	assert((reinterpret_cast<std::uintptr_t>(this) % _cache_line_size == 0) && "cool::threads_mq<...> : object location must be aligned in memory");
 
 	if (reinterpret_cast<std::uintptr_t>(this) % _cache_line_size != 0)
 	{
