@@ -1548,7 +1548,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 						xCOOL_THREADS_TRY
 						{
-							*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
+							*(target_ref.m_stored_values_ptr + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
 								function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 							);
 						}
@@ -1629,7 +1629,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 						xCOOL_THREADS_TRY
 						{
-							*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
+							*(target_ref.m_stored_values_ptr + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
 								function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 							);
 						}
@@ -1708,7 +1708,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 						xCOOL_THREADS_TRY
 						{
-							*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
+							*(target_ref.m_stored_values_ptr + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
 								function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 							);
 						}
@@ -1791,7 +1791,7 @@ inline void cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 						xCOOL_THREADS_TRY
 						{
-							*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
+							*(target_ref.m_stored_values_ptr + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
 								function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 							);
 						}
@@ -2346,7 +2346,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 						xCOOL_THREADS_TRY
 						{
-							*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
+							*(target_ref.m_stored_values_ptr + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
 								function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 							);
 						}
@@ -2431,7 +2431,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 						xCOOL_THREADS_TRY
 						{
-							*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
+							*(target_ref.m_stored_values_ptr + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
 								function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 							);
 						}
@@ -2514,7 +2514,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 						xCOOL_THREADS_TRY
 						{
-							*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
+							*(target_ref.m_stored_values_ptr + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
 								function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 							);
 						}
@@ -2601,7 +2601,7 @@ inline bool cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 						xCOOL_THREADS_TRY
 						{
-							*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
+							*(target_ref.m_stored_values_ptr + _task_ptr->m_address_data.m_offset) = cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
 								function_ptr, std::move(*reinterpret_cast<_cool_thsq_pack*>(_task_ptr->m_arg_buffer))
 							);
 						}
@@ -3297,7 +3297,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 							xCOOL_THREADS_TRY
 							{
-								*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_address_data.m_offset) = cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
+								*(target_ref.m_stored_values_ptr + _task_ptr->m_address_data.m_offset) = cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
 									function_ptr, std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 							}
@@ -3411,7 +3411,7 @@ inline void cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 							xCOOL_THREADS_TRY
 							{
-								*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_address_data.m_offset) = cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
+								*(target_ref.m_stored_values_ptr + _task_ptr->m_address_data.m_offset) = cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
 									function_ptr, std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 							}
@@ -3846,7 +3846,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 							xCOOL_THREADS_TRY
 							{
-								*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_address_data.m_offset) = cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
+								*(target_ref.m_stored_values_ptr + _task_ptr->m_address_data.m_offset) = cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
 									function_ptr, std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 							}
@@ -3959,7 +3959,7 @@ inline bool cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_ali
 
 							xCOOL_THREADS_TRY
 							{
-								*(static_cast<return_Ty*>(target_ref.m_stored_values_ptr) + _task_ptr->m_address_data.m_offset) = cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
+								*(target_ref.m_stored_values_ptr + _task_ptr->m_address_data.m_offset) = cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::call(
 									function_ptr, std::move(*reinterpret_cast<_cool_thmq_pack*>(_task_ptr->m_arg_buffer))
 								);
 							}
