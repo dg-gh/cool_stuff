@@ -389,7 +389,7 @@ namespace cool
 		static constexpr int bad_align = 1;
 		static constexpr int bad_parameters = 2;
 		static constexpr int bad_alloc = 3;
-		static constexpr int bad_thread = 4;
+		static constexpr int bad_thread_creation = 4;
 
 		static constexpr int undefined = -1;
 
@@ -2653,6 +2653,8 @@ inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_
 {
 	using _cool_thsq_task = typename cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_task;
 
+	assert((reinterpret_cast<std::uintptr_t>(this) % _cache_line_size == 0) && "cool::threads_sq<...> : object must be aligned in memory");
+
 	if (reinterpret_cast<std::uintptr_t>(this) % _cache_line_size != 0)
 	{
 		return cool::threads_init_result(cool::threads_init_result::bad_align);
@@ -2667,7 +2669,6 @@ inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_
 	{
 		return cool::threads_init_result(cool::threads_init_result::bad_parameters);
 	}
-
 
 	std::size_t _new_thread_count = static_cast<std::size_t>(new_thread_count.value());
 	this->m_thread_count = _new_thread_count;
@@ -2759,7 +2760,7 @@ inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_
 		{
 			this->delete_threads_detail(threads_constructed);
 			std::atomic_signal_fence(std::memory_order_release);
-			return cool::threads_init_result(cool::threads_init_result::bad_thread);
+			return cool::threads_init_result(cool::threads_init_result::bad_thread_creation);
 		}
 
 		threads_constructed++;
@@ -4032,6 +4033,8 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 	using _cool_thmq_uintX = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uintX;
 	using _cool_thmq_uint2X = typename cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>::_uint2X;
 
+	assert((reinterpret_cast<std::uintptr_t>(this) % _cache_line_size == 0) && "cool::threads_mq<...> : object must be aligned in memory");
+
 	if (reinterpret_cast<std::uintptr_t>(this) % _cache_line_size != 0)
 	{
 		return cool::threads_init_result(cool::threads_init_result::bad_align);
@@ -4367,7 +4370,7 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 		xCOOL_THREADS_CATCH(...)
 		{
 			this->delete_threads_detail(threads_constructed, threads_launched);
-			return cool::threads_init_result(cool::threads_init_result::bad_thread);
+			return cool::threads_init_result(cool::threads_init_result::bad_thread_creation);
 		}
 
 		threads_launched++;
@@ -4633,7 +4636,7 @@ inline const char* cool::threads_init_result::message() const noexcept
 	case threads_init_result::bad_align: return "cool threads init failed : bad alignment of threads_sq/threads_mq object"; break;
 	case threads_init_result::bad_parameters: return "cool threads init failed : bad parameters"; break;
 	case threads_init_result::bad_alloc: return "cool threads init failed : bad allocation"; break;
-	case threads_init_result::bad_thread: return "cool threads init failed : bad thread creation"; break;
+	case threads_init_result::bad_thread_creation: return "cool threads init failed : bad thread creation"; break;
 	default: return "cool threads init result undefined"; break;
 	}
 }
