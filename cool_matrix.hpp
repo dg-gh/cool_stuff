@@ -6,6 +6,7 @@
 #define xCOOL_MATRIX_HPP
 
 #include <cstddef>
+#include <cstdint>
 #include <initializer_list>
 #include <iterator>
 #include <type_traits>
@@ -185,6 +186,8 @@ namespace cool
 
 	template <class Ty> class cm;
 	template <class Ty> class rm;
+
+	class iteration_count;
 
 
 	namespace matrix_scalar_subroutine
@@ -862,7 +865,26 @@ namespace cool
 		};
 	};
 
-	// free operator
+	// iteration_count
+
+	class iteration_count
+	{
+
+	public:
+
+		iteration_count() = delete;
+		explicit inline constexpr iteration_count(std::int32_t iter_count) noexcept : m_remaining(iter_count) {}
+
+		inline constexpr std::int32_t remaining() const noexcept;
+		inline constexpr bool good() const noexcept;
+		inline constexpr operator bool() const noexcept;
+
+	private:
+
+		std::int32_t m_remaining;
+	};
+
+	// free operators
 
 	template <std::size_t _opt_res_rows_padded = 0, std::size_t _opt_res_align = 0, class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
 	inline cool::matrix_result<Ty, _rows, _cols, _opt_res_rows_padded, _opt_res_align> operator-(Ty lhs, const cool::const_matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matrix_storage_Ty>& rhs) noexcept;
@@ -1126,29 +1148,29 @@ namespace cool
 		const cool::const_matrix_interface<Ty, 4, 1, _a3_rows_padded, _a3_align, _a3_matrix_storage_Ty>& a3,
 		const cool::const_matrix_interface<Ty, 4, 1, _y_rows_padded, _y_align, _y_matrix_storage_Ty>& y) noexcept;
 
-	template <class params_Ty, class Ty, std::size_t _dim,
+	template <class Ty, std::size_t _dim,
 		std::size_t _fx_rows_padded, std::size_t _j_rows_padded, std::size_t _xref_rows_padded, std::size_t _xarg_rows_padded, std::size_t _y_rows_padded,
 		std::size_t _fx_align, std::size_t _j_align, std::size_t _xref_align, std::size_t _xarg_align, std::size_t _y_align,
-		class _x_matrix_storage_Ty, class _y_matrix_storage_Ty
+		class _x_matrix_storage_Ty, class _y_matrix_storage_Ty, class ... params_Ty
 	>
-	inline int nonlinear_solve(
-		cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty),
-		cool::matrix<Ty, _dim, _dim, _j_rows_padded, _j_align>(*Jfn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty),
+	inline cool::iteration_count nonlinear_solve(
+		cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty ...),
+		cool::matrix<Ty, _dim, _dim, _j_rows_padded, _j_align>(*Jfn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty ...),
 		cool::matrix_interface<Ty, _dim, 1, _xref_rows_padded, _xref_align, _x_matrix_storage_Ty>& xref,
 		const cool::const_matrix_interface<Ty, _dim, 1, _y_rows_padded, _y_align, _y_matrix_storage_Ty>& y,
-		Ty tol, int iter, params_Ty params) noexcept;
+		Ty tol, cool::iteration_count max_iter, const typename std::decay<params_Ty>::type& ... params);
 
-	template <class params_Ty, class Ty, std::size_t _dim,
+	template <class Ty, std::size_t _dim,
 		std::size_t _fx_rows_padded, std::size_t _jinv_rows_padded, std::size_t _xref_rows_padded, std::size_t _xarg_rows_padded, std::size_t _y_rows_padded,
 		std::size_t _fx_align, std::size_t _jinv_align, std::size_t _xref_align, std::size_t _xarg_align, std::size_t _y_align,
-		class _jinv_matrix_storage_Ty, class _x_matrix_storage_Ty, class _y_matrix_storage_Ty
+		class _jinv_matrix_storage_Ty, class _x_matrix_storage_Ty, class _y_matrix_storage_Ty, class ... params_Ty
 	>
-	inline int nonlinear_qn_solve(
-		cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty),
+	inline cool::iteration_count nonlinear_qn_solve(
+		cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty ...),
 		cool::matrix_interface<Ty, _dim, _dim, _jinv_rows_padded, _jinv_align, _jinv_matrix_storage_Ty>& Jinvref,
 		cool::matrix_interface<Ty, _dim, 1, _xref_rows_padded, _xref_align, _x_matrix_storage_Ty>& xref,
 		const cool::const_matrix_interface<Ty, _dim, 1, _y_rows_padded, _y_align, _y_matrix_storage_Ty>& y,
-		Ty tol, int iter, params_Ty params) noexcept;
+		Ty tol, cool::iteration_count max_iter, const typename std::decay<params_Ty>::type& ... params);
 
 	// lu_matrix
 
@@ -6275,6 +6297,23 @@ inline bool cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matr
 	return _cols * m_i + m_j > _cols * rhs.m_i + rhs.m_j;
 }
 
+// iteration_count
+
+inline constexpr std::int32_t cool::iteration_count::remaining() const noexcept
+{
+	return m_remaining;
+}
+
+inline constexpr bool cool::iteration_count::good() const noexcept
+{
+	return m_remaining >= 0;
+}
+
+inline constexpr cool::iteration_count::operator bool() const noexcept
+{
+	return m_remaining >= 0;
+}
+
 // free operators
 
 template <std::size_t _opt_res_rows_padded, std::size_t _opt_res_align, class Ty, std::size_t _rows, std::size_t _cols, std::size_t _rows_padded, std::size_t _align, class _matrix_storage_Ty>
@@ -8317,72 +8356,82 @@ inline cool::matrix_result<Ty, 4, 1, _opt_res_rows_padded, _opt_res_align> cool:
 	return x;
 }
 
-template <class params_Ty, class Ty, std::size_t _dim,
+template <class Ty, std::size_t _dim,
 	std::size_t _fx_rows_padded, std::size_t _j_rows_padded, std::size_t _xref_rows_padded, std::size_t _xarg_rows_padded, std::size_t _y_rows_padded,
 	std::size_t _fx_align, std::size_t _j_align, std::size_t _xref_align, std::size_t _xarg_align, std::size_t _y_align,
-	class _x_matrix_storage_Ty, class _y_matrix_storage_Ty
+	class _x_matrix_storage_Ty, class _y_matrix_storage_Ty, class ... params_Ty
 >
-inline int cool::nonlinear_solve(
-	cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty),
-	cool::matrix<Ty, _dim, _dim, _j_rows_padded, _j_align>(*Jfn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty),
+inline cool::iteration_count cool::nonlinear_solve(
+	cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty ...),
+	cool::matrix<Ty, _dim, _dim, _j_rows_padded, _j_align>(*Jfn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty ...),
 	cool::matrix_interface<Ty, _dim, 1, _xref_rows_padded, _xref_align, _x_matrix_storage_Ty>& xref,
 	const cool::const_matrix_interface<Ty, _dim, 1, _y_rows_padded, _y_align, _y_matrix_storage_Ty>& y,
-	Ty tol, int iter, params_Ty params) noexcept
+	Ty tol, cool::iteration_count max_iter, const typename std::decay<params_Ty>::type& ... params)
 {
 	cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align> x = xref;
-	cool::matrix<Ty, _dim, 1> fx_my = fn(x, params) - y;
-	tol = tol * tol;
+	cool::matrix<Ty, _dim, 1> fx_my = fn(x, params...) - y;
+	Ty tol_sq = tol * tol;
+	std::int32_t iter = max_iter.remaining();
 
-	while ((cool::dot(fx_my, fx_my) >= tol) && (iter >= 0))
+	while (cool::dot(fx_my, fx_my) >= tol_sq)
 	{
 		iter--;
+		if (iter < 0)
+		{
+			break;
+		}
 
-		x -= cool::solve<_xarg_rows_padded, _xarg_align>(Jfn(x, params), fx_my);
-		fx_my = fn(x, params) - y;
+		x -= cool::solve<_xarg_rows_padded, _xarg_align>(Jfn(x, params...), fx_my);
+		fx_my = fn(x, params...) - y;
 	}
 
 	xref = x;
 
-	return iter;
+	return cool::iteration_count(iter);
 }
 
-template <class params_Ty, class Ty, std::size_t _dim,
+template <class Ty, std::size_t _dim,
 	std::size_t _fx_rows_padded, std::size_t _jinv_rows_padded, std::size_t _xref_rows_padded, std::size_t _xarg_rows_padded, std::size_t _y_rows_padded,
 	std::size_t _fx_align, std::size_t _jinv_align, std::size_t _xref_align, std::size_t _xarg_align, std::size_t _y_align,
-	class _jinv_matrix_storage_Ty, class _x_matrix_storage_Ty, class _y_matrix_storage_Ty
+	class _jinv_matrix_storage_Ty, class _x_matrix_storage_Ty, class _y_matrix_storage_Ty, class ... params_Ty
 >
-inline int cool::nonlinear_qn_solve(
-	cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty),
+inline cool::iteration_count cool::nonlinear_qn_solve(
+	cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty ...),
 	cool::matrix_interface<Ty, _dim, _dim, _jinv_rows_padded, _jinv_align, _jinv_matrix_storage_Ty>& Jinvref,
 	cool::matrix_interface<Ty, _dim, 1, _xref_rows_padded, _xref_align, _x_matrix_storage_Ty>& xref,
 	const cool::const_matrix_interface<Ty, _dim, 1, _y_rows_padded, _y_align, _y_matrix_storage_Ty>& y,
-	Ty tol, int iter, params_Ty params) noexcept
+	Ty tol, cool::iteration_count max_iter, const typename std::decay<params_Ty>::type& ... params)
 {
 	cool::matrix<Ty, _dim, _dim> Jinv = Jinvref;
 	cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align> x = xref;
-	cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align> fx = fn(x, params);
+	cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align> fx = fn(x, params...);
 	cool::matrix<Ty, _dim, 1> fx_my = fx - y;
-	tol = tol * tol;
+	Ty tol_sq = tol * tol;
+	std::int32_t iter = max_iter.remaining();
 
-	while ((cool::dot(fx_my, fx_my) >= tol) && (iter >= 0))
+	while (cool::dot(fx_my, fx_my) >= tol_sq)
 	{
 		iter--;
+		if (iter < 0)
+		{
+			break;
+		}
 
 		cool::matrix<Ty, _dim, 1> s = Jinv * fx_my;
 		x -= s;
-		cool::matrix<Ty, _dim, 1> dfx = fx - fn(x, params);
+		cool::matrix<Ty, _dim, 1> dfx = fx - fn(x, params...);
 		cool::matrix<Ty, _dim, 1> Jinvdfx = Jinv * dfx;
 		cool::matrix<Ty, _dim, 1> stemp = (static_cast<Ty>(1) / cool::dot(Jinvdfx, s)) * (s - Jinvdfx);
 		cool::const_matrix_span<Ty, 1, _dim> st(s.data());
 		Jinv.fmadd(stemp, st * Jinv);
-		fx = fn(x, params);
+		fx = fn(x, params...);
 		fx_my = fx - y;
 	}
 
 	xref = x;
 	Jinvref = Jinv;
 
-	return iter;
+	return cool::iteration_count(iter);
 }
 
 // lu_matrix
