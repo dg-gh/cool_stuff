@@ -187,7 +187,7 @@ namespace cool
 	template <class Ty> class cm;
 	template <class Ty> class rm;
 
-	class iteration_count;
+	class iteration_countdown;
 
 
 	namespace matrix_scalar_subroutine
@@ -865,24 +865,54 @@ namespace cool
 		};
 	};
 
-	// iteration_count
+	// iteration_countdown
 
-	class iteration_count
+	class iteration_countdown
 	{
 
 	public:
 
-		iteration_count() = delete;
-		explicit inline constexpr iteration_count(std::int32_t iter_count) noexcept : m_remaining(iter_count) {}
+		iteration_countdown() = delete;
+		explicit inline constexpr iteration_countdown(std::int32_t initial_count) noexcept : m_remaining(initial_count) {}
 
 		inline constexpr std::int32_t remaining() const noexcept;
 		inline constexpr bool good() const noexcept;
 		inline constexpr operator bool() const noexcept;
 
+		inline constexpr bool operator==(cool::iteration_countdown rhs) const noexcept;
+		inline constexpr bool operator!=(cool::iteration_countdown rhs) const noexcept;
+		inline constexpr bool operator<=(cool::iteration_countdown rhs) const noexcept;
+		inline constexpr bool operator>=(cool::iteration_countdown rhs) const noexcept;
+		inline constexpr bool operator<(cool::iteration_countdown rhs) const noexcept;
+		inline constexpr bool operator>(cool::iteration_countdown rhs) const noexcept;
+
+		inline cool::iteration_countdown& operator=(std::int32_t rhs) noexcept;
+
+		inline cool::iteration_countdown& operator--() noexcept;
+		inline cool::iteration_countdown& operator++() noexcept;
+		inline cool::iteration_countdown operator--(int) noexcept;
+		inline cool::iteration_countdown operator++(int) noexcept;
+		inline cool::iteration_countdown& operator-=(std::int32_t rhs) noexcept;
+		inline cool::iteration_countdown& operator+=(std::int32_t rhs) noexcept;
+
+		inline constexpr bool operator==(std::int32_t rhs) const noexcept;
+		inline constexpr bool operator!=(std::int32_t rhs) const noexcept;
+		inline constexpr bool operator<=(std::int32_t rhs) const noexcept;
+		inline constexpr bool operator>=(std::int32_t rhs) const noexcept;
+		inline constexpr bool operator<(std::int32_t rhs) const noexcept;
+		inline constexpr bool operator>(std::int32_t rhs) const noexcept;
+
 	private:
 
 		std::int32_t m_remaining;
 	};
+
+	inline constexpr bool operator==(std::int32_t lhs, cool::iteration_countdown rhs) noexcept;
+	inline constexpr bool operator!=(std::int32_t lhs, cool::iteration_countdown rhs) noexcept;
+	inline constexpr bool operator<=(std::int32_t lhs, cool::iteration_countdown rhs) noexcept;
+	inline constexpr bool operator>=(std::int32_t lhs, cool::iteration_countdown rhs) noexcept;
+	inline constexpr bool operator<(std::int32_t lhs, cool::iteration_countdown rhs) noexcept;
+	inline constexpr bool operator>(std::int32_t lhs, cool::iteration_countdown rhs) noexcept;
 
 	// free operators
 
@@ -1153,24 +1183,24 @@ namespace cool
 		std::size_t _fx_align, std::size_t _j_align, std::size_t _xref_align, std::size_t _xarg_align, std::size_t _y_align,
 		class _x_matrix_storage_Ty, class _y_matrix_storage_Ty, class ... params_Ty
 	>
-	inline cool::iteration_count nonlinear_solve(
+	inline cool::iteration_countdown nonlinear_solve(
 		cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty ...),
 		cool::matrix<Ty, _dim, _dim, _j_rows_padded, _j_align>(*Jfn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty ...),
 		cool::matrix_interface<Ty, _dim, 1, _xref_rows_padded, _xref_align, _x_matrix_storage_Ty>& xref,
 		const cool::const_matrix_interface<Ty, _dim, 1, _y_rows_padded, _y_align, _y_matrix_storage_Ty>& y,
-		Ty tol, cool::iteration_count max_iter, const typename std::decay<params_Ty>::type& ... params);
+		Ty tol, cool::iteration_countdown max_iter, const typename std::decay<params_Ty>::type& ... params);
 
 	template <class Ty, std::size_t _dim,
 		std::size_t _fx_rows_padded, std::size_t _jinv_rows_padded, std::size_t _xref_rows_padded, std::size_t _xarg_rows_padded, std::size_t _y_rows_padded,
 		std::size_t _fx_align, std::size_t _jinv_align, std::size_t _xref_align, std::size_t _xarg_align, std::size_t _y_align,
 		class _jinv_matrix_storage_Ty, class _x_matrix_storage_Ty, class _y_matrix_storage_Ty, class ... params_Ty
 	>
-	inline cool::iteration_count nonlinear_qn_solve(
+	inline cool::iteration_countdown nonlinear_qn_solve(
 		cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty ...),
 		cool::matrix_interface<Ty, _dim, _dim, _jinv_rows_padded, _jinv_align, _jinv_matrix_storage_Ty>& Jinvref,
 		cool::matrix_interface<Ty, _dim, 1, _xref_rows_padded, _xref_align, _x_matrix_storage_Ty>& xref,
 		const cool::const_matrix_interface<Ty, _dim, 1, _y_rows_padded, _y_align, _y_matrix_storage_Ty>& y,
-		Ty tol, cool::iteration_count max_iter, const typename std::decay<params_Ty>::type& ... params);
+		Ty tol, cool::iteration_countdown max_iter, const typename std::decay<params_Ty>::type& ... params);
 
 	// lu_matrix
 
@@ -6297,21 +6327,96 @@ inline bool cool::matrix_interface<Ty, _rows, _cols, _rows_padded, _align, _matr
 	return _cols * m_i + m_j > _cols * rhs.m_i + rhs.m_j;
 }
 
-// iteration_count
+// iteration_countdown
 
-inline constexpr std::int32_t cool::iteration_count::remaining() const noexcept
-{
+inline constexpr std::int32_t cool::iteration_countdown::remaining() const noexcept {
 	return m_remaining;
 }
-
-inline constexpr bool cool::iteration_count::good() const noexcept
-{
+inline constexpr bool cool::iteration_countdown::good() const noexcept {
+	return m_remaining >= 0;
+}
+inline constexpr cool::iteration_countdown::operator bool() const noexcept {
 	return m_remaining >= 0;
 }
 
-inline constexpr cool::iteration_count::operator bool() const noexcept
-{
-	return m_remaining >= 0;
+inline constexpr bool cool::iteration_countdown::operator==(cool::iteration_countdown rhs) const noexcept {
+	return m_remaining == rhs.m_remaining;
+}
+inline constexpr bool cool::iteration_countdown::operator!=(cool::iteration_countdown rhs) const noexcept {
+	return m_remaining != rhs.m_remaining;
+}
+inline constexpr bool cool::iteration_countdown::operator<=(cool::iteration_countdown rhs) const noexcept {
+	return m_remaining <= rhs.m_remaining;
+}
+inline constexpr bool cool::iteration_countdown::operator>=(cool::iteration_countdown rhs) const noexcept {
+	return m_remaining >= rhs.m_remaining;
+}
+inline constexpr bool cool::iteration_countdown::operator<(cool::iteration_countdown rhs) const noexcept {
+	return m_remaining < rhs.m_remaining;
+}
+inline constexpr bool cool::iteration_countdown::operator>(cool::iteration_countdown rhs) const noexcept {
+	return m_remaining > rhs.m_remaining;
+}
+
+inline cool::iteration_countdown& cool::iteration_countdown::operator=(std::int32_t rhs) noexcept {
+	m_remaining = rhs; return *this;
+}
+
+inline cool::iteration_countdown& cool::iteration_countdown::operator--() noexcept {
+	m_remaining--; return *this;
+}
+inline cool::iteration_countdown& cool::iteration_countdown::operator++() noexcept {
+	m_remaining++; return *this;
+}
+inline cool::iteration_countdown cool::iteration_countdown::operator--(int) noexcept {
+	cool::iteration_countdown ret = *this; m_remaining--; return ret;
+}
+inline cool::iteration_countdown cool::iteration_countdown::operator++(int) noexcept {
+	cool::iteration_countdown ret = *this; m_remaining++; return ret;
+}
+inline cool::iteration_countdown& cool::iteration_countdown::operator-=(std::int32_t rhs) noexcept {
+	m_remaining -= rhs; return *this;
+}
+inline cool::iteration_countdown& cool::iteration_countdown::operator+=(std::int32_t rhs) noexcept {
+	m_remaining += rhs; return *this;
+}
+
+inline constexpr bool cool::iteration_countdown::operator==(std::int32_t rhs) const noexcept {
+	return m_remaining == rhs;
+}
+inline constexpr bool cool::iteration_countdown::operator!=(std::int32_t rhs) const noexcept {
+	return m_remaining != rhs;
+}
+inline constexpr bool cool::iteration_countdown::operator<=(std::int32_t rhs) const noexcept {
+	return m_remaining <= rhs;
+}
+inline constexpr bool cool::iteration_countdown::operator>=(std::int32_t rhs) const noexcept {
+	return m_remaining >= rhs;
+}
+inline constexpr bool cool::iteration_countdown::operator<(std::int32_t rhs) const noexcept {
+	return m_remaining < rhs;
+}
+inline constexpr bool cool::iteration_countdown::operator>(std::int32_t rhs) const noexcept {
+	return m_remaining > rhs;
+}
+
+inline constexpr bool cool::operator==(std::int32_t lhs, cool::iteration_countdown rhs) noexcept {
+	return lhs == rhs.remaining();
+}
+inline constexpr bool cool::operator!=(std::int32_t lhs, cool::iteration_countdown rhs) noexcept {
+	return lhs != rhs.remaining();
+}
+inline constexpr bool cool::operator<=(std::int32_t lhs, cool::iteration_countdown rhs) noexcept {
+	return lhs <= rhs.remaining();
+}
+inline constexpr bool cool::operator>=(std::int32_t lhs, cool::iteration_countdown rhs) noexcept {
+	return lhs >= rhs.remaining();
+}
+inline constexpr bool cool::operator<(std::int32_t lhs, cool::iteration_countdown rhs) noexcept {
+	return lhs < rhs.remaining();
+}
+inline constexpr bool cool::operator>(std::int32_t lhs, cool::iteration_countdown rhs) noexcept {
+	return lhs > rhs.remaining();
 }
 
 // free operators
@@ -8361,12 +8466,12 @@ template <class Ty, std::size_t _dim,
 	std::size_t _fx_align, std::size_t _j_align, std::size_t _xref_align, std::size_t _xarg_align, std::size_t _y_align,
 	class _x_matrix_storage_Ty, class _y_matrix_storage_Ty, class ... params_Ty
 >
-inline cool::iteration_count cool::nonlinear_solve(
+inline cool::iteration_countdown cool::nonlinear_solve(
 	cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty ...),
 	cool::matrix<Ty, _dim, _dim, _j_rows_padded, _j_align>(*Jfn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty ...),
 	cool::matrix_interface<Ty, _dim, 1, _xref_rows_padded, _xref_align, _x_matrix_storage_Ty>& xref,
 	const cool::const_matrix_interface<Ty, _dim, 1, _y_rows_padded, _y_align, _y_matrix_storage_Ty>& y,
-	Ty tol, cool::iteration_count max_iter, const typename std::decay<params_Ty>::type& ... params)
+	Ty tol, cool::iteration_countdown max_iter, const typename std::decay<params_Ty>::type& ... params)
 {
 	cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align> x = xref;
 	cool::matrix<Ty, _dim, 1> fx_my = fn(x, params...) - y;
@@ -8387,7 +8492,7 @@ inline cool::iteration_count cool::nonlinear_solve(
 
 	xref = x;
 
-	return cool::iteration_count(iter);
+	return cool::iteration_countdown(iter);
 }
 
 template <class Ty, std::size_t _dim,
@@ -8395,12 +8500,12 @@ template <class Ty, std::size_t _dim,
 	std::size_t _fx_align, std::size_t _jinv_align, std::size_t _xref_align, std::size_t _xarg_align, std::size_t _y_align,
 	class _jinv_matrix_storage_Ty, class _x_matrix_storage_Ty, class _y_matrix_storage_Ty, class ... params_Ty
 >
-inline cool::iteration_count cool::nonlinear_qn_solve(
+inline cool::iteration_countdown cool::nonlinear_qn_solve(
 	cool::matrix<Ty, _dim, 1, _fx_rows_padded, _fx_align>(*fn)(const cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align>&, params_Ty ...),
 	cool::matrix_interface<Ty, _dim, _dim, _jinv_rows_padded, _jinv_align, _jinv_matrix_storage_Ty>& Jinvref,
 	cool::matrix_interface<Ty, _dim, 1, _xref_rows_padded, _xref_align, _x_matrix_storage_Ty>& xref,
 	const cool::const_matrix_interface<Ty, _dim, 1, _y_rows_padded, _y_align, _y_matrix_storage_Ty>& y,
-	Ty tol, cool::iteration_count max_iter, const typename std::decay<params_Ty>::type& ... params)
+	Ty tol, cool::iteration_countdown max_iter, const typename std::decay<params_Ty>::type& ... params)
 {
 	cool::matrix<Ty, _dim, _dim> Jinv = Jinvref;
 	cool::matrix<Ty, _dim, 1, _xarg_rows_padded, _xarg_align> x = xref;
@@ -8431,7 +8536,7 @@ inline cool::iteration_count cool::nonlinear_qn_solve(
 	xref = x;
 	Jinvref = Jinv;
 
-	return cool::iteration_count(iter);
+	return cool::iteration_countdown(iter);
 }
 
 // lu_matrix
