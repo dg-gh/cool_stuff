@@ -7201,11 +7201,11 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 	{
 		for (std::size_t j = 0; j < cols_mult4; j += 4)
 		{
-			const Ty* ptrA0 = A.data() + _rows_padded * j;
+			Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty) + j;
+			const Ty* ptrA0 = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty) + _rows_padded * j;
 			const Ty* ptrA1 = ptrA0 + _rows_padded;
 			const Ty* ptrA2 = ptrA0 + _rows_padded * 2;
 			const Ty* ptrA3 = ptrA0 + _rows_padded * 3;
-			Ty* res_ptr = ret.data() + j;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -7231,8 +7231,8 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 
 		case 1:
 		{
-			const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
-			Ty* res_ptr = ret.data() + cols_mult4;
+			Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty) + cols_mult4;
+			const Ty* ptrA0 = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty) + _rows_padded * cols_mult4;
 			for (std::size_t i = 0; i < _rows; i++)
 			{
 				*res_ptr = *ptrA0++;
@@ -7243,9 +7243,9 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 
 		case 2:
 		{
-			const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
+			Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty) + cols_mult4;
+			const Ty* ptrA0 = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty) + _rows_padded * cols_mult4;
 			const Ty* ptrA1 = ptrA0 + _rows_padded;
-			Ty* res_ptr = ret.data() + cols_mult4;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -7265,10 +7265,10 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 
 		case 3:
 		{
-			const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
+			Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty) + cols_mult4;
+			const Ty* ptrA0 = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty) + _rows_padded * cols_mult4;
 			const Ty* ptrA1 = ptrA0 + _rows_padded;
 			const Ty* ptrA2 = ptrA0 + _rows_padded * 2;
-			Ty* res_ptr = ret.data() + cols_mult4;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -7329,11 +7329,11 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 		{
 			for (std::size_t j = 0; j < cols_mult4; j += 4)
 			{
-				const Ty* ptrA0 = A.data() + _rows_padded * j;
+				Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty) + j;
+				const Ty* ptrA0 = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty) + _rows_padded * j;
 				const Ty* ptrA1 = ptrA0 + _rows_padded;
 				const Ty* ptrA2 = ptrA0 + _rows_padded * 2;
 				const Ty* ptrA3 = ptrA0 + _rows_padded * 3;
-				Ty* res_ptr = ret.data() + j;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -7359,8 +7359,8 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 
 			case 1:
 			{
-				const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
-				Ty* res_ptr = ret.data() + cols_mult4;
+				Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty) + cols_mult4;
+				const Ty* ptrA0 = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty) + _rows_padded * cols_mult4;
 				for (std::size_t i = 0; i < _rows; i++)
 				{
 					*res_ptr = *ptrA0++;
@@ -7371,9 +7371,9 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 
 			case 2:
 			{
-				const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
+				Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty) + cols_mult4;
+				const Ty* ptrA0 = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty) + _rows_padded * cols_mult4;
 				const Ty* ptrA1 = ptrA0 + _rows_padded;
-				Ty* res_ptr = ret.data() + cols_mult4;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -7393,10 +7393,10 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 
 			case 3:
 			{
-				const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
+				Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty) + cols_mult4;
+				const Ty* ptrA0 = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty) + _rows_padded * cols_mult4;
 				const Ty* ptrA1 = ptrA0 + _rows_padded;
 				const Ty* ptrA2 = ptrA0 + _rows_padded * 2;
-				Ty* res_ptr = ret.data() + cols_mult4;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -7437,11 +7437,11 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 		{
 			for (std::size_t j = 0; j < cols_mult4; j += 4)
 			{
-				const Ty* ptrA0 = A.data() + _rows_padded * j;
+				Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty) + j;
+				const Ty* ptrA0 = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty) + _rows_padded * j;
 				const Ty* ptrA1 = ptrA0 + _rows_padded;
 				const Ty* ptrA2 = ptrA0 + _rows_padded * 2;
 				const Ty* ptrA3 = ptrA0 + _rows_padded * 3;
-				Ty* res_ptr = ret.data() + j;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -7467,8 +7467,8 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 
 			case 1:
 			{
-				const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
-				Ty* res_ptr = ret.data() + cols_mult4;
+				Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty) + cols_mult4;
+				const Ty* ptrA0 = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty) + _rows_padded * cols_mult4;
 				for (std::size_t i = 0; i < _rows; i++)
 				{
 					*res_ptr = cool::matrix_scalar_subroutine::conj(*ptrA0++);
@@ -7479,9 +7479,9 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 
 			case 2:
 			{
-				const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
+				Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty) + cols_mult4;
+				const Ty* ptrA0 = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty) + _rows_padded * cols_mult4;
 				const Ty* ptrA1 = ptrA0 + _rows_padded;
-				Ty* res_ptr = ret.data() + cols_mult4;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
@@ -7501,10 +7501,10 @@ inline cool::matrix_result<Ty, _cols, _rows, _opt_res_rows_padded, _opt_res_alig
 
 			case 3:
 			{
-				const Ty* ptrA0 = A.data() + _rows_padded * cols_mult4;
+				Ty* res_ptr = COOL_MATRIX_ASSUME_ALIGNED(ret.data(), _opt_res_align, Ty) + cols_mult4;
+				const Ty* ptrA0 = COOL_MATRIX_ASSUME_ALIGNED(A.data(), _align, Ty) + _rows_padded * cols_mult4;
 				const Ty* ptrA1 = ptrA0 + _rows_padded;
 				const Ty* ptrA2 = ptrA0 + _rows_padded * 2;
-				Ty* res_ptr = ret.data() + cols_mult4;
 #ifdef __clang__
 #pragma unroll 4
 #endif // __clang__
