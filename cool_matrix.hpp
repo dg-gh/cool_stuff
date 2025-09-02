@@ -193,8 +193,8 @@ namespace cool
 	namespace matrix_scalar_subroutine
 	{
 		// template specializable functions
-		template <class Ty> inline Ty conj(const Ty& val) noexcept; // return type must be same type as val
-		template <class Ty> inline Ty abs_sq(const Ty& val) noexcept; // return type must be comparable with operator<
+		template <class Ty> inline Ty conj(const Ty& val) noexcept; // complex conjugate, return type must be the same type as val
+		template <class Ty> inline Ty abs_sq(const Ty& val) noexcept; // absolute value squared, return type must be comparable with operator< and may be of different type than val
 	}
 
 
@@ -8616,15 +8616,17 @@ inline Ty cool::lu_matrix<Ty, _dim, _rows_padded, _align>::diag_ratio() const no
 	}
 	else
 	{
+		using _ordered_type = decltype(cool::matrix_scalar_subroutine::abs_sq<Ty>(static_cast<Ty>(0)));
+
 		std::size_t _dim_m1 = _dim - 1;
 
 		const Ty* ptr = COOL_MATRIX_ASSUME_ALIGNED(this->data(), _align, Ty);
 
 		Ty min_value = *ptr;
-		auto min_value_sq = cool::matrix_scalar_subroutine::abs_sq<Ty>(min_value);
+		_ordered_type min_value_sq = cool::matrix_scalar_subroutine::abs_sq<Ty>(min_value);
 
 		Ty max_value = min_value;
-		auto max_value_sq = min_value_sq;
+		_ordered_type max_value_sq = min_value_sq;
 
 #ifdef __clang__
 #pragma unroll 4
@@ -8635,7 +8637,7 @@ inline Ty cool::lu_matrix<Ty, _dim, _rows_padded, _align>::diag_ratio() const no
 		for (std::size_t k = 1; k < _dim_m1; k++)
 		{
 			Ty temp = *(ptr + (_rows_padded + 1) * k);
-			auto temp_sq = cool::matrix_scalar_subroutine::abs_sq<Ty>(temp);
+			_ordered_type temp_sq = cool::matrix_scalar_subroutine::abs_sq<Ty>(temp);
 
 			bool new_min = temp_sq < min_value_sq;
 			min_value = new_min ? temp : min_value;
@@ -8647,7 +8649,7 @@ inline Ty cool::lu_matrix<Ty, _dim, _rows_padded, _align>::diag_ratio() const no
 		}
 
 		Ty temp = *(ptr + (_rows_padded + 1) * _dim_m1);
-		auto temp_sq = cool::matrix_scalar_subroutine::abs_sq<Ty>(temp);
+		_ordered_type temp_sq = cool::matrix_scalar_subroutine::abs_sq<Ty>(temp);
 
 		min_value = (temp_sq < min_value_sq) ? temp : min_value;
 		max_value = (max_value_sq < temp_sq) ? temp : max_value;
@@ -8920,14 +8922,16 @@ inline cool::lu_matrix<Ty, _dim, cool::_opt_dim<_opt_res_rows_padded, _dim>::val
 	for (std::size_t k = 0; k < _dim_m1; k++)
 	{
 		{
+			using _ordered_type = decltype(cool::matrix_scalar_subroutine::abs_sq<Ty>(static_cast<Ty>(0)));
+
 			Ty* ptrLU = COOL_MATRIX_ASSUME_ALIGNED(LU.data(), _lu_align, Ty) + k + _rows_padded * k;
-			auto piv_abs_sq = cool::matrix_scalar_subroutine::abs_sq<Ty>(*ptrLU++);
+			_ordered_type piv_abs_sq = cool::matrix_scalar_subroutine::abs_sq<Ty>(*ptrLU++);
 			std::size_t grt = k;
 			bool permute = false;
 
 			for (std::size_t j = k + 1; j < _dim; j++)
 			{
-				auto piv_abs_sq_temp = cool::matrix_scalar_subroutine::abs_sq<Ty>(*ptrLU++);
+				_ordered_type piv_abs_sq_temp = cool::matrix_scalar_subroutine::abs_sq<Ty>(*ptrLU++);
 				if (piv_abs_sq < piv_abs_sq_temp)
 				{
 					piv_abs_sq = piv_abs_sq_temp;
