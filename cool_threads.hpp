@@ -42,6 +42,16 @@
 #endif // COOL_THREADS_NO_EXCEPTIONS
 #endif // !defined(xCOOL_THREADS_TRY) && !defined(xCOOL_THREADS_CATCH) && !defined(xCOOL_THREADS_EXCEPTION) && !defined(xCOOL_THREADS_SYSTEM_ERROR)
 
+// to force use of 32 bit counter in threads_mq : #define COOL_THREADS_MQ_32BIT_COUNTER
+
+#ifndef COOL_THREADS_MQ_32BIT_COUNTER
+#endif // COOL_THREADS_MQ_32BIT_COUNTER
+
+// to force use of 16 bit counter in threads_mq : #define COOL_THREADS_MQ_16BIT_COUNTER
+
+#ifndef COOL_THREADS_MQ_16BIT_COUNTER
+#endif // COOL_THREADS_MQ_16BIT_COUNTER
+
 
 namespace cool
 {
@@ -800,6 +810,7 @@ namespace cool
 
 		using _task = typename cool::_threads_base::_base_task<_arg_buffer_size, _arg_buffer_align>;
 
+#if !defined(COOL_THREADS_MQ_32BIT_COUNTER) && !defined(COOL_THREADS_MQ_16BIT_COUNTER)
 #ifdef UINT64_MAX
 		using _uintX = std::uint32_t;
 		using _uint2X = std::uint64_t;
@@ -807,6 +818,13 @@ namespace cool
 		using _uintX = std::uint16_t;
 		using _uint2X = std::uint32_t;
 #endif // UINT64_MAX
+#elif defined(COOL_THREADS_MQ_32BIT_COUNTER)
+		using _uintX = std::uint32_t;
+		using _uint2X = std::uint64_t;
+#else // defined(COOL_THREADS_MQ_16BIT_COUNTER)
+		using _uintX = std::uint16_t;
+		using _uint2X = std::uint32_t;
+#endif // COOL_THREADS_MQ_XBIT_COUNTER
 
 		_threads_mq_data() = default;
 		_threads_mq_data(const cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buffer_align>&) = delete;
