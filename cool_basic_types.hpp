@@ -193,7 +193,7 @@ namespace cool
 		func_ptr() noexcept = default;
 		inline func_ptr(value_type _func_ptr) noexcept;
 		inline func_ptr<return_Ty(arg_Ty ...)>& operator=(value_type _func_ptr) noexcept;
-		inline return_Ty operator()(arg_Ty&& ... args) const;
+		template <class ... _arg_Ty> inline return_Ty operator()(_arg_Ty&& ... args) const;
 
 		inline value_type& function() noexcept;
 		inline const value_type& function() const noexcept;
@@ -250,7 +250,7 @@ namespace cool
 		member_func_ptr() noexcept = default;
 		inline member_func_ptr(value_type _func_ptr) noexcept;
 		inline member_func_ptr<object_Ty, return_Ty(arg_Ty ...)>& operator=(value_type _func_ptr) noexcept;
-		inline return_Ty operator()(object_Ty* obj_ptr, arg_Ty&& ... args) const;
+		template <class ... _arg_Ty> inline return_Ty operator()(object_Ty* obj_ptr, _arg_Ty&& ... args) const;
 
 		inline value_type& function() noexcept;
 		inline const value_type& function() const noexcept;
@@ -325,7 +325,7 @@ namespace cool
 
 		object_member_func_ptr() noexcept = default;
 		inline object_member_func_ptr(object_Ty* obj_ptr, value_type _func_ptr) noexcept;
-		inline return_Ty operator()(arg_Ty&& ... args) const;
+		template <class ... _arg_Ty> inline return_Ty operator()(_arg_Ty&& ... args) const;
 
 		inline object_pointer_type& object() noexcept;
 		inline const object_pointer_type& object() const noexcept;
@@ -515,8 +515,8 @@ inline cool::func_ptr<return_Ty(arg_Ty ...)>& cool::func_ptr<return_Ty(arg_Ty ..
 	m_func_ptr = _func_ptr; return *this;
 }
 
-template <class return_Ty, class ... arg_Ty>
-inline return_Ty cool::func_ptr<return_Ty(arg_Ty ...)>::operator()(arg_Ty&& ... args) const { return m_func_ptr(std::forward<arg_Ty>(args)...); }
+template <class return_Ty, class ... arg_Ty> template <class ... _arg_Ty>
+inline return_Ty cool::func_ptr<return_Ty(arg_Ty ...)>::operator()(_arg_Ty&& ... args) const { return m_func_ptr(std::forward<_arg_Ty>(args)...); }
 
 template <class return_Ty, class ... arg_Ty>
 inline typename cool::func_ptr<return_Ty(arg_Ty ...)>::value_type& cool::func_ptr<return_Ty(arg_Ty ...)>::function() noexcept { return m_func_ptr; }
@@ -558,9 +558,9 @@ inline cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)>& cool::member_fun
 	m_func_ptr = _func_ptr; return *this;
 }
 
-template <class object_Ty, class return_Ty, class ... arg_Ty>
-inline return_Ty cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)>::operator()(object_Ty* obj_ptr, arg_Ty&& ... args) const {
-	return ((*obj_ptr).*m_func_ptr)(std::forward<arg_Ty>(args)...);
+template <class object_Ty, class return_Ty, class ... arg_Ty> template <class ... _arg_Ty>
+inline return_Ty cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)>::operator()(object_Ty* obj_ptr, _arg_Ty&& ... args) const {
+	return ((*obj_ptr).*m_func_ptr)(std::forward<_arg_Ty>(args)...);
 }
 
 template <class object_Ty, class return_Ty, class ... arg_Ty>
@@ -644,9 +644,9 @@ inline cool::object_member_func_ptr<object_Ty, return_Ty(arg_Ty ...)>::object_me
 	: m_obj_ptr(obj_ptr), m_func_ptr(_func_ptr) {
 }
 
-template <class object_Ty, class return_Ty, class ... arg_Ty>
-inline return_Ty cool::object_member_func_ptr<object_Ty, return_Ty(arg_Ty ...)>::operator()(arg_Ty&& ... args) const {
-	return ((*m_obj_ptr).*m_func_ptr)(std::forward<arg_Ty>(args)...);
+template <class object_Ty, class return_Ty, class ... arg_Ty> template <class ... _arg_Ty>
+inline return_Ty cool::object_member_func_ptr<object_Ty, return_Ty(arg_Ty ...)>::operator()(_arg_Ty&& ... args) const {
+	return ((*m_obj_ptr).*m_func_ptr)(std::forward<_arg_Ty>(args)...);
 }
 
 template <class object_Ty, class return_Ty, class ... arg_Ty>
