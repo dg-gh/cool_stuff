@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <climits>
 #include <cstring>
+#include <type_traits>
 #include <utility>
 #include <new>
 #include <thread>
