@@ -375,6 +375,104 @@ namespace cool
 	inline cool::object_member_func_ptr<const volatile object_Ty, return_Ty(arg_Ty ...)> make_object_member_func_ptr(
 		const volatile object_Ty* obj_ptr, return_Ty(object_Ty::* _func_ptr)(arg_Ty ...) const volatile noexcept) noexcept;
 #endif // __cplusplus >= 201703L
+
+
+	// aligned
+
+	template <class Ty, std::size_t _align, std::size_t _alloc_align> class alignas(_alloc_align) _aligned_realign_impl;
+	template <class Ty, std::size_t _align, std::size_t _alloc_align> class alignas(_alloc_align) _aligned_impl;
+
+	template <class Ty, std::size_t _align = alignof(Ty), std::size_t _alloc_align = alignof(std::max_align_t)>
+	using aligned = cool::type_if<(_align > _alloc_align),
+		_aligned_realign_impl<Ty, _align, _alloc_align>,
+		_aligned_impl<Ty, _align, _alloc_align>
+	>;
+
+	template <class Ty, std::size_t _align, std::size_t _alloc_align> class alignas(_alloc_align) _aligned_realign_impl
+	{
+
+	public:
+
+		static_assert((_align& (_align - 1)) == 0, "cool::aligned<type, align, alloc_align> requirement : align must be a power of 2");
+		static_assert((_alloc_align& (_alloc_align - 1)) == 0, "cool::aligned<type, alloc_align, alloc_align> requirement : align must be a power of 2");
+
+		inline _aligned_realign_impl();
+		template <class ... arg_Ty> inline _aligned_realign_impl(arg_Ty&& ... args);
+		inline _aligned_realign_impl(const cool::_aligned_realign_impl<Ty, _align, _alloc_align>& rhs);
+		inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>& operator=(const cool::_aligned_realign_impl<Ty, _align, _alloc_align>& rhs);
+		inline _aligned_realign_impl(cool::_aligned_realign_impl<Ty, _align, _alloc_align>&& rhs) noexcept;
+		inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>& operator=(cool::_aligned_realign_impl<Ty, _align, _alloc_align>&& rhs) noexcept;
+		inline ~_aligned_realign_impl();
+
+		using value_type = Ty;
+		using pointer = Ty*;
+		using const_pointer = const Ty*;
+		using reference = Ty&;
+		using const_reference = const Ty&;
+		using size_type = std::size_t;
+		using difference_type = std::ptrdiff_t;
+
+		static constexpr std::size_t align = _align;
+		static constexpr std::size_t alloc_align = _alloc_align;
+
+		inline Ty& get_aligned_ref() noexcept;
+		inline const Ty& get_aligned_ref() const noexcept;
+		inline const Ty& get_aligned_const_ref() const noexcept;
+
+		inline Ty* get_aligned_ptr() noexcept;
+		inline const Ty* get_aligned_ptr() const noexcept;
+		inline const Ty* get_aligned_const_ptr() const noexcept;
+
+	private:
+
+		static constexpr bool _need_realign = _align > _alloc_align;
+		static constexpr std::size_t _byte_size = _need_realign ? sizeof(Ty) + _align - _alloc_align : sizeof(Ty);
+
+		static inline Ty* _make_aligned_address_ptr(void* ptr) noexcept;
+
+		unsigned char m_storage[_byte_size];
+		Ty* m_ptr;
+	};
+
+	template <class Ty, std::size_t _align, std::size_t _alloc_align> class alignas(_alloc_align) _aligned_impl
+	{
+
+	public:
+
+		static_assert((_align& (_align - 1)) == 0, "cool::aligned<type, align, alloc_align> requirement : align must be a power of 2");
+		static_assert((_alloc_align& (_alloc_align - 1)) == 0, "cool::aligned<type, alloc_align, alloc_align> requirement : align must be a power of 2");
+
+		using value_type = Ty;
+		using pointer = Ty*;
+		using const_pointer = const Ty*;
+		using reference = Ty&;
+		using const_reference = const Ty&;
+		using size_type = std::size_t;
+		using difference_type = std::ptrdiff_t;
+
+		static constexpr std::size_t align = _align;
+		static constexpr std::size_t alloc_align = _alloc_align;
+
+		inline _aligned_impl() = default;
+		template <class ... arg_Ty> inline _aligned_impl(arg_Ty&& ... args);
+		inline _aligned_impl(const cool::_aligned_impl<Ty, _align, _alloc_align>& rhs) = default;
+		inline cool::_aligned_impl<Ty, _align, _alloc_align>& operator=(const cool::_aligned_impl<Ty, _align, _alloc_align>& rhs) = default;
+		inline _aligned_impl(cool::_aligned_impl<Ty, _align, _alloc_align>&& rhs) noexcept = default;
+		inline cool::_aligned_impl<Ty, _align, _alloc_align>& operator=(cool::_aligned_impl<Ty, _align, _alloc_align>&& rhs) noexcept = default;
+		inline ~_aligned_impl() = default;
+
+		inline Ty& get_aligned_ref() noexcept;
+		inline const Ty& get_aligned_ref() const noexcept;
+		inline const Ty& get_aligned_const_ref() const noexcept;
+
+		inline Ty* get_aligned_ptr() noexcept;
+		inline const Ty* get_aligned_ptr() const noexcept;
+		inline const Ty* get_aligned_const_ptr() const noexcept;
+
+	private:
+
+		Ty m_storage;
+	};
 }
 
 
@@ -728,6 +826,115 @@ inline cool::object_member_func_ptr<const volatile object_Ty, return_Ty(arg_Ty .
 	return cool::object_member_func_ptr<const volatile object_Ty, return_Ty(arg_Ty ...)>(obj_ptr, _func_ptr);
 }
 #endif // __cplusplus >= 201703L
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>::_aligned_realign_impl()
+{
+	m_ptr = _make_aligned_address_ptr(static_cast<void*>(m_storage));
+	new (m_ptr) Ty();
+}
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align> template <class ... arg_Ty>
+inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>::_aligned_realign_impl(arg_Ty&& ... args)
+{
+	m_ptr = _make_aligned_address_ptr(static_cast<void*>(m_storage));
+	new (m_ptr) Ty(std::forward<arg_Ty>(args)...);
+}
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>::_aligned_realign_impl(const cool::_aligned_realign_impl<Ty, _align, _alloc_align>& rhs)
+{
+	m_ptr = _make_aligned_address_ptr(static_cast<void*>(m_storage));
+	new (m_ptr) Ty(*rhs.m_ptr);
+	return *this;
+}
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>& cool::_aligned_realign_impl<Ty, _align, _alloc_align>::operator=(const cool::_aligned_realign_impl<Ty, _align, _alloc_align>& rhs)
+{
+	*m_ptr = *rhs.m_ptr;
+	return *this;
+}
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>::_aligned_realign_impl(cool::_aligned_realign_impl<Ty, _align, _alloc_align>&& rhs) noexcept
+{
+	m_ptr = _make_aligned_address_ptr(static_cast<void*>(m_storage));
+	new (m_ptr) Ty(std::move(*rhs.m_ptr));
+	return *this;
+}
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>& cool::_aligned_realign_impl<Ty, _align, _alloc_align>::operator=(cool::_aligned_realign_impl<Ty, _align, _alloc_align>&& rhs) noexcept
+{
+	*m_ptr = std::move(*rhs.m_ptr);
+	return *this;
+}
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>::~_aligned_realign_impl()
+{
+	m_ptr->~Ty();
+}
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline Ty& cool::_aligned_realign_impl<Ty, _align, _alloc_align>::get_aligned_ref() noexcept { return *m_ptr; }
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline const Ty& cool::_aligned_realign_impl<Ty, _align, _alloc_align>::get_aligned_ref() const noexcept { return *m_ptr; }
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline const Ty& cool::_aligned_realign_impl<Ty, _align, _alloc_align>::get_aligned_const_ref() const noexcept { return *m_ptr; }
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline Ty* cool::_aligned_realign_impl<Ty, _align, _alloc_align>::get_aligned_ptr() noexcept { return m_ptr; }
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline const Ty* cool::_aligned_realign_impl<Ty, _align, _alloc_align>::get_aligned_ptr() const noexcept { return m_ptr; }
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline const Ty* cool::_aligned_realign_impl<Ty, _align, _alloc_align>::get_aligned_const_ptr() const noexcept { return m_ptr; }
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline Ty* cool::_aligned_realign_impl<Ty, _align, _alloc_align>::_make_aligned_address_ptr(void* ptr) noexcept
+{
+	if (_need_realign)
+	{
+		std::uintptr_t ptr_address = reinterpret_cast<std::uintptr_t>(ptr);
+		std::uintptr_t remainder = ptr_address % _align;
+		if (remainder != 0)
+		{
+			ptr_address += (_align - remainder);
+		}
+
+		return reinterpret_cast<Ty*>(ptr_address);
+	}
+	else
+	{
+		return static_cast<Ty*>(ptr);
+	}
+}
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align> template <class ... arg_Ty>
+inline cool::_aligned_impl<Ty, _align, _alloc_align>::_aligned_impl(arg_Ty&& ... args) : m_storage(std::forward<arg_Ty>(args)...) {}
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline Ty& cool::_aligned_impl<Ty, _align, _alloc_align>::get_aligned_ref() noexcept { return m_storage; }
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline const Ty& cool::_aligned_impl<Ty, _align, _alloc_align>::get_aligned_ref() const noexcept { return m_storage; }
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline const Ty& cool::_aligned_impl<Ty, _align, _alloc_align>::get_aligned_const_ref() const noexcept { return m_storage; }
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline Ty* cool::_aligned_impl<Ty, _align, _alloc_align>::get_aligned_ptr() noexcept { return &m_storage; }
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline const Ty* cool::_aligned_impl<Ty, _align, _alloc_align>::get_aligned_ptr() const noexcept { return &m_storage; }
+
+template <class Ty, std::size_t _align, std::size_t _alloc_align>
+inline const Ty* cool::_aligned_impl<Ty, _align, _alloc_align>::get_aligned_const_ptr() const noexcept { return &m_storage; }
 
 #endif // xCOOL_BASIC_TYPES_HPP
 
