@@ -846,7 +846,6 @@ inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>::_aligned_realign_i
 {
 	m_ptr = _make_aligned_address_ptr(static_cast<void*>(m_storage));
 	new (m_ptr) Ty(*rhs.m_ptr);
-	return *this;
 }
 
 template <class Ty, std::size_t _align, std::size_t _alloc_align>
@@ -861,7 +860,6 @@ inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>::_aligned_realign_i
 {
 	m_ptr = _make_aligned_address_ptr(static_cast<void*>(m_storage));
 	new (m_ptr) Ty(std::move(*rhs.m_ptr));
-	return *this;
 }
 
 template <class Ty, std::size_t _align, std::size_t _alloc_align>
