@@ -10,6 +10,7 @@
 #include <climits>
 #include <limits>
 #include <type_traits>
+#include <new>
 #include <utility>
 #include <tuple>
 #include <cassert>
@@ -393,8 +394,10 @@ namespace cool
 
 	public:
 
-		static_assert((_align& (_align - 1)) == 0, "cool::aligned<type, align, alloc_align> requirement : align must be a power of 2");
-		static_assert((_alloc_align& (_alloc_align - 1)) == 0, "cool::aligned<type, alloc_align, alloc_align> requirement : align must be a power of 2");
+		static_assert((_align & (_align - 1)) == 0, "cool::aligned<type, align, alloc_align> requirement : align must be a power of 2");
+		static_assert((_alloc_align & (_alloc_align - 1)) == 0, "cool::aligned<type, align, alloc_align> requirement : alloc_align must be a power of 2");
+		static_assert(_align >= alignof(Ty), "cool::aligned<type, align, alloc_align> requirement : align must not be smaller than alignof(Ty)");
+		static_assert(_alloc_align >= alignof(std::max_align_t), "cool::aligned<type, align, alloc_align> requirement : alloc_align must not be smaller than alignof(std::max_align_t)");
 
 		inline _aligned_realign_impl();
 		template <class ... arg_Ty> inline _aligned_realign_impl(arg_Ty&& ... args);
@@ -439,8 +442,10 @@ namespace cool
 
 	public:
 
-		static_assert((_align& (_align - 1)) == 0, "cool::aligned<type, align, alloc_align> requirement : align must be a power of 2");
-		static_assert((_alloc_align& (_alloc_align - 1)) == 0, "cool::aligned<type, alloc_align, alloc_align> requirement : align must be a power of 2");
+		static_assert((_align & (_align - 1)) == 0, "cool::aligned<type, align, alloc_align> requirement : align must be a power of 2");
+		static_assert((_alloc_align & (_alloc_align - 1)) == 0, "cool::aligned<type, align, alloc_align> requirement : alloc_align must be a power of 2");
+		static_assert(_align >= alignof(Ty), "cool::aligned<type, align, alloc_align> requirement : align must not be smaller than alignof(Ty)");
+		static_assert(_alloc_align >= alignof(std::max_align_t), "cool::aligned<type, align, alloc_align> requirement : alloc_align must not be smaller than alignof(std::max_align_t)");
 
 		using value_type = Ty;
 		using pointer = Ty*;
