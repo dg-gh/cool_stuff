@@ -69,7 +69,8 @@ namespace cool
 	template <class int_Ty> class integer;
 	// has the same interface as integral types
 	// also has the following members :
-	// > static constexpr std::size_t bitcount;
+	// > using value_type = int_Ty;
+	// > static constexpr std::size_t bit_count;
 	// > static constexpr bool is_signed;
 	// > static constexpr cool::integer<int_Ty> min() noexcept;
 	// > static constexpr cool::integer<int_Ty> max() noexcept;
