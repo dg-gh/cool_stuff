@@ -395,18 +395,10 @@ namespace cool
 
 	public:
 
-		static_assert((_align & (_align - 1)) == 0, "cool::aligned<type, align, alloc_align> requirement : align must be a power of 2");
-		static_assert((_alloc_align & (_alloc_align - 1)) == 0, "cool::aligned<type, align, alloc_align> requirement : alloc_align must be a power of 2");
-		static_assert(_align >= alignof(Ty), "cool::aligned<type, align, alloc_align> requirement : align must not be smaller than alignof(Ty)");
-		static_assert(_alloc_align >= alignof(std::max_align_t), "cool::aligned<type, align, alloc_align> requirement : alloc_align must not be smaller than alignof(std::max_align_t)");
-
-		inline _aligned_realign_impl();
-		template <class ... arg_Ty> inline _aligned_realign_impl(arg_Ty&& ... args);
-		inline _aligned_realign_impl(const cool::_aligned_realign_impl<Ty, _align, _alloc_align>& rhs);
-		inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>& operator=(const cool::_aligned_realign_impl<Ty, _align, _alloc_align>& rhs);
-		inline _aligned_realign_impl(cool::_aligned_realign_impl<Ty, _align, _alloc_align>&& rhs) noexcept;
-		inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>& operator=(cool::_aligned_realign_impl<Ty, _align, _alloc_align>&& rhs) noexcept;
-		inline ~_aligned_realign_impl();
+		static_assert((_align & (_align - 1)) == 0, "cool::aligned<value_type, align, alloc_align> requirement : align must be a power of 2");
+		static_assert((_alloc_align & (_alloc_align - 1)) == 0, "cool::aligned<value_type, align, alloc_align> requirement : alloc_align must be a power of 2");
+		static_assert(_align >= alignof(Ty), "cool::aligned<value_type, align, alloc_align> requirement : align must not be smaller than alignof(value_type)");
+		static_assert(_alloc_align >= alignof(std::max_align_t), "cool::aligned<value_type, align, alloc_align> requirement : alloc_align must not be smaller than alignof(std::max_align_t)");
 
 		using value_type = Ty;
 		using pointer = Ty*;
@@ -418,6 +410,14 @@ namespace cool
 
 		static constexpr std::size_t align = _align;
 		static constexpr std::size_t alloc_align = _alloc_align;
+
+		inline _aligned_realign_impl();
+		template <class ... arg_Ty> inline _aligned_realign_impl(arg_Ty&& ... args);
+		inline _aligned_realign_impl(const cool::_aligned_realign_impl<Ty, _align, _alloc_align>& rhs);
+		inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>& operator=(const cool::_aligned_realign_impl<Ty, _align, _alloc_align>& rhs);
+		inline _aligned_realign_impl(cool::_aligned_realign_impl<Ty, _align, _alloc_align>&& rhs) noexcept;
+		inline cool::_aligned_realign_impl<Ty, _align, _alloc_align>& operator=(cool::_aligned_realign_impl<Ty, _align, _alloc_align>&& rhs) noexcept;
+		inline ~_aligned_realign_impl();
 
 		inline Ty& get_aligned_ref() noexcept;
 		inline const Ty& get_aligned_ref() const noexcept;
@@ -443,10 +443,10 @@ namespace cool
 
 	public:
 
-		static_assert((_align & (_align - 1)) == 0, "cool::aligned<type, align, alloc_align> requirement : align must be a power of 2");
-		static_assert((_alloc_align & (_alloc_align - 1)) == 0, "cool::aligned<type, align, alloc_align> requirement : alloc_align must be a power of 2");
-		static_assert(_align >= alignof(Ty), "cool::aligned<type, align, alloc_align> requirement : align must not be smaller than alignof(Ty)");
-		static_assert(_alloc_align >= alignof(std::max_align_t), "cool::aligned<type, align, alloc_align> requirement : alloc_align must not be smaller than alignof(std::max_align_t)");
+		static_assert((_align & (_align - 1)) == 0, "cool::aligned<value_type, align, alloc_align> requirement : align must be a power of 2");
+		static_assert((_alloc_align & (_alloc_align - 1)) == 0, "cool::aligned<value_type, align, alloc_align> requirement : alloc_align must be a power of 2");
+		static_assert(_align >= alignof(Ty), "cool::aligned<value_type, align, alloc_align> requirement : align must not be smaller than alignof(value_type)");
+		static_assert(_alloc_align >= alignof(std::max_align_t), "cool::aligned<value_type, align, alloc_align> requirement : alloc_align must not be smaller than alignof(std::max_align_t)");
 
 		using value_type = Ty;
 		using pointer = Ty*;
@@ -503,8 +503,8 @@ namespace cool
 		integer() noexcept = default;
 		inline constexpr integer(int_Ty val) noexcept : m_value(val) {}
 
-		static constexpr cool::integer<int_Ty> min() noexcept { return cool::integer<int_Ty>(std::numeric_limits<int_Ty>::min()); }
-		static constexpr cool::integer<int_Ty> max() noexcept { return cool::integer<int_Ty>(std::numeric_limits<int_Ty>::max()); }
+		static inline constexpr cool::integer<int_Ty> min() noexcept { return cool::integer<int_Ty>(std::numeric_limits<int_Ty>::min()); }
+		static inline constexpr cool::integer<int_Ty> max() noexcept { return cool::integer<int_Ty>(std::numeric_limits<int_Ty>::max()); }
 
 		inline cool::integer<int_Ty>& operator&=(cool::integer<int_Ty> rhs) noexcept { m_value &= rhs.m_value; return *this; }
 		inline cool::integer<int_Ty>& operator|=(cool::integer<int_Ty> rhs) noexcept { m_value |= rhs.m_value; return *this; }
