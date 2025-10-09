@@ -48,15 +48,27 @@ namespace cool
 		cmp_Ty cmp{};
 	};
 
-	// max_depth
+	// logic_ctrl_cmp
 
-	class max_depth {
+	template <class Ty> class logic_ctrl_cmp
+	{
+
 	public:
-		max_depth() = delete;
-		explicit inline constexpr max_depth(int new_max_depth) noexcept;
-		inline constexpr int value() const noexcept;
-	private:
-		int m_value;
+
+		static constexpr unsigned char not_equal = 0;
+		static constexpr unsigned char rising = 1;
+		static constexpr unsigned char falling = 2;
+		static constexpr unsigned char always_false = 3;
+		static constexpr unsigned char always_true = 4;
+
+		unsigned char detect = logic_ctrl_cmp::not_equal;
+
+		constexpr logic_ctrl_cmp() = default;
+		inline constexpr logic_ctrl_cmp(unsigned char _detect) noexcept;
+		constexpr logic_ctrl_cmp(const cool::logic_ctrl_cmp<Ty>&) noexcept = default;
+		cool::logic_ctrl_cmp<Ty>& operator=(const cool::logic_ctrl_cmp<Ty>&) noexcept = default;
+
+		inline constexpr bool operator()(const Ty& old_value, const Ty& new_value) const noexcept;
 	};
 
 	// logic_ctrl_init_result
@@ -92,27 +104,15 @@ namespace cool
 		template <class Ty, class cmp_Ty, class index_Ty> friend class cool::logic_ctrl;
 	};
 
-	// logic_ctrl_cmp
+	// max_depth
 
-	template <class Ty> class logic_ctrl_cmp
-	{
-
+	class max_depth {
 	public:
-
-		static constexpr unsigned char not_equal = 0;
-		static constexpr unsigned char rising = 1;
-		static constexpr unsigned char falling = 2;
-		static constexpr unsigned char always_false = 3;
-		static constexpr unsigned char always_true = 4;
-
-		unsigned char detect = logic_ctrl_cmp::not_equal;
-
-		constexpr logic_ctrl_cmp() = default;
-		inline constexpr logic_ctrl_cmp(unsigned char _detect) noexcept;
-		constexpr logic_ctrl_cmp(const cool::logic_ctrl_cmp<Ty>&) noexcept = default;
-		cool::logic_ctrl_cmp<Ty>& operator=(const cool::logic_ctrl_cmp<Ty>&) noexcept = default;
-
-		inline constexpr bool operator()(const Ty& old_value, const Ty& new_value) const noexcept;
+		max_depth() = delete;
+		explicit inline constexpr max_depth(int new_max_depth) noexcept;
+		inline constexpr int value() const noexcept;
+	private:
+		int m_value;
 	};
 
 	// logic_ctrl
@@ -321,6 +321,21 @@ namespace cool
 template <class cmp_Ty, class index_Ty>
 inline cool::logic_ctrl_observed_info<cmp_Ty, index_Ty>::logic_ctrl_observed_info(index_Ty _observed_index, cmp_Ty _cmp) : observed_index(_observed_index), cmp(_cmp) {}
 
+template <class Ty>
+inline constexpr cool::logic_ctrl_cmp<Ty>::logic_ctrl_cmp(unsigned char _detect) noexcept : detect(_detect) {}
+
+template <class Ty>
+inline constexpr bool cool::logic_ctrl_cmp<Ty>::operator()(const Ty& old_value, const Ty& new_value) const noexcept
+{
+	switch (detect)
+	{
+	case logic_ctrl_cmp::not_equal: return old_value != new_value; break;
+	case logic_ctrl_cmp::rising: return old_value < new_value; break;
+	case logic_ctrl_cmp::falling: return old_value > new_value; break;
+	default: return (detect == logic_ctrl_cmp::always_true); break;
+	}
+}
+
 inline cool::logic_ctrl_init_result::operator bool() const noexcept
 {
 	return m_result == logic_ctrl_init_result::success;
@@ -351,21 +366,6 @@ inline const char* cool::logic_ctrl_init_result::message() const noexcept
 }
 
 inline cool::logic_ctrl_init_result::logic_ctrl_init_result(int result) noexcept : m_result(result) {}
-
-template <class Ty>
-inline constexpr cool::logic_ctrl_cmp<Ty>::logic_ctrl_cmp(unsigned char _detect) noexcept : detect(_detect) {}
-
-template <class Ty>
-inline constexpr bool cool::logic_ctrl_cmp<Ty>::operator()(const Ty& old_value, const Ty& new_value) const noexcept
-{
-	switch (detect)
-	{
-	case logic_ctrl_cmp::not_equal: return old_value != new_value; break;
-	case logic_ctrl_cmp::rising: return old_value < new_value; break;
-	case logic_ctrl_cmp::falling: return old_value > new_value; break;
-	default: return (detect == logic_ctrl_cmp::always_true); break;
-	}
-}
 
 inline constexpr cool::max_depth::max_depth(int new_max_depth) noexcept : m_value(new_max_depth) {}
 
