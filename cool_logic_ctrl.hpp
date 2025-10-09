@@ -16,7 +16,7 @@ namespace cool
 {
 	// cmp_Ty must have the same interface as std::not_equal_to<Ty>
 	// cmp_Ty must return true when equality is considered to not hold
-	// logic_ctrl_cmp may also be used for cmp_Ty and provides more options
+	// logic_ctrl_cmp<Ty> may also be used for cmp_Ty and provides more options
 
 	template <class Ty, class cmp_Ty = std::not_equal_to<Ty>, class index_Ty = std::size_t> class logic_ctrl;
 
