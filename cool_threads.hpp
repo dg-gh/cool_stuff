@@ -1064,7 +1064,7 @@ inline constexpr std::uint16_t cool::dispatch_interval::value() const noexcept {
 // threads_sq detail
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::~threads_sq()
+inline cool::threads_sq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::threads_sq::~threads_sq()
 {
 	delete_threads();
 }
@@ -2925,7 +2925,7 @@ inline void cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 // threads_mq detail
 
 template <std::size_t _cache_line_size, std::size_t _arg_buffer_size, std::size_t _arg_buffer_align, bool _arg_type_static_check>
-inline cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::~threads_mq()
+inline cool::threads_mq<_cache_line_size, _arg_buffer_size, _arg_buffer_align, _arg_type_static_check>::threads_mq::~threads_mq()
 {
 	delete_threads();
 }
