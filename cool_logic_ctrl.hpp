@@ -19,6 +19,7 @@ namespace cool
 	// > 'cmp_Ty' should return true when equality is considered to not hold
 	// > 'cmp_Ty' comparisons must not throw exceptions
 	// > 'logic_ctrl_cmp<Ty>' may also be used for 'cmp_Ty' and provides more options
+	// > in expression 'cmp(lhs, rhs)' with 'cmp' of type 'cmp_Ty', 'lhs' is the new value and 'rhs' is the previous value
 	// > 'static_cast<index_Ty>(0)' must be a valid expression
 
 	template <class Ty, class cmp_Ty = std::not_equal_to<Ty>, class index_Ty = std::size_t> class logic_ctrl;
@@ -61,17 +62,17 @@ namespace cool
 		static constexpr unsigned char not_equal = 0;
 		static constexpr unsigned char rising = 1;
 		static constexpr unsigned char falling = 2;
-		static constexpr unsigned char always_false = 3;
-		static constexpr unsigned char always_true = 4;
+		static constexpr unsigned char always = 3;
+		static constexpr unsigned char never = 4;
 
-		unsigned char detect = logic_ctrl_cmp::not_equal;
+		unsigned char trigger = logic_ctrl_cmp::not_equal;
 
 		constexpr logic_ctrl_cmp() = default;
 		inline constexpr logic_ctrl_cmp(unsigned char _detect) noexcept;
 		constexpr logic_ctrl_cmp(const cool::logic_ctrl_cmp<Ty>&) noexcept = default;
 		cool::logic_ctrl_cmp<Ty>& operator=(const cool::logic_ctrl_cmp<Ty>&) noexcept = default;
 
-		inline constexpr bool operator()(const Ty& old_value, const Ty& new_value) const noexcept;
+		inline constexpr bool operator()(const Ty& new_value, const Ty& previous_value) const noexcept;
 	};
 
 	// logic_ctrl_init_result
@@ -147,7 +148,7 @@ namespace cool
 
 		// set
 
-		// > set_variable writes and triggers observers if 'cmp(old_value, new_value)' is true
+		// > set_variable writes and triggers observers if 'cmp(new_value, previous_value)' returns true
 
 		void set_variable(index_Ty variable_index, Ty new_value) noexcept;
 		void set_variable(index_Ty variable_index, Ty new_value, cool::max_depth _max_depth) noexcept;
@@ -332,17 +333,17 @@ template <class cmp_Ty, class index_Ty>
 inline cool::logic_ctrl_observed_info<cmp_Ty, index_Ty>::logic_ctrl_observed_info(index_Ty _observed_index, cmp_Ty _cmp) : observed_index(_observed_index), cmp(_cmp) {}
 
 template <class Ty>
-inline constexpr cool::logic_ctrl_cmp<Ty>::logic_ctrl_cmp(unsigned char _detect) noexcept : detect(_detect) {}
+inline constexpr cool::logic_ctrl_cmp<Ty>::logic_ctrl_cmp(unsigned char _trigger) noexcept : trigger(_trigger) {}
 
 template <class Ty>
-inline constexpr bool cool::logic_ctrl_cmp<Ty>::operator()(const Ty& old_value, const Ty& new_value) const noexcept
+inline constexpr bool cool::logic_ctrl_cmp<Ty>::operator()(const Ty& new_value, const Ty& previous_value) const noexcept
 {
-	switch (detect)
+	switch (trigger)
 	{
-	case logic_ctrl_cmp::not_equal: return old_value != new_value; break;
-	case logic_ctrl_cmp::rising: return old_value < new_value; break;
-	case logic_ctrl_cmp::falling: return old_value > new_value; break;
-	default: return (detect == logic_ctrl_cmp::always_true); break;
+	case logic_ctrl_cmp::not_equal: return new_value != previous_value; break;
+	case logic_ctrl_cmp::rising: return new_value > previous_value; break;
+	case logic_ctrl_cmp::falling: return new_value < previous_value; break;
+	default: return (trigger == logic_ctrl_cmp::always); break;
 	}
 }
 
@@ -394,9 +395,9 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::set_variable(index_Ty variable_inde
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
 
 	variable_info_type& variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(variable_index));
-	Ty old_value = *(m_variables_ptr + static_cast<std::size_t>(variable_index));
+	Ty previous_value = *(m_variables_ptr + static_cast<std::size_t>(variable_index));
 
-	if (variable_info_ref.cmp(old_value, new_value) && !variable_info_ref.affected)
+	if (variable_info_ref.cmp(new_value, previous_value) && !variable_info_ref.affected)
 	{
 		*(m_variables_ptr + static_cast<std::size_t>(variable_index)) = new_value;
 		int _max_depth_value = _max_depth.value();
@@ -411,7 +412,7 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::set_variable(index_Ty variable_inde
 			{
 				observer_info_type& observer_info_ref = *(m_observer_info_ptr + observer_index);
 
-				if (observer_info_ref.cmp(old_value, new_value))
+				if (observer_info_ref.cmp(new_value, previous_value))
 				{
 					variable_info_type& observer_variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(observer_info_ref.observer_index));
 
@@ -488,13 +489,13 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable(index_Ty variable_
 
 	if (variable_info_ref.compute_func != nullptr)
 	{
-		Ty old_value = *(m_variables_ptr + static_cast<std::size_t>(variable_index));
 		Ty new_value = variable_info_ref.compute_func(variable_index,
 			typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view{ m_variables_ptr },
 			variable_info_ref.shared_data_ptr
 		);
+		Ty previous_value = *(m_variables_ptr + static_cast<std::size_t>(variable_index));
 
-		if (variable_info_ref.cmp(old_value, new_value))
+		if (variable_info_ref.cmp(new_value, previous_value))
 		{
 			*(m_variables_ptr + static_cast<std::size_t>(variable_index)) = new_value;
 			int _max_depth_value = _max_depth.value();
@@ -509,7 +510,7 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable(index_Ty variable_
 				{
 					observer_info_type& observer_info_ref = *(m_observer_info_ptr + observer_index);
 
-					if (observer_info_ref.cmp(old_value, new_value))
+					if (observer_info_ref.cmp(new_value, previous_value))
 					{
 						variable_info_type& observer_variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(observer_info_ref.observer_index));
 
