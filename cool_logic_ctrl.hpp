@@ -167,12 +167,8 @@ namespace cool
 		inline Ty& operator[](index_Ty variable_index) noexcept;
 		inline const Ty& operator[](index_Ty variable_index) const noexcept;
 
-		inline bool good() const noexcept;
-		inline bool init_ongoing() const noexcept;
-		inline std::size_t variable_count() const noexcept;
-		inline int default_max_depth() const noexcept;
-		inline std::size_t relation_count() const noexcept;
-		inline std::size_t max_relation_count() const noexcept;
+		inline Ty* data() noexcept;
+		inline const Ty* data() const noexcept;
 
 		inline Ty* begin() noexcept;
 		inline Ty* end() noexcept;
@@ -180,6 +176,17 @@ namespace cool
 		inline const Ty* end() const noexcept;
 		inline const Ty* cbegin() const noexcept;
 		inline const Ty* cend() const noexcept;
+
+		inline bool& locked(index_Ty variable_index) noexcept;
+		inline const bool& locked(index_Ty variable_index) const noexcept;
+		void lock_all(bool _locked) noexcept;
+
+		inline bool good() const noexcept;
+		inline bool init_ongoing() const noexcept;
+		inline std::size_t variable_count() const noexcept;
+		inline int default_max_depth() const noexcept;
+		inline std::size_t relation_count() const noexcept;
+		inline std::size_t max_relation_count() const noexcept;
 
 		// setup and clear
 
@@ -283,7 +290,7 @@ namespace cool
 		index_Ty observer_index_begin = static_cast<index_Ty>(0);
 		index_Ty observer_index_end = static_cast<index_Ty>(0);
 		cmp_Ty cmp{};
-		bool affected = false;
+		bool locked = false;
 	};
 
 	// logic_ctrl_observer_info
@@ -397,14 +404,14 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::set_variable(index_Ty variable_inde
 	variable_info_type& variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(variable_index));
 	Ty previous_value = *(m_variables_ptr + static_cast<std::size_t>(variable_index));
 
-	if (variable_info_ref.cmp(new_value, previous_value) && !variable_info_ref.affected)
+	if (variable_info_ref.cmp(new_value, previous_value) && !variable_info_ref.locked)
 	{
 		*(m_variables_ptr + static_cast<std::size_t>(variable_index)) = new_value;
 		int _max_depth_value = _max_depth.value();
 
 		if (_max_depth_value > 0)
 		{
-			variable_info_ref.affected = true;
+			variable_info_ref.locked = true;
 
 			for (std::size_t observer_index = static_cast<std::size_t>(variable_info_ref.observer_index_begin);
 				observer_index < static_cast<std::size_t>(variable_info_ref.observer_index_end);
@@ -425,7 +432,7 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::set_variable(index_Ty variable_inde
 				}
 			}
 
-			variable_info_ref.affected = false;
+			variable_info_ref.locked = false;
 		}
 	}
 }
@@ -444,14 +451,14 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::set_variable_no_cmp(index_Ty variab
 
 	variable_info_type& variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(variable_index));
 
-	if (!variable_info_ref.affected)
+	if (!variable_info_ref.locked)
 	{
 		*(m_variables_ptr + static_cast<std::size_t>(variable_index)) = new_value;
 		int _max_depth_value = _max_depth.value();
 
 		if (_max_depth_value > 0)
 		{
-			variable_info_ref.affected = true;
+			variable_info_ref.locked = true;
 
 			for (std::size_t observer_index = static_cast<std::size_t>(variable_info_ref.observer_index_begin);
 				observer_index < static_cast<std::size_t>(variable_info_ref.observer_index_end);
@@ -468,7 +475,7 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::set_variable_no_cmp(index_Ty variab
 					cool::max_depth(_max_depth_value - 1));
 			}
 
-			variable_info_ref.affected = false;
+			variable_info_ref.locked = false;
 		}
 	}
 }
@@ -487,7 +494,7 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable(index_Ty variable_
 
 	variable_info_type& variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(variable_index));
 
-	if (variable_info_ref.compute_func != nullptr)
+	if (!variable_info_ref.locked && (variable_info_ref.compute_func != nullptr))
 	{
 		Ty new_value = variable_info_ref.compute_func(variable_index,
 			typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view{ m_variables_ptr },
@@ -502,7 +509,7 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable(index_Ty variable_
 
 			if (_max_depth_value > 0)
 			{
-				variable_info_ref.affected = true;
+				variable_info_ref.locked = true;
 
 				for (std::size_t observer_index = static_cast<std::size_t>(variable_info_ref.observer_index_begin);
 					observer_index < static_cast<std::size_t>(variable_info_ref.observer_index_end);
@@ -523,7 +530,7 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable(index_Ty variable_
 					}
 				}
 
-				variable_info_ref.affected = false;
+				variable_info_ref.locked = false;
 			}
 		}
 	}
@@ -543,36 +550,39 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable_no_cmp(index_Ty va
 
 	variable_info_type& variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(variable_index));
 
-	if (variable_info_ref.compute_func != nullptr)
+	if (!variable_info_ref.locked)
 	{
-		*(m_variables_ptr + static_cast<std::size_t>(variable_index)) = variable_info_ref.compute_func(variable_index,
-			typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view{ m_variables_ptr },
-			variable_info_ref.shared_data_ptr
-		);
-	}
-
-	int _max_depth_value = _max_depth.value();
-
-	if (_max_depth_value > 0)
-	{
-		variable_info_ref.affected = true;
-
-		for (std::size_t observer_index = static_cast<std::size_t>(variable_info_ref.observer_index_begin);
-			observer_index < static_cast<std::size_t>(variable_info_ref.observer_index_end);
-			observer_index++)
+		if (variable_info_ref.compute_func != nullptr)
 		{
-			observer_info_type& observer_info_ref = *(m_observer_info_ptr + observer_index);
-			variable_info_type& observer_variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(observer_info_ref.observer_index));
-
-			set_variable_no_cmp(observer_info_ref.observer_index,
-				observer_variable_info_ref.compute_func(observer_info_ref.observer_index,
-					typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view{ m_variables_ptr },
-					observer_variable_info_ref.shared_data_ptr
-				),
-				cool::max_depth(_max_depth_value - 1));
+			*(m_variables_ptr + static_cast<std::size_t>(variable_index)) = variable_info_ref.compute_func(variable_index,
+				typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view{ m_variables_ptr },
+				variable_info_ref.shared_data_ptr
+			);
 		}
 
-		variable_info_ref.affected = false;
+		int _max_depth_value = _max_depth.value();
+
+		if (_max_depth_value > 0)
+		{
+			variable_info_ref.locked = true;
+
+			for (std::size_t observer_index = static_cast<std::size_t>(variable_info_ref.observer_index_begin);
+				observer_index < static_cast<std::size_t>(variable_info_ref.observer_index_end);
+				observer_index++)
+			{
+				observer_info_type& observer_info_ref = *(m_observer_info_ptr + observer_index);
+				variable_info_type& observer_variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(observer_info_ref.observer_index));
+
+				set_variable_no_cmp(observer_info_ref.observer_index,
+					observer_variable_info_ref.compute_func(observer_info_ref.observer_index,
+						typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view{ m_variables_ptr },
+						observer_variable_info_ref.shared_data_ptr
+					),
+					cool::max_depth(_max_depth_value - 1));
+			}
+
+			variable_info_ref.locked = false;
+		}
 	}
 }
 
@@ -595,22 +605,10 @@ inline const Ty& cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::operator[](index_Ty var
 }
 
 template <class Ty, class cmp_Ty, class index_Ty>
-inline bool cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::good() const noexcept { return m_init == logic_ctrl_init_result::success; }
+inline Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::data() noexcept { return m_variables_ptr; }
 
 template <class Ty, class cmp_Ty, class index_Ty>
-inline bool cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::init_ongoing() const noexcept { return m_init == logic_ctrl_init_result::ongoing; }
-
-template <class Ty, class cmp_Ty, class index_Ty>
-inline std::size_t cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_count() const noexcept { return m_variable_count; }
-
-template <class Ty, class cmp_Ty, class index_Ty>
-inline int cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::default_max_depth() const noexcept { return m_default_max_depth; }
-
-template <class Ty, class cmp_Ty, class index_Ty>
-inline std::size_t cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::relation_count() const noexcept { return m_relation_count; }
-
-template <class Ty, class cmp_Ty, class index_Ty>
-inline std::size_t cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::max_relation_count() const noexcept { return m_max_relation_count; }
+inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::data() const noexcept { return m_variables_ptr; }
 
 template <class Ty, class cmp_Ty, class index_Ty>
 inline Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::begin() noexcept { return m_variables_ptr; }
@@ -629,6 +627,53 @@ inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::cbegin() const noexcept
 
 template <class Ty, class cmp_Ty, class index_Ty>
 inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::cend() const noexcept { return m_variables_ptr + m_variable_count; }
+
+template <class Ty, class cmp_Ty, class index_Ty>
+inline bool& cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::locked(index_Ty variable_index) noexcept
+{
+	assert(m_variable_info_ptr != nullptr);
+	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
+
+	return (m_variable_info_ptr + static_cast<std::size_t>(variable_index))->locked;
+}
+
+template <class Ty, class cmp_Ty, class index_Ty>
+inline const bool& cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::locked(index_Ty variable_index) const noexcept
+{
+	assert(m_variable_info_ptr != nullptr);
+	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
+
+	return (m_variable_info_ptr + static_cast<std::size_t>(variable_index))->locked;
+}
+
+template <class Ty, class cmp_Ty, class index_Ty>
+void inline cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::lock_all(bool _locked) noexcept
+{
+	assert(m_variable_info_ptr != nullptr);
+
+	for (std::size_t variable_index = 0; variable_index < m_variable_count; variable_index++)
+	{
+		(m_variable_info_ptr + variable_index)->locked = _locked;
+	}
+}
+
+template <class Ty, class cmp_Ty, class index_Ty>
+inline bool cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::good() const noexcept { return m_init == logic_ctrl_init_result::success; }
+
+template <class Ty, class cmp_Ty, class index_Ty>
+inline bool cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::init_ongoing() const noexcept { return m_init == logic_ctrl_init_result::ongoing; }
+
+template <class Ty, class cmp_Ty, class index_Ty>
+inline std::size_t cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_count() const noexcept { return m_variable_count; }
+
+template <class Ty, class cmp_Ty, class index_Ty>
+inline int cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::default_max_depth() const noexcept { return m_default_max_depth; }
+
+template <class Ty, class cmp_Ty, class index_Ty>
+inline std::size_t cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::relation_count() const noexcept { return m_relation_count; }
+
+template <class Ty, class cmp_Ty, class index_Ty>
+inline std::size_t cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::max_relation_count() const noexcept { return m_max_relation_count; }
 
 template <class Ty, class cmp_Ty, class index_Ty>
 cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::begin_init(
