@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <initializer_list>
+#include <type_traits>
 #include <functional>
 #include <algorithm>
 #include <cassert>
@@ -21,15 +22,16 @@ namespace cool
 	// > 'logic_ctrl_cmp<Ty>' may also be used for 'cmp_Ty' and provides more options
 	// > in expression 'cmp(lhs, rhs)' with 'cmp' of type 'cmp_Ty', 'lhs' is the new value and 'rhs' is the previous value
 	// > 'static_cast<index_Ty>(0)' must be a valid expression
+	// > member functions setting/refreshing variables will favor passing by value if 'small_Ty' is true
 
-	template <class Ty, class cmp_Ty = std::not_equal_to<Ty>, class index_Ty = std::size_t> class logic_ctrl;
+	template <class Ty, class cmp_Ty = std::not_equal_to<Ty>, class index_Ty = std::size_t, bool small_Ty = (sizeof(Ty) <= 2 * sizeof(Ty*))> class logic_ctrl;
 
 	template <class cmp_Ty, class index_Ty> class logic_ctrl_observed_info;
 	template <class Ty> class logic_ctrl_cmp;
 	class logic_ctrl_init_result;
 	class max_depth;
 
-	template <class Ty, class cmp_Ty, class index_Ty> class logic_ctrl_variable_info;
+	template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty = (sizeof(Ty) <= 2 * sizeof(Ty*))> class logic_ctrl_variable_info;
 	template <class cmp_Ty, class index_Ty> class logic_ctrl_observer_info;
 	template <class cmp_Ty, class index_Ty> class logic_ctrl_relation_info;
 
@@ -105,7 +107,7 @@ namespace cool
 
 		int m_result = cool::logic_ctrl_init_result::undefined;
 
-		template <class Ty, class cmp_Ty, class index_Ty> friend class cool::logic_ctrl;
+		template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty> friend class cool::logic_ctrl;
 	};
 
 	// max_depth
@@ -121,7 +123,7 @@ namespace cool
 
 	// logic_ctrl
 
-	template <class Ty, class cmp_Ty, class index_Ty> class logic_ctrl
+	template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty> class logic_ctrl
 	{
 
 	public:
@@ -137,10 +139,14 @@ namespace cool
 		using compare_type = cmp_Ty;
 		using index_type = index_Ty;
 
-		using variable_info_type = cool::logic_ctrl_variable_info<Ty, cmp_Ty, index_Ty>;
+		static constexpr bool small_value_type = small_Ty;
+
+		using variable_info_type = cool::logic_ctrl_variable_info<Ty, cmp_Ty, index_Ty, small_Ty>;
 		using observed_info_type = cool::logic_ctrl_observed_info<cmp_Ty, index_Ty>;
 		using observer_info_type = cool::logic_ctrl_observer_info<cmp_Ty, index_Ty>;
 		using relation_info_type = cool::logic_ctrl_relation_info<cmp_Ty, index_Ty>;
+
+		using value_type_arg = typename std::conditional<small_Ty, Ty, const Ty&>::type;
 
 		// provides interface to all variables as a const contiguous array
 		class variable_view;
@@ -148,17 +154,17 @@ namespace cool
 		// > 1st arg is observer/refreshed variable index, observer variable gets assigned the return value
 		// > 2nt arg provides a view/array of all variables
 		// > 3rd arg points to shared data of observer
-		using refresh_func_type = Ty(*)(index_Ty, typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view, void*);
+		using refresh_func_type = Ty(*)(index_Ty, typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::variable_view, void*);
 
 		// set
 
 		// > set_variable writes and triggers observers if 'cmp(new_value, previous_value)' returns true
 
-		void set_variable(index_Ty variable_index, Ty new_value) noexcept;
-		void set_variable(index_Ty variable_index, Ty new_value, cool::max_depth _max_depth) noexcept;
+		void set_variable(index_Ty variable_index, value_type_arg new_value) noexcept;
+		void set_variable(index_Ty variable_index, value_type_arg new_value, cool::max_depth _max_depth) noexcept;
 
-		void set_variable_no_cmp(index_Ty variable_index, Ty new_value) noexcept;
-		void set_variable_no_cmp(index_Ty variable_index, Ty new_value, cool::max_depth _max_depth) noexcept;
+		void set_variable_no_cmp(index_Ty variable_index, value_type_arg new_value) noexcept;
+		void set_variable_no_cmp(index_Ty variable_index, value_type_arg new_value, cool::max_depth _max_depth) noexcept;
 
 		void refresh_variable(index_Ty variable_index) noexcept;
 		void refresh_variable(index_Ty variable_index, cool::max_depth _max_depth) noexcept;
@@ -239,7 +245,7 @@ namespace cool
 
 			variable_view() = delete;
 			explicit inline variable_view(const Ty* ptr) noexcept;
-			const Ty& operator[](index_Ty variable_index) const noexcept;
+			inline const Ty& operator[](index_Ty variable_index) const noexcept;
 			inline const Ty* data() const noexcept;
 
 		private:
@@ -265,7 +271,7 @@ namespace cool
 
 	// logic_ctrl_variable_info
 
-	template <class Ty, class cmp_Ty, class index_Ty> class logic_ctrl_variable_info
+	template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty> class logic_ctrl_variable_info
 	{
 
 	public:
@@ -281,7 +287,9 @@ namespace cool
 		using compare_type = cmp_Ty;
 		using index_type = index_Ty;
 
-		using refresh_func_type = typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_func_type;
+		static constexpr bool small_value_type = cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::small_value_type;
+		using value_type_arg = typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::value_type_arg;
+		using refresh_func_type = typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::refresh_func_type;
 
 		logic_ctrl_variable_info() = default;
 		inline logic_ctrl_variable_info(cmp_Ty _cmp);
@@ -374,13 +382,13 @@ inline const char* cool::logic_ctrl_init_result::message() const noexcept
 {
 	switch (m_result)
 	{
-	case logic_ctrl_init_result::success: return "cool logic ctrl init success"; break;
-	case logic_ctrl_init_result::bad_parameters: return "cool logic ctrl init failed : bad parameters"; break;
-	case logic_ctrl_init_result::bad_observer_variable_index: return "cool logic ctrl init failed : observer variable index out of bound"; break;
-	case logic_ctrl_init_result::bad_observed_variable_index: return "cool logic ctrl init failed : observed variable index out of bound"; break;
-	case logic_ctrl_init_result::bad_relation_count: return "cool logic ctrl init failed : maximum relation count is too low"; break;
-	case logic_ctrl_init_result::bad_refresh_func_assignment: return "cool logic ctrl init failed : double assignement of refresh functions for one variable"; break;
-	default: return "cool logic ctrl init result undefined"; break;
+	case logic_ctrl_init_result::success: return "cool logic_ctrl init success"; break;
+	case logic_ctrl_init_result::bad_parameters: return "cool logic_ctrl init failed : bad parameters"; break;
+	case logic_ctrl_init_result::bad_observer_variable_index: return "cool logic_ctrl init failed : observer variable index out of bound"; break;
+	case logic_ctrl_init_result::bad_observed_variable_index: return "cool logic_ctrl init failed : observed variable index out of bound"; break;
+	case logic_ctrl_init_result::bad_relation_count: return "cool logic_ctrl init failed : maximum relation count is too low"; break;
+	case logic_ctrl_init_result::bad_refresh_func_assignment: return "cool logic_ctrl init failed : double assignement of refresh functions for one variable"; break;
+	default: return "cool logic_ctrl init result undefined"; break;
 	}
 }
 
@@ -390,14 +398,14 @@ inline constexpr cool::max_depth::max_depth(int new_max_depth) noexcept : m_valu
 
 inline constexpr int cool::max_depth::value() const noexcept { return m_value; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::set_variable(index_Ty variable_index, Ty new_value) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+void cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::set_variable(index_Ty variable_index, value_type_arg new_value) noexcept
 {
 	set_variable(variable_index, new_value, cool::max_depth(m_default_max_depth));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::set_variable(index_Ty variable_index, Ty new_value, cool::max_depth _max_depth) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+void cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::set_variable(index_Ty variable_index, value_type_arg new_value, cool::max_depth _max_depth) noexcept
 {
 	assert(good());
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -426,7 +434,7 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::set_variable(index_Ty variable_inde
 
 					set_variable(observer_info_ref.observer_index,
 						observer_variable_info_ref.refresh_func(observer_info_ref.observer_index,
-							typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view{ m_variables_ptr },
+							logic_ctrl::variable_view(m_variables_ptr),
 							observer_variable_info_ref.shared_data_ptr
 						),
 						cool::max_depth(_max_depth_value - 1));
@@ -438,14 +446,14 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::set_variable(index_Ty variable_inde
 	}
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::set_variable_no_cmp(index_Ty variable_index, Ty new_value) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+void cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::set_variable_no_cmp(index_Ty variable_index, value_type_arg new_value) noexcept
 {
 	set_variable_no_cmp(variable_index, new_value, cool::max_depth(m_default_max_depth));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::set_variable_no_cmp(index_Ty variable_index, Ty new_value, cool::max_depth _max_depth) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+void cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::set_variable_no_cmp(index_Ty variable_index, value_type_arg new_value, cool::max_depth _max_depth) noexcept
 {
 	assert(good());
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -470,7 +478,7 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::set_variable_no_cmp(index_Ty variab
 
 				set_variable_no_cmp(observer_info_ref.observer_index,
 					observer_variable_info_ref.refresh_func(observer_info_ref.observer_index,
-						typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view{ m_variables_ptr },
+						logic_ctrl::variable_view(m_variables_ptr),
 						observer_variable_info_ref.shared_data_ptr
 					),
 					cool::max_depth(_max_depth_value - 1));
@@ -481,14 +489,14 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::set_variable_no_cmp(index_Ty variab
 	}
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable(index_Ty variable_index) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+void cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::refresh_variable(index_Ty variable_index) noexcept
 {
 	refresh_variable(variable_index, cool::max_depth(m_default_max_depth));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable(index_Ty variable_index, cool::max_depth _max_depth) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+void cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::refresh_variable(index_Ty variable_index, cool::max_depth _max_depth) noexcept
 {
 	assert(good());
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -498,7 +506,7 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable(index_Ty variable_
 	if (!variable_info_ref.locked && (variable_info_ref.refresh_func != nullptr))
 	{
 		Ty new_value = variable_info_ref.refresh_func(variable_index,
-			typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view{ m_variables_ptr },
+			logic_ctrl::variable_view(m_variables_ptr),
 			variable_info_ref.shared_data_ptr
 		);
 		Ty previous_value = *(m_variables_ptr + static_cast<std::size_t>(variable_index));
@@ -524,7 +532,7 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable(index_Ty variable_
 
 						set_variable(observer_info_ref.observer_index,
 							observer_variable_info_ref.refresh_func(observer_info_ref.observer_index,
-								typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view{ m_variables_ptr },
+								logic_ctrl::variable_view(m_variables_ptr),
 								observer_variable_info_ref.shared_data_ptr
 							),
 							cool::max_depth(_max_depth_value - 1));
@@ -537,14 +545,14 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable(index_Ty variable_
 	}
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable_no_cmp(index_Ty variable_index) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+void cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::refresh_variable_no_cmp(index_Ty variable_index) noexcept
 {
 	refresh_variable_no_cmp(variable_index, cool::max_depth(m_default_max_depth));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable_no_cmp(index_Ty variable_index, cool::max_depth _max_depth) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+void cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::refresh_variable_no_cmp(index_Ty variable_index, cool::max_depth _max_depth) noexcept
 {
 	assert(good());
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -556,7 +564,7 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable_no_cmp(index_Ty va
 		if (variable_info_ref.refresh_func != nullptr)
 		{
 			*(m_variables_ptr + static_cast<std::size_t>(variable_index)) = variable_info_ref.refresh_func(variable_index,
-				typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view{ m_variables_ptr },
+				logic_ctrl::variable_view(m_variables_ptr),
 				variable_info_ref.shared_data_ptr
 			);
 		}
@@ -576,7 +584,7 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable_no_cmp(index_Ty va
 
 				set_variable_no_cmp(observer_info_ref.observer_index,
 					observer_variable_info_ref.refresh_func(observer_info_ref.observer_index,
-						typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view{ m_variables_ptr },
+						logic_ctrl::variable_view(m_variables_ptr),
 						observer_variable_info_ref.shared_data_ptr
 					),
 					cool::max_depth(_max_depth_value - 1));
@@ -587,8 +595,8 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_variable_no_cmp(index_Ty va
 	}
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline Ty& cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::operator[](index_Ty variable_index) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline Ty& cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::operator[](index_Ty variable_index) noexcept
 {
 	assert(m_variables_ptr != nullptr);
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -596,8 +604,8 @@ inline Ty& cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::operator[](index_Ty variable_
 	return *(m_variables_ptr + static_cast<std::size_t>(variable_index));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline const Ty& cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::operator[](index_Ty variable_index) const noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline const Ty& cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::operator[](index_Ty variable_index) const noexcept
 {
 	assert(m_variables_ptr != nullptr);
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -605,32 +613,32 @@ inline const Ty& cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::operator[](index_Ty var
 	return *(m_variables_ptr + static_cast<std::size_t>(variable_index));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::data() noexcept { return m_variables_ptr; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::data() noexcept { return m_variables_ptr; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::data() const noexcept { return m_variables_ptr; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::data() const noexcept { return m_variables_ptr; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::begin() noexcept { return m_variables_ptr; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::begin() noexcept { return m_variables_ptr; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::end() noexcept { return m_variables_ptr + m_variable_count; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::end() noexcept { return m_variables_ptr + m_variable_count; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::begin() const noexcept { return m_variables_ptr; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::begin() const noexcept { return m_variables_ptr; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::end() const noexcept { return m_variables_ptr + m_variable_count; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::end() const noexcept { return m_variables_ptr + m_variable_count; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::cbegin() const noexcept { return m_variables_ptr; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::cbegin() const noexcept { return m_variables_ptr; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::cend() const noexcept { return m_variables_ptr + m_variable_count; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::cend() const noexcept { return m_variables_ptr + m_variable_count; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline bool& cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::locked(index_Ty variable_index) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline bool& cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::locked(index_Ty variable_index) noexcept
 {
 	assert(m_variable_info_ptr != nullptr);
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -638,8 +646,8 @@ inline bool& cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::locked(index_Ty variable_in
 	return (m_variable_info_ptr + static_cast<std::size_t>(variable_index))->locked;
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline const bool& cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::locked(index_Ty variable_index) const noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline const bool& cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::locked(index_Ty variable_index) const noexcept
 {
 	assert(m_variable_info_ptr != nullptr);
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -647,8 +655,8 @@ inline const bool& cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::locked(index_Ty varia
 	return (m_variable_info_ptr + static_cast<std::size_t>(variable_index))->locked;
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-void inline cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::lock_all(bool _locked) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+void inline cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::lock_all(bool _locked) noexcept
 {
 	assert(m_variable_info_ptr != nullptr);
 
@@ -658,26 +666,26 @@ void inline cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::lock_all(bool _locked) noexc
 	}
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline bool cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::good() const noexcept { return m_init == logic_ctrl_init_result::success; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline bool cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::good() const noexcept { return m_init == logic_ctrl_init_result::success; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline bool cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::init_ongoing() const noexcept { return m_init == logic_ctrl_init_result::ongoing; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline bool cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::init_ongoing() const noexcept { return m_init == logic_ctrl_init_result::ongoing; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline std::size_t cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_count() const noexcept { return m_variable_count; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline std::size_t cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::variable_count() const noexcept { return m_variable_count; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline int cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::default_max_depth() const noexcept { return m_default_max_depth; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline int cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::default_max_depth() const noexcept { return m_default_max_depth; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline std::size_t cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::relation_count() const noexcept { return m_relation_count; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline std::size_t cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::relation_count() const noexcept { return m_relation_count; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline std::size_t cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::max_relation_count() const noexcept { return m_max_relation_count; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline std::size_t cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::max_relation_count() const noexcept { return m_max_relation_count; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::begin_init(
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::begin_init(
 	Ty* variables_ptr,
 	variable_info_type* variable_info_ptr,
 	std::size_t new_variable_count,
@@ -728,14 +736,14 @@ cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::begin_init(
 	return cool::logic_ctrl_init_result(m_init);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::init_add_relations(index_Ty observer_variable_index, std::initializer_list<index_Ty> observed_variables, refresh_func_type refresh_func) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::init_add_relations(index_Ty observer_variable_index, std::initializer_list<index_Ty> observed_variables, refresh_func_type refresh_func) noexcept
 {
 	return init_add_relations(observer_variable_index, observed_variables.begin(), observed_variables.size(), refresh_func);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::init_add_relations(index_Ty observer_variable_index, const index_Ty* observed_variables_ptr, std::size_t observed_variable_count, refresh_func_type refresh_func) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::init_add_relations(index_Ty observer_variable_index, const index_Ty* observed_variables_ptr, std::size_t observed_variable_count, refresh_func_type refresh_func) noexcept
 {
 	assert(refresh_func != nullptr);
 	assert((observed_variables_ptr != nullptr) || (observed_variable_count == 0));
@@ -785,14 +793,14 @@ cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::init_add_re
 	return cool::logic_ctrl_init_result(m_init);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::init_add_relations(index_Ty observer_variable_index, std::initializer_list<observed_info_type> observed_variables, refresh_func_type refresh_func)
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::init_add_relations(index_Ty observer_variable_index, std::initializer_list<observed_info_type> observed_variables, refresh_func_type refresh_func)
 {
 	return init_add_relations(observer_variable_index, observed_variables.begin(), observed_variables.size(), refresh_func);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::init_add_relations(index_Ty observer_variable_index, const observed_info_type* observed_variables_ptr, std::size_t observed_variable_count, refresh_func_type refresh_func)
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::init_add_relations(index_Ty observer_variable_index, const observed_info_type* observed_variables_ptr, std::size_t observed_variable_count, refresh_func_type refresh_func)
 {
 	assert(refresh_func != nullptr);
 	assert((observed_variables_ptr != nullptr) || (observed_variable_count == 0));
@@ -843,8 +851,8 @@ cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::init_add_re
 	return cool::logic_ctrl_init_result(m_init);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::init_set_cmp(index_Ty variable_index, cmp_Ty cmp)
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::init_set_cmp(index_Ty variable_index, cmp_Ty cmp)
 {
 	if (m_init == cool::logic_ctrl_init_result::ongoing)
 	{
@@ -861,8 +869,8 @@ cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::init_set_cm
 	return cool::logic_ctrl_init_result(m_init);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::init_set_shared_data_ptr(index_Ty variable_index, void* shared_data_ptr) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::init_set_shared_data_ptr(index_Ty variable_index, void* shared_data_ptr) noexcept
 {
 	if (m_init == cool::logic_ctrl_init_result::ongoing)
 	{
@@ -879,8 +887,8 @@ cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::init_set_sh
 	return cool::logic_ctrl_init_result(m_init);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::end_init()
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::end_init()
 {
 	if (m_init == cool::logic_ctrl_init_result::ongoing)
 	{
@@ -937,8 +945,8 @@ cool::logic_ctrl_init_result cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::end_init()
 	return cool::logic_ctrl_init_result(m_init);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::clear() noexcept
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+void cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::clear() noexcept
 {
 	m_variables_ptr = nullptr;
 	m_variable_info_ptr = nullptr;
@@ -954,17 +962,17 @@ void cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::clear() noexcept
 	m_max_relation_count = 0;
 }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view::variable_view(const Ty* ptr) noexcept : m_ptr(ptr) {}
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::variable_view::variable_view(const Ty* ptr) noexcept : m_ptr(ptr) {}
 
-template <class Ty, class cmp_Ty, class index_Ty>
-const Ty& cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view::operator[](index_Ty variable_index) const noexcept { return *(m_ptr + static_cast<std::size_t>(variable_index)); }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline const Ty& cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::variable_view::operator[](index_Ty variable_index) const noexcept { return *(m_ptr + static_cast<std::size_t>(variable_index)); }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view::data() const noexcept { return m_ptr; }
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline const Ty* cool::logic_ctrl<Ty, cmp_Ty, index_Ty, small_Ty>::variable_view::data() const noexcept { return m_ptr; }
 
-template <class Ty, class cmp_Ty, class index_Ty>
-inline cool::logic_ctrl_variable_info<Ty, cmp_Ty, index_Ty>::logic_ctrl_variable_info(cmp_Ty _cmp) : cmp(_cmp) {}
+template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
+inline cool::logic_ctrl_variable_info<Ty, cmp_Ty, index_Ty, small_Ty>::logic_ctrl_variable_info(cmp_Ty _cmp) : cmp(_cmp) {}
 
 template <class cmp_Ty, class index_Ty>
 inline cool::logic_ctrl_observer_info<cmp_Ty, index_Ty>::logic_ctrl_observer_info(index_Ty _observer_index, cmp_Ty _cmp) : observer_index(_observer_index), cmp(_cmp) {}
