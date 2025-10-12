@@ -142,8 +142,12 @@ namespace cool
 		using observer_info_type = cool::logic_ctrl_observer_info<cmp_Ty, index_Ty>;
 		using relation_info_type = cool::logic_ctrl_relation_info<cmp_Ty, index_Ty>;
 
+		// provides interface to all variables as a const contiguous array
 		class variable_view;
 
+		// > 1st arg is observer/refreshed variable index, observer variable gets assigned the return value
+		// > 2nt arg provides a view/array of all variables
+		// > 3rd arg points to shared data of observer
 		using refresh_func_type = Ty(*)(index_Ty, typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::variable_view, void*);
 
 		// set
@@ -277,9 +281,6 @@ namespace cool
 		using compare_type = cmp_Ty;
 		using index_type = index_Ty;
 
-		// > 1st arg is observer variable index, observer variable gets assigned the return value
-		// > 2nt arg points to array of all variables
-		// > 3rd arg points to shared data
 		using refresh_func_type = typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty>::refresh_func_type;
 
 		logic_ctrl_variable_info() = default;
