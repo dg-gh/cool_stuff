@@ -59,13 +59,13 @@ namespace cool
 
 	public:
 
-		static constexpr unsigned char not_equal = 0;
+		static constexpr unsigned char change = 0;
 		static constexpr unsigned char rising = 1;
 		static constexpr unsigned char falling = 2;
 		static constexpr unsigned char always = 3;
 		static constexpr unsigned char never = 4;
 
-		unsigned char trigger = logic_ctrl_cmp::not_equal;
+		unsigned char trigger = logic_ctrl_cmp::change;
 
 		constexpr logic_ctrl_cmp() = default;
 		inline constexpr logic_ctrl_cmp(unsigned char _detect) noexcept;
@@ -347,7 +347,7 @@ inline constexpr bool cool::logic_ctrl_cmp<Ty>::operator()(const Ty& new_value, 
 {
 	switch (trigger)
 	{
-	case logic_ctrl_cmp::not_equal: return new_value != previous_value; break;
+	case logic_ctrl_cmp::change: return new_value != previous_value; break;
 	case logic_ctrl_cmp::rising: return new_value > previous_value; break;
 	case logic_ctrl_cmp::falling: return new_value < previous_value; break;
 	default: return (trigger == logic_ctrl_cmp::always); break;
