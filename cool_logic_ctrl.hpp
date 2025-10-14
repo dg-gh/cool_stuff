@@ -610,7 +610,8 @@ void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, small_Ty>::set_variable(index_
 							_logic_ctrl_base::variable_view(m_variables_ptr),
 							observer_variable_info_ref.shared_data_ptr
 						),
-						cool::max_depth(_max_depth_value - 1));
+						cool::max_depth(_max_depth_value - 1)
+					);
 				}
 			}
 
@@ -654,7 +655,8 @@ void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, small_Ty>::set_variable_no_cmp
 						_logic_ctrl_base::variable_view(m_variables_ptr),
 						observer_variable_info_ref.shared_data_ptr
 					),
-					cool::max_depth(_max_depth_value - 1));
+					cool::max_depth(_max_depth_value - 1)
+				);
 			}
 
 			variable_info_ref.locked = false;
@@ -708,7 +710,8 @@ void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, small_Ty>::refresh_variable(in
 								_logic_ctrl_base::variable_view(m_variables_ptr),
 								observer_variable_info_ref.shared_data_ptr
 							),
-							cool::max_depth(_max_depth_value - 1));
+							cool::max_depth(_max_depth_value - 1)
+						);
 					}
 				}
 
@@ -760,7 +763,8 @@ void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, small_Ty>::refresh_variable_no
 						_logic_ctrl_base::variable_view(m_variables_ptr),
 						observer_variable_info_ref.shared_data_ptr
 					),
-					cool::max_depth(_max_depth_value - 1));
+					cool::max_depth(_max_depth_value - 1)
+				);
 			}
 
 			variable_info_ref.locked = false;
@@ -858,9 +862,9 @@ template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
 inline std::size_t cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, small_Ty>::max_relation_count() const noexcept { return m_max_relation_count; }
 
 template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
-cool::logic_ctrl_init_result<index_Ty> cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, small_Ty>::init_set_cmp(index_Ty variable_index, cmp_Ty cmp)
+typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, small_Ty>::init_result_type cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, small_Ty>::init_set_cmp(index_Ty variable_index, cmp_Ty cmp)
 {
-	index_Ty return_index = observer_variable_index;
+	index_Ty return_index = variable_index;
 
 	if (m_init == init_result_type::ongoing)
 	{
@@ -887,9 +891,9 @@ cool::logic_ctrl_init_result<index_Ty> cool::_logic_ctrl_base<Ty, cmp_Ty, index_
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, bool small_Ty>
-cool::logic_ctrl_init_result<index_Ty> cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, small_Ty>::init_set_shared_data_ptr(index_Ty variable_index, void* shared_data_ptr) noexcept
+typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, small_Ty>::init_result_type cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, small_Ty>::init_set_shared_data_ptr(index_Ty variable_index, void* shared_data_ptr) noexcept
 {
-	index_Ty return_index = observer_variable_index;
+	index_Ty return_index = variable_index;
 
 	if (m_init == init_result_type::ongoing)
 	{
