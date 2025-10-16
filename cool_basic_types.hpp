@@ -11,6 +11,7 @@
 #include <limits>
 #include <type_traits>
 #include <new>
+#include <cstring>
 #include <utility>
 #include <tuple>
 #include <cassert>
@@ -497,56 +498,101 @@ namespace cool
 
 		using value_type = int_Ty;
 
-		static constexpr std::size_t bit_count = sizeof(int_Ty) * CHAR_BIT;
-		static constexpr bool is_signed = std::is_signed<int_Ty>::value;
+		static constexpr std::size_t bit_count = sizeof(value_type) * CHAR_BIT;
+		static constexpr bool is_signed = std::is_signed<value_type>::value;
 
 		integer() noexcept = default;
-		inline constexpr integer(int_Ty val) noexcept : m_value(val) {}
+		inline constexpr integer(value_type val) noexcept : m_value(val) {}
 
-		static inline constexpr cool::integer<int_Ty> min() noexcept { return cool::integer<int_Ty>(std::numeric_limits<int_Ty>::min()); }
-		static inline constexpr cool::integer<int_Ty> max() noexcept { return cool::integer<int_Ty>(std::numeric_limits<int_Ty>::max()); }
+		static inline constexpr cool::integer<value_type> min() noexcept { return cool::integer<value_type>(std::numeric_limits<value_type>::min()); }
+		static inline constexpr cool::integer<value_type> max() noexcept { return cool::integer<value_type>(std::numeric_limits<value_type>::max()); }
 
-		inline cool::integer<int_Ty>& operator&=(cool::integer<int_Ty> rhs) noexcept { m_value &= rhs.m_value; return *this; }
-		inline cool::integer<int_Ty>& operator|=(cool::integer<int_Ty> rhs) noexcept { m_value |= rhs.m_value; return *this; }
-		inline cool::integer<int_Ty>& operator^=(cool::integer<int_Ty> rhs) noexcept { m_value ^= rhs.m_value; return *this; }
+		inline cool::integer<value_type>& operator&=(cool::integer<value_type> rhs) noexcept { m_value &= rhs.m_value; return *this; }
+		inline cool::integer<value_type>& operator|=(cool::integer<value_type> rhs) noexcept { m_value |= rhs.m_value; return *this; }
+		inline cool::integer<value_type>& operator^=(cool::integer<value_type> rhs) noexcept { m_value ^= rhs.m_value; return *this; }
 
-		inline cool::integer<int_Ty>& operator+=(cool::integer<int_Ty> rhs) noexcept { m_value += rhs.m_value; return *this; }
-		inline cool::integer<int_Ty>& operator-=(cool::integer<int_Ty> rhs) noexcept { m_value -= rhs.m_value; return *this; }
-		inline cool::integer<int_Ty>& operator*=(cool::integer<int_Ty> rhs) noexcept { m_value *= rhs.m_value; return *this; }
-		inline cool::integer<int_Ty>& operator/=(cool::integer<int_Ty> rhs) noexcept { m_value /= rhs.m_value; return *this; }
-		inline cool::integer<int_Ty>& operator%=(cool::integer<int_Ty> rhs) noexcept { m_value %= rhs.m_value; return *this; }
+		inline cool::integer<value_type>& operator+=(cool::integer<value_type> rhs) noexcept { m_value += rhs.m_value; return *this; }
+		inline cool::integer<value_type>& operator-=(cool::integer<value_type> rhs) noexcept { m_value -= rhs.m_value; return *this; }
+		inline cool::integer<value_type>& operator*=(cool::integer<value_type> rhs) noexcept { m_value *= rhs.m_value; return *this; }
+		inline cool::integer<value_type>& operator/=(cool::integer<value_type> rhs) noexcept { m_value /= rhs.m_value; return *this; }
+		inline cool::integer<value_type>& operator%=(cool::integer<value_type> rhs) noexcept { m_value %= rhs.m_value; return *this; }
 
-		inline cool::integer<int_Ty>& operator<<=(cool::integer<int_Ty> rhs) noexcept { m_value <<= rhs.m_value; return *this; }
-		inline cool::integer<int_Ty>& operator>>=(cool::integer<int_Ty> rhs) noexcept { m_value >>= rhs.m_value; return *this; }
+		inline cool::integer<value_type>& operator<<=(cool::integer<value_type> rhs) noexcept { m_value <<= rhs.m_value; return *this; }
+		inline cool::integer<value_type>& operator>>=(cool::integer<value_type> rhs) noexcept { m_value >>= rhs.m_value; return *this; }
 
-		inline constexpr cool::integer<int_Ty> operator&(cool::integer<int_Ty> rhs) const noexcept { return cool::integer<int_Ty>(m_value & rhs.m_value); }
-		inline constexpr cool::integer<int_Ty> operator|(cool::integer<int_Ty> rhs) const noexcept { return cool::integer<int_Ty>(m_value | rhs.m_value); }
-		inline constexpr cool::integer<int_Ty> operator^(cool::integer<int_Ty> rhs) const noexcept { return cool::integer<int_Ty>(m_value ^ rhs.m_value); }
+		inline constexpr cool::integer<value_type> operator&(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value & rhs.m_value); }
+		inline constexpr cool::integer<value_type> operator|(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value | rhs.m_value); }
+		inline constexpr cool::integer<value_type> operator^(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value ^ rhs.m_value); }
 
-		inline constexpr cool::integer<int_Ty> operator+(cool::integer<int_Ty> rhs) const noexcept { return cool::integer<int_Ty>(m_value + rhs.m_value); }
-		inline constexpr cool::integer<int_Ty> operator-(cool::integer<int_Ty> rhs) const noexcept { return cool::integer<int_Ty>(m_value - rhs.m_value); }
-		inline constexpr cool::integer<int_Ty> operator*(cool::integer<int_Ty> rhs) const noexcept { return cool::integer<int_Ty>(m_value * rhs.m_value); }
-		inline constexpr cool::integer<int_Ty> operator/(cool::integer<int_Ty> rhs) const noexcept { return cool::integer<int_Ty>(m_value / rhs.m_value); }
-		inline constexpr cool::integer<int_Ty> operator%(cool::integer<int_Ty> rhs) const noexcept { return cool::integer<int_Ty>(m_value % rhs.m_value); }
-		inline constexpr cool::integer<int_Ty> operator-() const noexcept { return cool::integer<int_Ty>(-m_value); }
-		inline constexpr cool::integer<int_Ty> operator~() const noexcept { return cool::integer<int_Ty>(~m_value); }
-		inline constexpr cool::integer<int_Ty> operator!() const noexcept { return cool::integer<int_Ty>(!m_value); }
+		inline constexpr cool::integer<value_type> operator+(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value + rhs.m_value); }
+		inline constexpr cool::integer<value_type> operator-(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value - rhs.m_value); }
+		inline constexpr cool::integer<value_type> operator*(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value * rhs.m_value); }
+		inline constexpr cool::integer<value_type> operator/(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value / rhs.m_value); }
+		inline constexpr cool::integer<value_type> operator%(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value % rhs.m_value); }
+		inline constexpr cool::integer<value_type> operator-() const noexcept { return cool::integer<value_type>(-m_value); }
+		inline constexpr cool::integer<value_type> operator~() const noexcept { return cool::integer<value_type>(~m_value); }
+		inline constexpr cool::integer<value_type> operator!() const noexcept { return cool::integer<value_type>(!m_value); }
 
-		inline constexpr cool::integer<int_Ty> operator<<(cool::integer<int_Ty> rhs) const noexcept { return cool::integer<int_Ty>(m_value << rhs.m_value); }
-		inline constexpr cool::integer<int_Ty> operator>>(cool::integer<int_Ty> rhs) const noexcept { return cool::integer<int_Ty>(m_value >> rhs.m_value); }
+		inline constexpr cool::integer<value_type> operator<<(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value << rhs.m_value); }
+		inline constexpr cool::integer<value_type> operator>>(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value >> rhs.m_value); }
 
-		inline constexpr bool operator==(cool::integer<int_Ty> rhs) const noexcept { return m_value == rhs.m_value; }
-		inline constexpr bool operator!=(cool::integer<int_Ty> rhs) const noexcept { return m_value != rhs.m_value; }
-		inline constexpr bool operator<=(cool::integer<int_Ty> rhs) const noexcept { return m_value >= rhs.m_value; }
-		inline constexpr bool operator>=(cool::integer<int_Ty> rhs) const noexcept { return m_value <= rhs.m_value; }
-		inline constexpr bool operator<(cool::integer<int_Ty> rhs) const noexcept { return m_value < rhs.m_value; }
-		inline constexpr bool operator>(cool::integer<int_Ty> rhs) const noexcept { return m_value > rhs.m_value; }
+		inline constexpr bool operator==(cool::integer<value_type> rhs) const noexcept { return m_value == rhs.m_value; }
+		inline constexpr bool operator!=(cool::integer<value_type> rhs) const noexcept { return m_value != rhs.m_value; }
+		inline constexpr bool operator<=(cool::integer<value_type> rhs) const noexcept { return m_value <= rhs.m_value; }
+		inline constexpr bool operator>=(cool::integer<value_type> rhs) const noexcept { return m_value >= rhs.m_value; }
+		inline constexpr bool operator<(cool::integer<value_type> rhs) const noexcept { return m_value < rhs.m_value; }
+		inline constexpr bool operator>(cool::integer<value_type> rhs) const noexcept { return m_value > rhs.m_value; }
 
-		inline constexpr int_Ty get_value() const noexcept { return m_value; }
+		inline constexpr value_type get_value() const noexcept { return m_value; }
 
 	private:
 
-		int_Ty m_value;
+		value_type m_value;
+	};
+
+	template <> class integer<bool>
+	{
+
+	public:
+
+		using value_type = bool;
+
+		static constexpr std::size_t bit_count = sizeof(value_type) * CHAR_BIT;
+		static constexpr bool is_signed = std::is_signed<value_type>::value;
+
+		integer() noexcept = default;
+		inline constexpr integer(value_type val) noexcept : m_value(val) {}
+
+		static inline constexpr cool::integer<value_type> min() noexcept { return cool::integer<value_type>(std::numeric_limits<value_type>::min()); }
+		static inline constexpr cool::integer<value_type> max() noexcept { return cool::integer<value_type>(std::numeric_limits<value_type>::max()); }
+
+		inline cool::integer<value_type>& operator&=(cool::integer<value_type> rhs) noexcept { m_value &= rhs.m_value; return *this; }
+		inline cool::integer<value_type>& operator|=(cool::integer<value_type> rhs) noexcept { m_value |= rhs.m_value; return *this; }
+		inline cool::integer<value_type>& operator^=(cool::integer<value_type> rhs) noexcept { m_value ^= rhs.m_value; return *this; }
+
+		inline cool::integer<value_type>& operator+=(cool::integer<value_type> rhs) noexcept { m_value += rhs.m_value; return *this; }
+		inline cool::integer<value_type>& operator*=(cool::integer<value_type> rhs) noexcept { m_value *= rhs.m_value; return *this; }
+
+		inline constexpr cool::integer<value_type> operator&(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value & rhs.m_value); }
+		inline constexpr cool::integer<value_type> operator|(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value | rhs.m_value); }
+		inline constexpr cool::integer<value_type> operator^(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value ^ rhs.m_value); }
+
+		inline constexpr cool::integer<value_type> operator+(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value + rhs.m_value); }
+		inline constexpr cool::integer<value_type> operator*(cool::integer<value_type> rhs) const noexcept { return cool::integer<value_type>(m_value * rhs.m_value); }
+		inline constexpr cool::integer<value_type> operator!() const noexcept { return cool::integer<value_type>(!m_value); }
+
+		inline constexpr bool operator==(cool::integer<value_type> rhs) const noexcept { return m_value == rhs.m_value; }
+		inline constexpr bool operator!=(cool::integer<value_type> rhs) const noexcept { return m_value != rhs.m_value; }
+		inline constexpr bool operator<=(cool::integer<value_type> rhs) const noexcept { return m_value <= rhs.m_value; }
+		inline constexpr bool operator>=(cool::integer<value_type> rhs) const noexcept { return m_value >= rhs.m_value; }
+		inline constexpr bool operator<(cool::integer<value_type> rhs) const noexcept { return m_value < rhs.m_value; }
+		inline constexpr bool operator>(cool::integer<value_type> rhs) const noexcept { return m_value > rhs.m_value; }
+
+		inline constexpr value_type get_value() const noexcept { return m_value; }
+
+	private:
+
+		value_type m_value;
 	};
 }
 
@@ -941,6 +987,84 @@ template <class Ty, std::size_t _align, std::size_t _alloc_align>
 inline const Ty* cool::_aligned_impl<Ty, _align, _alloc_align>::get_aligned_const_ptr() const noexcept { return &m_storage; }
 
 #endif // xCOOL_BASIC_TYPES_HPP
+
+#if defined(xCOOL_BASIC_TYPES_HPP) && (defined(_LIBCPP_OSTREAM) || defined(_GLIBCXX_OSTREAM) || defined(_OSTREAM_))
+#ifndef xCOOL_BASIC_TYPES_HPP_OSTREAM
+#define xCOOL_BASIC_TYPES_HPP_OSTREAM
+namespace cool
+{
+	template <class int_Ty, class char_Ty>
+	inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out_stream,
+		cool::integer<int_Ty> rhs);
+
+	template <class return_Ty, class ... arg_Ty, class char_Ty>
+	inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out_stream,
+		cool::func_ptr<return_Ty(arg_Ty ...)> rhs);
+
+	template <class object_Ty, class return_Ty, class ... arg_Ty, class char_Ty>
+	inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out_stream,
+		cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)> rhs);
+
+	template <class object_Ty, class return_Ty, class ... arg_Ty, class char_Ty>
+	inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out_stream,
+		cool::object_member_func_ptr<object_Ty, return_Ty(arg_Ty ...)> rhs);
+}
+
+template <class int_Ty, class char_Ty>
+inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& cool::operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out_stream,
+	cool::integer<int_Ty> rhs)
+{
+	out_stream << rhs.get_value();
+	return out_stream;
+}
+
+template <class return_Ty, class ... arg_Ty, class char_Ty>
+inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& cool:: operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out_stream,
+	cool::func_ptr<return_Ty(arg_Ty ...)> rhs)
+{
+	out_stream << rhs.function();
+	return out_stream;
+}
+
+template <class object_Ty, class return_Ty, class ... arg_Ty, class char_Ty>
+inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& cool:: operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out_stream,
+	cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)> rhs)
+{
+	if (sizeof(void(*)(void)) == sizeof(decltype(rhs.function())))
+	{
+		void(*function_ptr)(void);
+		std::memcpy(&function_ptr, &(rhs.function()), sizeof(void(*)(void)));
+		out_stream << function_ptr;
+	}
+	else
+	{
+		out_stream << rhs.function();
+	}
+
+	return out_stream;
+}
+
+template <class object_Ty, class return_Ty, class ... arg_Ty, class char_Ty>
+inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& cool:: operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out_stream,
+	cool::object_member_func_ptr<object_Ty, return_Ty(arg_Ty ...)> rhs)
+{
+	out_stream << rhs.object() << '-' << '>';
+
+	if (sizeof(void(*)(void)) == sizeof(decltype(rhs.function())))
+	{
+		void(*function_ptr)(void);
+		std::memcpy(&function_ptr, &(rhs.function()), sizeof(void(*)(void)));
+		out_stream << function_ptr;
+	}
+	else
+	{
+		out_stream << rhs.function();
+	}
+
+	return out_stream;
+}
+#endif // xCOOL_BASIC_TYPES_HPP_OSTREAM
+#endif // defined(xCOOL_BASIC_TYPES_HPP) && (defined(_LIBCPP_OSTREAM) || defined(_GLIBCXX_OSTREAM) || defined(_OSTREAM_))
 
 
 // cool_basic_types.hpp
