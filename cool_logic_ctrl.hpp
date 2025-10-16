@@ -178,7 +178,7 @@ namespace cool
 		using relation_info_type = cool::logic_ctrl_relation_info<cmp_Ty, index_Ty>;
 		using init_result_type = cool::logic_ctrl_init_result<index_Ty>;
 
-		using value_type_arg = typename std::conditional<small_Ty, refresh_result_Ty, const refresh_result_Ty&>::type;
+		using arg_value_type = typename std::conditional<small_Ty, refresh_result_Ty, const refresh_result_Ty&>::type;
 
 		// provides interface to all variables as a const contiguous array
 		class variable_view;
@@ -192,11 +192,11 @@ namespace cool
 
 		// > set_variable writes and triggers observers if 'cmp(new_value, previous_value)' returns true
 
-		void set_variable(index_Ty variable_index, value_type_arg new_value);
-		void set_variable(index_Ty variable_index, value_type_arg new_value, cool::max_depth _max_depth);
+		void set_variable(index_Ty variable_index, arg_value_type new_value);
+		void set_variable(index_Ty variable_index, arg_value_type new_value, cool::max_depth _max_depth);
 
-		void set_variable_no_cmp(index_Ty variable_index, value_type_arg new_value);
-		void set_variable_no_cmp(index_Ty variable_index, value_type_arg new_value, cool::max_depth _max_depth);
+		void set_variable_no_cmp(index_Ty variable_index, arg_value_type new_value);
+		void set_variable_no_cmp(index_Ty variable_index, arg_value_type new_value, cool::max_depth _max_depth);
 
 		void refresh_variable(index_Ty variable_index);
 		void refresh_variable(index_Ty variable_index, cool::max_depth _max_depth);
@@ -325,7 +325,7 @@ namespace cool
 		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::relation_info_type;
 		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type;
 
-		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::value_type_arg;
+		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::arg_value_type;
 		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::variable_view;
 		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::refresh_func_type;
 
@@ -392,7 +392,7 @@ namespace cool
 		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::relation_info_type;
 		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type;
 
-		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::value_type_arg;
+		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::arg_value_type;
 		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::variable_view;
 		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::refresh_func_type;
 
@@ -448,7 +448,7 @@ namespace cool
 		using refresh_result_value_type = refresh_result_Ty;
 
 		static constexpr bool small_value_type = cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::small_value_type;
-		using value_type_arg = typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::value_type_arg;
+		using arg_value_type = typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::arg_value_type;
 		using refresh_func_type = typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::refresh_func_type;
 
 		logic_ctrl_variable_info() = default;
@@ -593,13 +593,13 @@ inline constexpr cool::max_depth::max_depth(int new_max_depth) noexcept : m_valu
 inline constexpr int cool::max_depth::value() const noexcept { return m_value; }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::set_variable(index_Ty variable_index, value_type_arg new_value)
+void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::set_variable(index_Ty variable_index, arg_value_type new_value)
 {
 	set_variable(variable_index, new_value, cool::max_depth(m_default_max_depth));
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::set_variable(index_Ty variable_index, value_type_arg new_value, cool::max_depth _max_depth)
+void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::set_variable(index_Ty variable_index, arg_value_type new_value, cool::max_depth _max_depth)
 {
 	assert(good());
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -640,13 +640,13 @@ void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::set_variable_no_cmp(index_Ty variable_index, value_type_arg new_value)
+void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::set_variable_no_cmp(index_Ty variable_index, arg_value_type new_value)
 {
 	set_variable_no_cmp(variable_index, new_value, cool::max_depth(m_default_max_depth));
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::set_variable_no_cmp(index_Ty variable_index, value_type_arg new_value, cool::max_depth _max_depth)
+void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::set_variable_no_cmp(index_Ty variable_index, arg_value_type new_value, cool::max_depth _max_depth)
 {
 	assert(good());
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
