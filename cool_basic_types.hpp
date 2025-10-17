@@ -1016,7 +1016,22 @@ template <class int_Ty, class char_Ty>
 inline std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& cool::operator<<(std::basic_ostream<char_Ty, std::char_traits<char_Ty>>& out_stream,
 	cool::integer<int_Ty> rhs)
 {
-	out_stream << rhs.get_value();
+	if (sizeof(int_Ty) >= sizeof(int))
+	{
+		out_stream << rhs.get_value();
+	}
+	else
+	{
+		if (cool::integer<int_Ty>::is_signed)
+		{
+			out_stream << static_cast<int>(rhs.get_value());
+		}
+		else
+		{
+			out_stream << static_cast<unsigned int>(rhs.get_value());
+		}
+	}
+
 	return out_stream;
 }
 
