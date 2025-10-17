@@ -80,7 +80,9 @@ namespace cool
 	template <class integral_Ty> class is_integral : public std::false_type {};
 	template <class int_Ty> class is_integral<cool::integer<int_Ty>> : public std::true_type {};
 
-	using bl = cool::integer<bool>;
+	using ubool = cool::integer<bool>;
+	using ibyte = cool::integer<char>;
+	using ubyte = cool::integer<unsigned char>;
 
 #ifdef INT8_MAX
 	using i8 = cool::integer<std::int8_t>;
