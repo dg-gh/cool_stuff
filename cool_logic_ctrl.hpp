@@ -22,6 +22,12 @@
 #endif // COOL_LOGIC_CTRL_VECTOR
 
 
+// to include variable count in variable_view : #define COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
+
+#ifdef COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
+#endif // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
+
+
 namespace cool
 {
 	// > Ty must be copy assignable from refresh_result_Ty
@@ -250,13 +256,21 @@ namespace cool
 			using index_type = index_Ty;
 
 			variable_view() = delete;
+#ifndef COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
 			explicit inline variable_view(const Ty* ptr) noexcept;
+#else // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
+			explicit inline variable_view(const Ty* ptr, std::size_t _variable_count) noexcept;
+			inline std::size_t variable_count() const noexcept;
+#endif // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
 			inline const Ty& operator[](index_Ty variable_index) const noexcept;
 			inline const Ty* data() const noexcept;
 
 		private:
 
 			const Ty* m_ptr;
+#ifdef COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
+			std::size_t m_variable_count;
+#endif // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
 		};
 
 	private:
@@ -629,7 +643,11 @@ void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::
 
 					set_variable(observer_info_ref.observer_index,
 						observer_variable_info_ref.refresh_func(observer_info_ref.observer_index,
+#ifndef COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
 							_logic_ctrl_base::variable_view(m_variables_ptr),
+#else // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
+							_logic_ctrl_base::variable_view(m_variables_ptr, m_variable_count),
+#endif // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
 							observer_variable_info_ref.shared_data_ptr
 						),
 						cool::max_depth(_max_depth_value - 1)
@@ -672,7 +690,11 @@ void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::
 
 				set_variable_no_cmp(observer_info_ref.observer_index,
 					observer_variable_info_ref.refresh_func(observer_info_ref.observer_index,
+#ifndef COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
 						_logic_ctrl_base::variable_view(m_variables_ptr),
+#else // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
+						_logic_ctrl_base::variable_view(m_variables_ptr, m_variable_count),
+#endif // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
 						observer_variable_info_ref.shared_data_ptr
 					),
 					cool::max_depth(_max_depth_value - 1)
@@ -725,7 +747,11 @@ void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::
 
 						set_variable(observer_info_ref.observer_index,
 							observer_variable_info_ref.refresh_func(observer_info_ref.observer_index,
+#ifndef COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
 								_logic_ctrl_base::variable_view(m_variables_ptr),
+#else // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
+								_logic_ctrl_base::variable_view(m_variables_ptr, m_variable_count),
+#endif // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
 								observer_variable_info_ref.shared_data_ptr
 							),
 							cool::max_depth(_max_depth_value - 1)
@@ -776,7 +802,11 @@ void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::
 
 				set_variable_no_cmp(observer_info_ref.observer_index,
 					observer_variable_info_ref.refresh_func(observer_info_ref.observer_index,
+#ifndef COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
 						_logic_ctrl_base::variable_view(m_variables_ptr),
+#else // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
+						_logic_ctrl_base::variable_view(m_variables_ptr, m_variable_count),
+#endif // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
 						observer_variable_info_ref.shared_data_ptr
 					),
 					cool::max_depth(_max_depth_value - 1)
@@ -935,11 +965,27 @@ typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_T
 	return init_result_type(m_init, return_index);
 }
 
+#ifndef COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
 inline cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::variable_view::variable_view(const Ty* ptr) noexcept : m_ptr(ptr) {}
+#else // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
+template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
+inline cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::variable_view::variable_view(const Ty* ptr, std::size_t _variable_count) noexcept : m_ptr(ptr), m_variable_count(_variable_count) {}
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-inline const Ty& cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::variable_view::operator[](index_Ty variable_index) const noexcept { return *(m_ptr + static_cast<std::size_t>(variable_index)); }
+inline std::size_t cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::variable_view::variable_count() const noexcept { return m_variable_count; }
+#endif // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
+
+template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
+inline const Ty& cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::variable_view::operator[](index_Ty variable_index) const noexcept
+{
+	assert(m_ptr != nullptr);
+#ifdef COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
+	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
+#endif // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
+
+	return *(m_ptr + static_cast<std::size_t>(variable_index));
+}
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
 inline const Ty* cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::variable_view::data() const noexcept { return m_ptr; }
