@@ -2729,8 +2729,8 @@ inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_
 	}
 
 	this->m_task_buffer_end_ptr = this->m_task_buffer_data_ptr + new_task_buffer_size_p1;
-	this->m_next_task_ptr = this->m_task_buffer_data_ptr;
 	this->m_last_task_ptr = this->m_task_buffer_data_ptr;
+	this->m_next_task_ptr = this->m_task_buffer_data_ptr;
 
 	for (std::size_t k = 0; k < new_task_buffer_size_p1; k++)
 	{
@@ -2752,16 +2752,14 @@ inline cool::threads_init_result cool::threads_sq<_cache_line_size, _arg_buffer_
 						{
 							std::unique_lock<std::mutex> lock(this->m_mutex);
 
-							this->m_condition_var.wait(lock, [this]() -> bool { return (this->m_last_task_ptr != this->m_next_task_ptr) || this->m_stop_threads; });
+							this->m_condition_var.wait(lock, [this]() -> bool { return (this->m_next_task_ptr != this->m_last_task_ptr) || this->m_stop_threads; });
 
-							if (this->m_last_task_ptr != this->m_next_task_ptr)
+							if (this->m_next_task_ptr != this->m_last_task_ptr)
 							{
 								this->m_next_task_ptr->m_address_data.m_callable(&current_task, this->m_next_task_ptr);
 
-								_cool_thsq_task* next_task_ptr_p1 = this->m_next_task_ptr + 1;
-
-								this->m_next_task_ptr = (next_task_ptr_p1 != this->m_task_buffer_end_ptr) ?
-									next_task_ptr_p1 : this->m_task_buffer_data_ptr;
+								this->m_next_task_ptr = (this->m_next_task_ptr + 1 != this->m_task_buffer_end_ptr) ?
+									this->m_next_task_ptr + 1 : this->m_task_buffer_data_ptr;
 							}
 							else
 							{
@@ -2915,8 +2913,8 @@ inline void cool::_threads_sq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 
 	this->m_task_buffer_data_ptr = nullptr;
 	this->m_task_buffer_end_ptr = nullptr;
-	this->m_next_task_ptr = nullptr;
 	this->m_last_task_ptr = nullptr;
+	this->m_next_task_ptr = nullptr;
 
 	this->m_task_buffer_unaligned_data_ptr = nullptr;
 }
@@ -4179,16 +4177,14 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 							{
 								std::unique_lock<std::mutex> lock(ptr->m_mutex);
 
-								ptr->m_condition_var.wait(lock, [ptr]() -> bool { return (ptr->m_last_task_ptr != ptr->m_next_task_ptr) || ptr->m_stop_threads; });
+								ptr->m_condition_var.wait(lock, [ptr]() -> bool { return (ptr->m_next_task_ptr != ptr->m_last_task_ptr) || ptr->m_stop_threads; });
 
-								if (ptr->m_last_task_ptr != ptr->m_next_task_ptr)
+								if (ptr->m_next_task_ptr != ptr->m_last_task_ptr)
 								{
 									ptr->m_next_task_ptr->m_address_data.m_callable(&current_task, ptr->m_next_task_ptr);
 
-									_cool_thmq_task* next_task_ptr_p1 = ptr->m_next_task_ptr + 1;
-
-									ptr->m_next_task_ptr = (next_task_ptr_p1 != ptr->m_task_buffer_end_ptr) ?
-										next_task_ptr_p1 : ptr->m_task_buffer_data_ptr;
+									ptr->m_next_task_ptr = (ptr->m_next_task_ptr + 1 != ptr->m_task_buffer_end_ptr) ?
+										ptr->m_next_task_ptr + 1 : ptr->m_task_buffer_data_ptr;
 								}
 								else
 								{
@@ -4222,14 +4218,12 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 
 									std::unique_lock<std::mutex> lock(ptr->m_mutex, std::try_to_lock);
 
-									if (lock.owns_lock() && (ptr->m_last_task_ptr != ptr->m_next_task_ptr))
+									if (lock.owns_lock() && (ptr->m_next_task_ptr != ptr->m_last_task_ptr))
 									{
 										ptr->m_next_task_ptr->m_address_data.m_callable(&current_task, ptr->m_next_task_ptr);
 
-										_cool_thmq_task* next_task_ptr_p1 = ptr->m_next_task_ptr + 1;
-
-										ptr->m_next_task_ptr = (next_task_ptr_p1 != ptr->m_task_buffer_end_ptr) ?
-											next_task_ptr_p1 : ptr->m_task_buffer_data_ptr;
+										ptr->m_next_task_ptr = (ptr->m_next_task_ptr + 1 != ptr->m_task_buffer_end_ptr) ?
+											ptr->m_next_task_ptr + 1 : ptr->m_task_buffer_data_ptr;
 
 										return true; // return from lambda, sets variable 'ongoing' as true
 									}
@@ -4241,14 +4235,12 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 
 									std::unique_lock<std::mutex> lock(ptr->m_mutex, std::try_to_lock);
 
-									if (lock.owns_lock() && (ptr->m_last_task_ptr != ptr->m_next_task_ptr))
+									if (lock.owns_lock() && (ptr->m_next_task_ptr != ptr->m_last_task_ptr))
 									{
 										ptr->m_next_task_ptr->m_address_data.m_callable(&current_task, ptr->m_next_task_ptr);
 
-										_cool_thmq_task* next_task_ptr_p1 = ptr->m_next_task_ptr + 1;
-
-										ptr->m_next_task_ptr = (next_task_ptr_p1 != ptr->m_task_buffer_end_ptr) ?
-											next_task_ptr_p1 : ptr->m_task_buffer_data_ptr;
+										ptr->m_next_task_ptr = (ptr->m_next_task_ptr + 1 != ptr->m_task_buffer_end_ptr) ?
+											ptr->m_next_task_ptr + 1 : ptr->m_task_buffer_data_ptr;
 
 										return true; // return from lambda, sets variable 'ongoing' as true
 									}
@@ -4259,16 +4251,14 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 
 									std::unique_lock<std::mutex> lock(ptr->m_mutex);
 
-									ptr->m_condition_var.wait(lock, [ptr]() -> bool { return (ptr->m_last_task_ptr != ptr->m_next_task_ptr) || ptr->m_stop_threads; });
+									ptr->m_condition_var.wait(lock, [ptr]() -> bool { return (ptr->m_next_task_ptr != ptr->m_last_task_ptr) || ptr->m_stop_threads; });
 
-									if (ptr->m_last_task_ptr != ptr->m_next_task_ptr)
+									if (ptr->m_next_task_ptr != ptr->m_last_task_ptr)
 									{
 										ptr->m_next_task_ptr->m_address_data.m_callable(&current_task, ptr->m_next_task_ptr);
 
-										_cool_thmq_task* next_task_ptr_p1 = ptr->m_next_task_ptr + 1;
-
-										ptr->m_next_task_ptr = (next_task_ptr_p1 != ptr->m_task_buffer_end_ptr) ?
-											next_task_ptr_p1 : ptr->m_task_buffer_data_ptr;
+										ptr->m_next_task_ptr = (ptr->m_next_task_ptr + 1 != ptr->m_task_buffer_end_ptr) ?
+											ptr->m_next_task_ptr + 1 : ptr->m_task_buffer_data_ptr;
 
 										return true; // return from lambda, sets variable 'ongoing' as true
 									}
@@ -4314,14 +4304,12 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 
 										std::unique_lock<std::mutex> lock(ptr->m_mutex, std::try_to_lock);
 
-										if (lock.owns_lock() && (ptr->m_last_task_ptr != ptr->m_next_task_ptr))
+										if (lock.owns_lock() && (ptr->m_next_task_ptr != ptr->m_last_task_ptr))
 										{
 											ptr->m_next_task_ptr->m_address_data.m_callable(&current_task, ptr->m_next_task_ptr);
 
-											_cool_thmq_task* next_task_ptr_p1 = ptr->m_next_task_ptr + 1;
-
-											ptr->m_next_task_ptr = (next_task_ptr_p1 != ptr->m_task_buffer_end_ptr) ?
-												next_task_ptr_p1 : ptr->m_task_buffer_data_ptr;
+											ptr->m_next_task_ptr = (ptr->m_next_task_ptr + 1 != ptr->m_task_buffer_end_ptr) ?
+												ptr->m_next_task_ptr + 1 : ptr->m_task_buffer_data_ptr;
 
 											return true; // return from lambda, sets variable 'ongoing' as true
 										}
@@ -4333,14 +4321,12 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 
 										std::unique_lock<std::mutex> lock(ptr->m_mutex, std::try_to_lock);
 
-										if (lock.owns_lock() && (ptr->m_last_task_ptr != ptr->m_next_task_ptr))
+										if (lock.owns_lock() && (ptr->m_next_task_ptr != ptr->m_last_task_ptr))
 										{
 											ptr->m_next_task_ptr->m_address_data.m_callable(&current_task, ptr->m_next_task_ptr);
 
-											_cool_thmq_task* next_task_ptr_p1 = ptr->m_next_task_ptr + 1;
-
-											ptr->m_next_task_ptr = (next_task_ptr_p1 != ptr->m_task_buffer_end_ptr) ?
-												next_task_ptr_p1 : ptr->m_task_buffer_data_ptr;
+											ptr->m_next_task_ptr = (ptr->m_next_task_ptr + 1 != ptr->m_task_buffer_end_ptr) ?
+												ptr->m_next_task_ptr + 1 : ptr->m_task_buffer_data_ptr;
 
 											return true; // return from lambda, sets variable 'ongoing' as true
 										}
@@ -4352,16 +4338,14 @@ inline cool::threads_init_result cool::threads_mq<_cache_line_size, _arg_buffer_
 
 									std::unique_lock<std::mutex> lock(ptr->m_mutex);
 
-									ptr->m_condition_var.wait(lock, [ptr]() -> bool { return (ptr->m_last_task_ptr != ptr->m_next_task_ptr) || ptr->m_stop_threads; });
+									ptr->m_condition_var.wait(lock, [ptr]() -> bool { return (ptr->m_next_task_ptr != ptr->m_last_task_ptr) || ptr->m_stop_threads; });
 
-									if (ptr->m_last_task_ptr != ptr->m_next_task_ptr)
+									if (ptr->m_next_task_ptr != ptr->m_last_task_ptr)
 									{
 										ptr->m_next_task_ptr->m_address_data.m_callable(&current_task, ptr->m_next_task_ptr);
 
-										_cool_thmq_task* next_task_ptr_p1 = ptr->m_next_task_ptr + 1;
-
-										ptr->m_next_task_ptr = (next_task_ptr_p1 != ptr->m_task_buffer_end_ptr) ?
-											next_task_ptr_p1 : ptr->m_task_buffer_data_ptr;
+										ptr->m_next_task_ptr = (ptr->m_next_task_ptr + 1 != ptr->m_task_buffer_end_ptr) ?
+											ptr->m_next_task_ptr + 1 : ptr->m_task_buffer_data_ptr;
 
 										return true; // return from lambda, sets variable 'ongoing' as true
 									}
@@ -4709,8 +4693,8 @@ inline bool cool::_threads_mq_data<_cache_line_size, _arg_buffer_size, _arg_buff
 	}
 
 	m_task_buffer_end_ptr = m_task_buffer_data_ptr + new_task_buffer_size_p1;
-	m_next_task_ptr = m_task_buffer_data_ptr;
 	m_last_task_ptr = m_task_buffer_data_ptr;
+	m_next_task_ptr = m_task_buffer_data_ptr;
 
 	for (std::size_t k = 0; k < new_task_buffer_size_p1; k++)
 	{
