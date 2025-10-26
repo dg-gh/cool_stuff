@@ -2345,17 +2345,17 @@ inline cool::rotation_status cool::rotation_axis_angle<traits_Ty, _dim_padded, _
 		value_type a2 = *(m3x3_rotation_ptr + _index_data::i10) - *(m3x3_rotation_ptr + _index_data::i01);
 		value_type b2 = *(m3x3_rotation_ptr + _index_data::i10) + *(m3x3_rotation_ptr + _index_data::i01);
 
-		value_type c = static_cast<value_type>(1) + *(m3x3_rotation_ptr + _index_data::i00) + *(m3x3_rotation_ptr + _index_data::i11) + *(m3x3_rotation_ptr + _index_data::i22);
-		quat_comp_sq[0] = c * c + a0 * a0 + a1 * a1 + a2 * a2;
+		value_type c = (static_cast<value_type>(1) + *(m3x3_rotation_ptr + _index_data::i00)) + (*(m3x3_rotation_ptr + _index_data::i11) + *(m3x3_rotation_ptr + _index_data::i22));
+		quat_comp_sq[0] = (c * c + a0 * a0) + (a1 * a1 + a2 * a2);
 
-		c = static_cast<value_type>(1) + *(m3x3_rotation_ptr + _index_data::i00) - *(m3x3_rotation_ptr + _index_data::i11) - *(m3x3_rotation_ptr + _index_data::i22);
-		quat_comp_sq[1] = a0 * a0 + c * c + b1 * b1 + b2 * b2;
+		c = (static_cast<value_type>(1) + *(m3x3_rotation_ptr + _index_data::i00)) - (*(m3x3_rotation_ptr + _index_data::i11) + *(m3x3_rotation_ptr + _index_data::i22));
+		quat_comp_sq[1] = (a0 * a0 + c * c) + (b1 * b1 + b2 * b2);
 
-		c = static_cast<value_type>(1) - *(m3x3_rotation_ptr + _index_data::i00) + *(m3x3_rotation_ptr + _index_data::i11) - *(m3x3_rotation_ptr + _index_data::i22);
-		quat_comp_sq[2] = a1 * a1 + b0 * b0 + c * c + b2 * b2;
+		c = (static_cast<value_type>(1) - *(m3x3_rotation_ptr + _index_data::i00)) + (*(m3x3_rotation_ptr + _index_data::i11) - *(m3x3_rotation_ptr + _index_data::i22));
+		quat_comp_sq[2] = (a1 * a1 + b0 * b0) + (c * c + b2 * b2);
 
-		c = static_cast<value_type>(1) - *(m3x3_rotation_ptr + _index_data::i00) - *(m3x3_rotation_ptr + _index_data::i11) + *(m3x3_rotation_ptr + _index_data::i22);
-		quat_comp_sq[3] = a2 * a2 + b0 * b0 + b1 * b1 + c * c;
+		c = (static_cast<value_type>(1) - *(m3x3_rotation_ptr + _index_data::i00)) - (*(m3x3_rotation_ptr + _index_data::i11) - *(m3x3_rotation_ptr + _index_data::i22));
+		quat_comp_sq[3] = (a2 * a2 + b0 * b0) + (b1 * b1 + c * c);
 
 		quat_comp_sgn[0] = static_cast<value_type>(0.25);
 		quat_comp_sgn[1] = (a0 < static_cast<value_type>(0)) ? static_cast<value_type>(-0.25) : static_cast<value_type>(0.25);
@@ -2417,17 +2417,17 @@ inline cool::rotation_status cool::rotation_axis_angle<traits_Ty, _dim_padded, _
 		value_type a2 = *(m3x3_rotation_ptr + _index_data::i10) - *(m3x3_rotation_ptr + _index_data::i01);
 		value_type b2 = *(m3x3_rotation_ptr + _index_data::i10) + *(m3x3_rotation_ptr + _index_data::i01);
 
-		value_type c = static_cast<value_type>(1) + *(m3x3_rotation_ptr + _index_data::i00) + *(m3x3_rotation_ptr + _index_data::i11) + *(m3x3_rotation_ptr + _index_data::i22);
-		quat_comp_sq[0] = c * c + a0 * a0 + a1 * a1 + a2 * a2;
+		value_type c = (static_cast<value_type>(1) + *(m3x3_rotation_ptr + _index_data::i00)) + (*(m3x3_rotation_ptr + _index_data::i11) + *(m3x3_rotation_ptr + _index_data::i22));
+		quat_comp_sq[0] = (c * c + a0 * a0) + (a1 * a1 + a2 * a2);
 
-		c = static_cast<value_type>(1) + *(m3x3_rotation_ptr + _index_data::i00) - *(m3x3_rotation_ptr + _index_data::i11) - *(m3x3_rotation_ptr + _index_data::i22);
-		quat_comp_sq[1] = a0 * a0 + c * c + b1 * b1 + b2 * b2;
+		c = (static_cast<value_type>(1) + *(m3x3_rotation_ptr + _index_data::i00)) - (*(m3x3_rotation_ptr + _index_data::i11) + *(m3x3_rotation_ptr + _index_data::i22));
+		quat_comp_sq[1] = (a0 * a0 + c * c) + (b1 * b1 + b2 * b2);
 
-		c = static_cast<value_type>(1) - *(m3x3_rotation_ptr + _index_data::i00) + *(m3x3_rotation_ptr + _index_data::i11) - *(m3x3_rotation_ptr + _index_data::i22);
-		quat_comp_sq[2] = a1 * a1 + b0 * b0 + c * c + b2 * b2;
+		c = (static_cast<value_type>(1) - *(m3x3_rotation_ptr + _index_data::i00)) + (*(m3x3_rotation_ptr + _index_data::i11) - *(m3x3_rotation_ptr + _index_data::i22));
+		quat_comp_sq[2] = (a1 * a1 + b0 * b0) + (c * c + b2 * b2);
 
-		c = static_cast<value_type>(1) - *(m3x3_rotation_ptr + _index_data::i00) - *(m3x3_rotation_ptr + _index_data::i11) + *(m3x3_rotation_ptr + _index_data::i22);
-		quat_comp_sq[3] = a2 * a2 + b0 * b0 + b1 * b1 + c * c;
+		c = (static_cast<value_type>(1) - *(m3x3_rotation_ptr + _index_data::i00)) - (*(m3x3_rotation_ptr + _index_data::i11) - *(m3x3_rotation_ptr + _index_data::i22));
+		quat_comp_sq[3] = (a2 * a2 + b0 * b0) + (b1 * b1 + c * c);
 
 		quat_comp_sgn[0] = static_cast<value_type>(0.25);
 		quat_comp_sgn[1] = (a0 < static_cast<value_type>(0)) ? static_cast<value_type>(-0.25) : static_cast<value_type>(0.25);
@@ -2606,17 +2606,17 @@ inline void cool::rotation_quaternion<traits_Ty, _dim_padded, _layout>::get_quat
 	value_type a2 = *(m3x3_rotation_ptr + _index_data::i10) - *(m3x3_rotation_ptr + _index_data::i01);
 	value_type b2 = *(m3x3_rotation_ptr + _index_data::i10) + *(m3x3_rotation_ptr + _index_data::i01);
 
-	value_type c = static_cast<value_type>(1) + *(m3x3_rotation_ptr + _index_data::i00) + *(m3x3_rotation_ptr + _index_data::i11) + *(m3x3_rotation_ptr + _index_data::i22);
-	quat_comp_sq[0] = c * c + a0 * a0 + a1 * a1 + a2 * a2;
+	value_type c = (static_cast<value_type>(1) + *(m3x3_rotation_ptr + _index_data::i00)) + (*(m3x3_rotation_ptr + _index_data::i11) + *(m3x3_rotation_ptr + _index_data::i22));
+	quat_comp_sq[0] = (c * c + a0 * a0) + (a1 * a1 + a2 * a2);
 
-	c = static_cast<value_type>(1) + *(m3x3_rotation_ptr + _index_data::i00) - *(m3x3_rotation_ptr + _index_data::i11) - *(m3x3_rotation_ptr + _index_data::i22);
-	quat_comp_sq[1] = a0 * a0 + c * c + b1 * b1 + b2 * b2;
+	c = (static_cast<value_type>(1) + *(m3x3_rotation_ptr + _index_data::i00)) - (*(m3x3_rotation_ptr + _index_data::i11) + *(m3x3_rotation_ptr + _index_data::i22));
+	quat_comp_sq[1] = (a0 * a0 + c * c) + (b1 * b1 + b2 * b2);
 
-	c = static_cast<value_type>(1) - *(m3x3_rotation_ptr + _index_data::i00) + *(m3x3_rotation_ptr + _index_data::i11) - *(m3x3_rotation_ptr + _index_data::i22);
-	quat_comp_sq[2] = a1 * a1 + b0 * b0 + c * c + b2 * b2;
+	c = (static_cast<value_type>(1) - *(m3x3_rotation_ptr + _index_data::i00)) + (*(m3x3_rotation_ptr + _index_data::i11) - *(m3x3_rotation_ptr + _index_data::i22));
+	quat_comp_sq[2] = (a1 * a1 + b0 * b0) + (c * c + b2 * b2);
 
-	c = static_cast<value_type>(1) - *(m3x3_rotation_ptr + _index_data::i00) - *(m3x3_rotation_ptr + _index_data::i11) + *(m3x3_rotation_ptr + _index_data::i22);
-	quat_comp_sq[3] = a2 * a2 + b0 * b0 + b1 * b1 + c * c;
+	c = (static_cast<value_type>(1) - *(m3x3_rotation_ptr + _index_data::i00)) - (*(m3x3_rotation_ptr + _index_data::i11) - *(m3x3_rotation_ptr + _index_data::i22));
+	quat_comp_sq[3] = (a2 * a2 + b0 * b0) + (b1 * b1 + c * c);
 
 	value_type quat_comp_sgn[4] = {
 		static_cast<value_type>(0.25),
