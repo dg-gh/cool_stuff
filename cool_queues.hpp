@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <type_traits>
 #include <limits>
 #include <utility>
@@ -37,14 +38,14 @@
 //	static inline void wait(value_type&) noexcept;
 //};
 
-// TYPE must allow construction with '= 0'
+// TYPE must allow initialization with empty curly braces
 
 
 namespace cool
 {
 	class default_wait;
 	template <class Ty, std::size_t _cache_line_size, class _wait_Ty = default_wait> class queue_spsc;
-	template <class Ty, std::size_t _cache_line_size, class _uintX_t = std::uint32_t, class _wait_Ty = default_wait> class queue_mpmc;
+	template <class Ty, std::size_t _cache_line_size, class _wait_Ty = default_wait, class _uintX_t = std::uint32_t> class queue_mpmc;
 
 #ifdef COOL_QUEUES_THREAD
 	class default_wait_wlock;
@@ -128,13 +129,13 @@ namespace cool
 
 		using wait_type = _wait_Ty;
 
-		static constexpr std::size_t cache_line_size = alignof(cool::queue_spsc<Ty, _cache_line_size>);
+		static constexpr std::size_t cache_line_size = alignof(cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>);
 
 		queue_spsc() = default;
-		queue_spsc(const cool::queue_spsc<Ty, _cache_line_size>&) = delete;
-		cool::queue_spsc<Ty, _cache_line_size>& operator=(const cool::queue_spsc<Ty, _cache_line_size>&) = delete;
-		queue_spsc(cool::queue_spsc<Ty, _cache_line_size>&&) = delete;
-		cool::queue_spsc<Ty, _cache_line_size>& operator=(cool::queue_spsc<Ty, _cache_line_size>&&) = delete;
+		queue_spsc(const cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>&) = delete;
+		cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>& operator=(const cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>&) = delete;
+		queue_spsc(cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>&&) = delete;
+		cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>& operator=(cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>&&) = delete;
 		~queue_spsc();
 
 		// WARNING : array at data_ptr must have space for new_item_buffer_size.value() + 1 elements
@@ -166,7 +167,7 @@ namespace cool
 
 	// queue_mpmc
 
-	template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty> class alignas(_cache_line_size) queue_mpmc
+	template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t> class alignas(_cache_line_size) queue_mpmc
 	{
 
 	private:
@@ -200,18 +201,18 @@ namespace cool
 
 		using wait_type = _wait_Ty;
 
-		class item_type;
-
 		using uintX_type = _uintX_t;
 		using uint2X_type = decltype(_upcast(static_cast<_uintX_t>(0)));
 
-		static constexpr std::size_t cache_line_size = alignof(cool::queue_spsc<Ty, _cache_line_size>);
+		class item_type;
+
+		static constexpr std::size_t cache_line_size = alignof(cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>);
 
 		queue_mpmc() = default;
-		queue_mpmc(const cool::queue_mpmc<Ty, _cache_line_size>&) = delete;
-		cool::queue_mpmc<Ty, _cache_line_size>& operator=(const cool::queue_mpmc<Ty, _cache_line_size>&) = delete;
-		queue_mpmc(cool::queue_mpmc<Ty, _cache_line_size>&&) = delete;
-		cool::queue_mpmc<Ty, _cache_line_size>& operator=(cool::queue_mpmc<Ty, _cache_line_size>&&) = delete;
+		queue_mpmc(const cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>&) = delete;
+		cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>& operator=(const cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>&) = delete;
+		queue_mpmc(cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>&&) = delete;
+		cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>& operator=(cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>&&) = delete;
 		inline ~queue_mpmc();
 
 		// WARNING : array at data_ptr must have space for new_item_buffer_size.value() + 1 elements
@@ -241,11 +242,11 @@ namespace cool
 		public:
 
 			item_info_type() = delete;
-			inline item_info_type(uintX_type _item_number, uintX_type _round_number) noexcept : item_number(_item_number), round_number(_round_number) {}
-			item_info_type(const typename cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::item_info_type&) = default;
-			typename cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::item_info_type& operator=(const typename cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::item_info_type&) noexcept = default;
-			item_info_type(typename cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::item_info_type&&) noexcept = default;
-			typename cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::item_info_type& operator=(typename cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::item_info_type&&) noexcept = default;
+			inline item_info_type(uintX_type _item_number, uintX_type _round_number) noexcept;
+			item_info_type(const typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type&) = default;
+			typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type& operator=(const typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type&) noexcept = default;
+			item_info_type(typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type&&) noexcept = default;
+			typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type& operator=(typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type&&) noexcept = default;
 			~item_info_type() = default;
 
 			uintX_type item_number;
@@ -262,9 +263,9 @@ namespace cool
 		std::atomic<bool> m_good{ false };
 		char* m_item_buffer_unaligned_data_ptr = nullptr;
 
-		alignas(cache_line_size) std::atomic<item_info_type> m_last_item_info{ item_info_type(0, 0) };
+		alignas(_cache_line_size) std::atomic<item_info_type> m_last_item_info{ item_info_type(0, 0) };
 
-		alignas(cache_line_size) std::atomic<item_info_type> m_next_item_info{ item_info_type(0, 1) };
+		alignas(_cache_line_size) std::atomic<item_info_type> m_next_item_info{ item_info_type(0, 1) };
 	};
 
 #ifdef COOL_QUEUES_THREAD
@@ -294,13 +295,13 @@ namespace cool
 
 		using wait_type = _wait_Ty;
 
-		static constexpr std::size_t cache_line_size = alignof(cool::queue_spsc<Ty, _cache_line_size>);
+		static constexpr std::size_t cache_line_size = alignof(cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>);
 
 		queue_wlock() = default;
-		queue_wlock(const cool::queue_wlock<Ty, _cache_line_size>&) = delete;
-		cool::queue_wlock<Ty, _cache_line_size>& operator=(const cool::queue_wlock<Ty, _cache_line_size>&) = delete;
-		queue_wlock(cool::queue_wlock<Ty, _cache_line_size>&&) = delete;
-		cool::queue_wlock<Ty, _cache_line_size>& operator=(cool::queue_wlock<Ty, _cache_line_size>&&) = delete;
+		queue_wlock(const cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>&) = delete;
+		cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>& operator=(const cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>&) = delete;
+		queue_wlock(cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>&&) = delete;
+		cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>& operator=(cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>&&) = delete;
 		~queue_wlock();
 
 		// WARNING : array at data_ptr must have space for new_item_buffer_size.value() + 1 elements
@@ -363,10 +364,10 @@ inline const char* cool::queue_init_result::message() const noexcept
 	switch (m_result)
 	{
 	case queue_init_result::success: return "cool queue init success"; break;
-	case queue_init_result::bad_align: return "cool queue init failed : bad alignment of queue_sq/queue_mq object"; break;
+	case queue_init_result::bad_align: return "cool queue init failed : bad alignment of queue_spsc/queue_mpmc/queue_wlock object"; break;
 	case queue_init_result::bad_parameters: return "cool queue init failed : bad parameters"; break;
 	case queue_init_result::bad_alloc: return "cool queue init failed : bad allocation"; break;
-	case queue_init_result::not_lockfree: return "cool queue init failed : atomic pointers not lockfree"; break;
+	case queue_init_result::not_lockfree: return "cool queue init failed : atomic pointers/counters are not lockfree"; break;
 	default: return "cool queue init result undefined"; break;
 	}
 }
@@ -385,6 +386,7 @@ template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
 inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::init_new_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size)
 {
 	assert((reinterpret_cast<std::uintptr_t>(this) % cache_line_size == 0) && "cool::queue_spsc<...> : object location must be aligned in memory");
+	assert(data_ptr != nullptr);
 
 	if (reinterpret_cast<std::uintptr_t>(this) % cache_line_size != 0)
 	{
@@ -400,7 +402,7 @@ inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>:
 		return cool::queue_init_result(cool::queue_init_result::not_lockfree);
 	}
 
-	if (new_item_buffer_size.value() == 0)
+	if ((data_ptr == nullptr) || (new_item_buffer_size.value() == 0))
 	{
 		return cool::queue_init_result(cool::queue_init_result::bad_parameters);
 	}
@@ -572,7 +574,7 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ... 
 	Ty* last_item_ptr = m_last_item_aptr.load(std::memory_order_relaxed);
 	Ty* last_item_ptr_p1 = (last_item_ptr + 1 != m_item_buffer_end_ptr) ? last_item_ptr + 1 : m_item_buffer_data_ptr;
 
-	typename _wait_Ty::value_type try_count = 0;
+	typename _wait_Ty::value_type try_count{};
 	while (last_item_ptr_p1 == m_next_item_cached_ptr)
 	{
 		m_next_item_cached_ptr = m_next_item_aptr.load(std::memory_order_acquire);
@@ -588,7 +590,7 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::pop(Ty* ptr)
 {
 	Ty* next_item_ptr = m_next_item_aptr.load(std::memory_order_relaxed);
 
-	typename _wait_Ty::value_type try_count = 0;
+	typename _wait_Ty::value_type try_count{};
 	while (next_item_ptr == m_last_item_cached_ptr)
 	{
 		m_last_item_cached_ptr = m_last_item_aptr.load(std::memory_order_acquire);
@@ -600,16 +602,17 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::pop(Ty* ptr)
 	m_next_item_aptr.store(next_item_ptr_p1, std::memory_order_release);
 }
 
-template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty>
-cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::queue_mpmc::~queue_mpmc()
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::queue_mpmc::~queue_mpmc()
 {
 	delete_buffer();
 }
 
-template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty>
-inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::init_new_buffer(item_type* data_ptr, cool::item_buffer_size new_item_buffer_size)
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::init_new_buffer(item_type* data_ptr, cool::item_buffer_size new_item_buffer_size)
 {
 	assert((reinterpret_cast<std::uintptr_t>(this) % cache_line_size == 0) && "cool::queue_mpmc<...> : object location must be aligned in memory");
+	assert(data_ptr != nullptr);
 
 	if (reinterpret_cast<std::uintptr_t>(this) % cache_line_size != 0)
 	{
@@ -625,7 +628,8 @@ inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, 
 		return cool::queue_init_result(cool::queue_init_result::not_lockfree);
 	}
 
-	if ((new_item_buffer_size.value() == 0) && static_cast<std::size_t>(new_item_buffer_size.value()) > static_cast<std::size_t>(std::numeric_limits<_uintX_t>::max() - 1))
+	if ((data_ptr == nullptr) || (new_item_buffer_size.value() == 0)
+		|| (static_cast<std::uintmax_t>(new_item_buffer_size.value()) > static_cast<std::uintmax_t>(std::numeric_limits<_uintX_t>::max() - 1)))
 	{
 		return cool::queue_init_result(cool::queue_init_result::bad_parameters);
 	}
@@ -647,8 +651,8 @@ inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, 
 	return cool::queue_init_result(cool::queue_init_result::success);
 }
 
-template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty>
-inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::init_new_buffer(cool::item_buffer_size new_item_buffer_size)
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::init_new_buffer(cool::item_buffer_size new_item_buffer_size)
 {
 	assert((reinterpret_cast<std::uintptr_t>(this) % cache_line_size == 0) && "cool::queue_mpmc<...> : object location must be aligned in memory");
 
@@ -666,7 +670,8 @@ inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, 
 		return cool::queue_init_result(cool::queue_init_result::not_lockfree);
 	}
 
-	if (new_item_buffer_size.value() == 0)
+	if ((new_item_buffer_size.value() == 0)
+		|| (static_cast<std::uintmax_t>(new_item_buffer_size.value()) > static_cast<std::uintmax_t>(std::numeric_limits<_uintX_t>::max() - 1)))
 	{
 		return cool::queue_init_result(cool::queue_init_result::bad_parameters);
 	}
@@ -702,11 +707,11 @@ inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, 
 	return cool::queue_init_result(cool::queue_init_result::success);
 }
 
-template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty>
-inline bool cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::good() const noexcept { return m_good.load(std::memory_order_seq_cst); }
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::good() const noexcept { return m_good.load(std::memory_order_seq_cst); }
 
-template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty>
-inline std::size_t cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::size() const noexcept
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline std::size_t cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::size() const noexcept
 {
 	if (m_item_buffer_data_ptr != nullptr)
 	{
@@ -718,11 +723,11 @@ inline std::size_t cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::s
 	}
 }
 
-template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty>
-inline bool cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::owns_buffer() const noexcept { return m_item_buffer_unaligned_data_ptr != nullptr; }
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::owns_buffer() const noexcept { return m_item_buffer_unaligned_data_ptr != nullptr; }
 
-template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty>
-inline void cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::delete_buffer() noexcept
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::delete_buffer() noexcept
 {
 	m_good.store(false, std::memory_order_seq_cst);
 
@@ -741,15 +746,15 @@ inline void cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::delete_b
 	m_item_buffer_unaligned_data_ptr = nullptr;
 }
 
-template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty> template <class ... arg_Ty>
-void cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::push(arg_Ty&& ... args) noexcept
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t> template <class ... arg_Ty>
+void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::push(arg_Ty&& ... args) noexcept
 {
 	item_info_type last_item_info = m_last_item_info.load(std::memory_order_acquire);
 	while (!m_last_item_info.compare_exchange_weak(last_item_info, update_info(last_item_info))) {}
 
 	item_type& item_ref = *(m_item_buffer_data_ptr + static_cast<std::size_t>(last_item_info.item_number));
 
-	typename _wait_Ty::value_type try_count = 0;
+	typename _wait_Ty::value_type try_count{};
 	while (last_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
 	{
 		_wait_Ty::wait(try_count);
@@ -759,15 +764,15 @@ void cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::push(arg_Ty&& .
 	item_ref.round_number.store(last_item_info.round_number + 1, std::memory_order_release);
 }
 
-template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty>
-void cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::pop(Ty* ptr) noexcept
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::pop(Ty* ptr) noexcept
 {
 	item_info_type next_item_info = m_next_item_info.load(std::memory_order_acquire);
 	while (!m_next_item_info.compare_exchange_weak(next_item_info, update_info(next_item_info))) {}
 
 	item_type& item_ref = *(m_item_buffer_data_ptr + static_cast<std::size_t>(next_item_info.item_number));
 
-	typename _wait_Ty::value_type try_count = 0;
+	typename _wait_Ty::value_type try_count{};
 	while (next_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
 	{
 		_wait_Ty::wait(try_count);
@@ -777,8 +782,8 @@ void cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::pop(Ty* ptr) no
 	item_ref.round_number.store(next_item_info.round_number + 1, std::memory_order_release);
 }
 
-template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty> template <class ... arg_Ty>
-inline bool cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::try_push(arg_Ty&& ... args)
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t> template <class ... arg_Ty>
+inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::try_push(arg_Ty&& ... args)
 {
 	item_info_type last_item_info = m_last_item_info.load(std::memory_order_acquire);
 
@@ -809,8 +814,8 @@ inline bool cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::try_push
 	}
 }
 
-template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty>
-inline bool cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::try_pop(Ty* ptr)
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::try_pop(Ty* ptr)
 {
 	item_info_type next_item_info = m_next_item_info.load(std::memory_order_acquire);
 
@@ -841,20 +846,24 @@ inline bool cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::try_pop(
 	}
 }
 
-template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty>
-inline bool cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::item_info_type::operator==(const item_info_type& rhs) const noexcept
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type::item_info_type(uintX_type _item_number, uintX_type _round_number) noexcept
+	: item_number(_item_number), round_number(_round_number) {}
+
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type::operator==(const item_info_type& rhs) const noexcept
 {
-	return (item_number == rhs.item_number) && (round_number == rhs.round_number);
+	return std::memcmp(this, &rhs, sizeof(item_info_type)) == 0;
 }
 
-template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty>
-inline bool cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::item_info_type::operator!=(const item_info_type& rhs) const noexcept
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type::operator!=(const item_info_type& rhs) const noexcept
 {
-	return (item_number != rhs.item_number) || (round_number != rhs.round_number);
+	return std::memcmp(this, &rhs, sizeof(item_info_type)) != 0;
 }
 
-template <class Ty, std::size_t _cache_line_size, class _uintX_t, class _wait_Ty>
-inline typename cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::item_info_type cool::queue_mpmc<Ty, _cache_line_size, _uintX_t, _wait_Ty>::update_info(const item_info_type& info) const noexcept
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::update_info(const item_info_type& info) const noexcept
 {
 	if (info.item_number + 1 != m_item_buffer_size)
 	{
@@ -882,6 +891,7 @@ template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
 inline cool::queue_init_result cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::init_new_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size)
 {
 	assert((reinterpret_cast<std::uintptr_t>(this) % cache_line_size == 0) && "cool::queue_wlock<...> : object location must be aligned in memory");
+	assert(data_ptr != nullptr);
 
 	if (reinterpret_cast<std::uintptr_t>(this) % cache_line_size != 0)
 	{
@@ -893,7 +903,7 @@ inline cool::queue_init_result cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>
 		delete_buffer();
 	}
 
-	if (new_item_buffer_size.value() == 0)
+	if ((data_ptr == nullptr) || (new_item_buffer_size.value() == 0))
 	{
 		return cool::queue_init_result(cool::queue_init_result::bad_parameters);
 	}
@@ -1059,7 +1069,7 @@ inline bool cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::try_pop(Ty* ptr)
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty> template <class ... arg_Ty>
 inline void cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ... args)
 {
-	typename _wait_Ty::value_type try_count = 0;
+	typename _wait_Ty::value_type try_count{};
 
 	while (true)
 	{
