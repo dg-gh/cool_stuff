@@ -314,7 +314,7 @@ namespace cool
 		template <class ... arg_Ty> inline bool try_push(arg_Ty&& ... args);
 		inline bool try_pop(Ty* ptr);
 		template <class ... arg_Ty> inline void push(arg_Ty&& ... args);
-		inline void pop(Ty* ptr);
+		inline bool pop(Ty* ptr);
 
 	private:
 
@@ -1084,7 +1084,7 @@ inline void cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ...
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline void cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::pop(Ty* ptr)
+inline bool cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::pop(Ty* ptr)
 {
 	std::unique_lock<std::mutex> lock(m_mutex);
 
@@ -1094,6 +1094,12 @@ inline void cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::pop(Ty* ptr)
 	{
 		*ptr = std::move(*m_next_item_ptr);
 		m_next_item_ptr = (m_next_item_ptr + 1 != m_item_buffer_end_ptr) ? m_next_item_ptr + 1 : m_item_buffer_data_ptr;
+
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 }
 #endif // COOL_QUEUES_THREAD
