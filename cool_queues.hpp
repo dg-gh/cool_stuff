@@ -243,7 +243,7 @@ namespace cool
 
 			item_info_type() = delete;
 			inline item_info_type(uintX_type _item_number, uintX_type _round_number) noexcept;
-			item_info_type(const typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type&) = default;
+			item_info_type(const typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type&) noexcept = default;
 			typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type& operator=(const typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type&) noexcept = default;
 			item_info_type(typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type&&) noexcept = default;
 			typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type& operator=(typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item_info_type&&) noexcept = default;
