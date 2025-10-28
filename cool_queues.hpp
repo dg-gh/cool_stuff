@@ -146,10 +146,10 @@ namespace cool
 		inline bool owns_buffer() const noexcept;
 		inline void delete_buffer() noexcept;
 
-		template <class ... arg_Ty> inline bool try_push(arg_Ty&& ... args);
-		inline bool try_pop(Ty* ptr);
-		template <class ... arg_Ty> inline void push(arg_Ty&& ... args);
-		inline void pop(Ty* ptr);
+		template <class ... arg_Ty> inline bool try_push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value);
+		inline bool try_pop(Ty* ptr) noexcept;
+		template <class ... arg_Ty> inline void push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value);
+		inline void pop(Ty* ptr) noexcept;
 
 	private:
 
@@ -223,10 +223,10 @@ namespace cool
 		inline bool owns_buffer() const noexcept;
 		inline void delete_buffer() noexcept;
 
-		template <class ... arg_Ty> void push(arg_Ty&& ... args) noexcept;
-		void pop(Ty* ptr) noexcept;
-		template <class ... arg_Ty> inline bool try_push(arg_Ty&& ... args);
-		inline bool try_pop(Ty* ptr);
+		template <class ... arg_Ty> inline bool try_push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value);
+		inline bool try_pop(Ty* ptr) noexcept;
+		template <class ... arg_Ty> inline void push(arg_Ty&& ... args)  noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value);
+		inline void pop(Ty* ptr) noexcept;
 
 		class item_type {
 		public:
@@ -529,7 +529,7 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::delete_buffer() no
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty> template <class ... arg_Ty>
-inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::try_push(arg_Ty&& ... args)
+inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::try_push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value)
 {
 	Ty* last_item_ptr = m_last_item_aptr.load(std::memory_order_relaxed);
 	Ty* last_item_ptr_p1 = (last_item_ptr + 1 != m_item_buffer_end_ptr) ? last_item_ptr + 1 : m_item_buffer_data_ptr;
@@ -549,7 +549,7 @@ inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::try_push(arg_Ty&& 
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::try_pop(Ty* ptr)
+inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::try_pop(Ty* ptr) noexcept
 {
 	Ty* next_item_ptr = m_next_item_aptr.load(std::memory_order_relaxed);
 
@@ -569,7 +569,7 @@ inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::try_pop(Ty* ptr)
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty> template <class ... arg_Ty>
-inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ... args)
+inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value)
 {
 	Ty* last_item_ptr = m_last_item_aptr.load(std::memory_order_relaxed);
 	Ty* last_item_ptr_p1 = (last_item_ptr + 1 != m_item_buffer_end_ptr) ? last_item_ptr + 1 : m_item_buffer_data_ptr;
@@ -586,7 +586,7 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ... 
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::pop(Ty* ptr)
+inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::pop(Ty* ptr) noexcept
 {
 	Ty* next_item_ptr = m_next_item_aptr.load(std::memory_order_relaxed);
 
@@ -747,43 +747,7 @@ inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::delete_b
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t> template <class ... arg_Ty>
-void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::push(arg_Ty&& ... args) noexcept
-{
-	item_info_type last_item_info = m_last_item_info.load(std::memory_order_acquire);
-	while (!m_last_item_info.compare_exchange_weak(last_item_info, update_info(last_item_info))) {}
-
-	item_type& item_ref = *(m_item_buffer_data_ptr + static_cast<std::size_t>(last_item_info.item_number));
-
-	typename _wait_Ty::value_type try_count{};
-	while (last_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
-	{
-		_wait_Ty::wait(try_count);
-	}
-
-	new (&item_ref.value) Ty(std::forward<arg_Ty>(args)...);
-	item_ref.round_number.store(last_item_info.round_number + 1, std::memory_order_release);
-}
-
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
-void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::pop(Ty* ptr) noexcept
-{
-	item_info_type next_item_info = m_next_item_info.load(std::memory_order_acquire);
-	while (!m_next_item_info.compare_exchange_weak(next_item_info, update_info(next_item_info))) {}
-
-	item_type& item_ref = *(m_item_buffer_data_ptr + static_cast<std::size_t>(next_item_info.item_number));
-
-	typename _wait_Ty::value_type try_count{};
-	while (next_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
-	{
-		_wait_Ty::wait(try_count);
-	}
-
-	*ptr = std::move(item_ref.value);
-	item_ref.round_number.store(next_item_info.round_number + 1, std::memory_order_release);
-}
-
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t> template <class ... arg_Ty>
-inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::try_push(arg_Ty&& ... args)
+inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::try_push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value)
 {
 	item_info_type last_item_info = m_last_item_info.load(std::memory_order_acquire);
 
@@ -815,7 +779,7 @@ inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::try_push
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
-inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::try_pop(Ty* ptr)
+inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::try_pop(Ty* ptr) noexcept
 {
 	item_info_type next_item_info = m_next_item_info.load(std::memory_order_acquire);
 
@@ -844,6 +808,42 @@ inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::try_pop(
 			}
 		}
 	}
+}
+
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t> template <class ... arg_Ty>
+inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value)
+{
+	item_info_type last_item_info = m_last_item_info.load(std::memory_order_acquire);
+	while (!m_last_item_info.compare_exchange_weak(last_item_info, update_info(last_item_info))) {}
+
+	item_type& item_ref = *(m_item_buffer_data_ptr + static_cast<std::size_t>(last_item_info.item_number));
+
+	typename _wait_Ty::value_type try_count{};
+	while (last_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
+	{
+		_wait_Ty::wait(try_count);
+	}
+
+	new (&item_ref.value) Ty(std::forward<arg_Ty>(args)...);
+	item_ref.round_number.store(last_item_info.round_number + 1, std::memory_order_release);
+}
+
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::pop(Ty* ptr) noexcept
+{
+	item_info_type next_item_info = m_next_item_info.load(std::memory_order_acquire);
+	while (!m_next_item_info.compare_exchange_weak(next_item_info, update_info(next_item_info))) {}
+
+	item_type& item_ref = *(m_item_buffer_data_ptr + static_cast<std::size_t>(next_item_info.item_number));
+
+	typename _wait_Ty::value_type try_count{};
+	while (next_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
+	{
+		_wait_Ty::wait(try_count);
+	}
+
+	*ptr = std::move(item_ref.value);
+	item_ref.round_number.store(next_item_info.round_number + 1, std::memory_order_release);
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
