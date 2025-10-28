@@ -7,15 +7,19 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <type_traits>
-#include <limits>
 #include <utility>
-#include <tuple>
 #include <new>
-#include <atomic>
 #include <cassert>
 
+// to allow the use of atomic to enable cool::queue_spsc/cool::queue_mpmc : #define COOL_QUEUES_ATOMIC
+
+#ifdef COOL_QUEUES_ATOMIC
+#include <atomic>
+#include <limits>
+#include <cstring>
+
+#endif // COOL_QUEUES_ATOMIC
 
 // to allow the use of this_thread/mutex/condition_variable to enable cool::queue_wlock : #define COOL_QUEUES_THREAD
 
@@ -43,9 +47,13 @@
 
 namespace cool
 {
+	template <class Ty> class queue_nosync;
+
+#ifdef COOL_QUEUES_ATOMIC
 	class default_wait;
 	template <class Ty, std::size_t _cache_line_size, class _wait_Ty = default_wait> class queue_spsc;
 	template <class Ty, std::size_t _cache_line_size, class _wait_Ty = default_wait, class _uintX_t = std::uint32_t> class queue_mpmc;
+#endif // COOL_QUEUES_ATOMIC
 
 #ifdef COOL_QUEUES_THREAD
 	class default_wait_wlock;
@@ -95,14 +103,64 @@ namespace cool
 
 		int m_result = cool::queue_init_result::undefined;
 
+		template <class Ty> friend class cool::queue_nosync;
+
+#ifdef COOL_QUEUES_ATOMIC
 		template <class Ty, std::size_t _cache_line_size, class _wait_Ty> friend class cool::queue_spsc;
-		template <class Ty, std::size_t _cache_line_size, class _uintX, class _wait_Ty> friend class cool::queue_mpmc;
+		template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX> friend class cool::queue_mpmc;
+#endif // COOL_QUEUES_ATOMIC
+
 #ifdef COOL_QUEUES_THREAD
 		template <class Ty, std::size_t _cache_line_size, class _wait_Ty> friend class cool::queue_wlock;
 #endif // COOL_QUEUES_THREAD
 	};
 
 
+	// queue_nosync
+
+	template <class Ty> class queue_nosync
+	{
+
+	public:
+
+		using value_type = Ty;
+		using pointer = Ty*;
+		using const_pointer = const Ty*;
+		using reference = Ty&;
+		using const_reference = const Ty&;
+		using size_type = std::size_t;
+		using difference_type = std::ptrdiff_t;
+
+		queue_nosync() = default;
+		queue_nosync(const cool::queue_nosync<Ty>&) = delete;
+		cool::queue_nosync<Ty>& operator=(const cool::queue_nosync<Ty>&) = delete;
+		queue_nosync(cool::queue_nosync<Ty>&&) = delete;
+		cool::queue_nosync<Ty>& operator=(cool::queue_nosync<Ty>&&) = delete;
+		~queue_nosync();
+
+		// WARNING : array at data_ptr must have space for new_item_buffer_size.value() + 1 elements
+		inline cool::queue_init_result init_new_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size);
+		inline cool::queue_init_result init_new_buffer(cool::item_buffer_size new_item_buffer_size);
+		inline bool good() const noexcept;
+		inline bool owns_buffer() const noexcept;
+		inline std::size_t size() const noexcept;
+		inline void delete_buffer() noexcept;
+
+		template <class ... arg_Ty> inline bool try_push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value);
+		inline bool try_pop(Ty* ptr) noexcept;
+
+	private:
+
+		Ty* m_item_buffer_data_ptr = nullptr;
+		Ty* m_item_buffer_end_ptr = nullptr;
+		Ty* m_last_item_ptr = nullptr;
+		Ty* m_next_item_ptr = nullptr;
+
+		bool m_good = false;
+		bool m_owns_buffer = false;
+	};
+
+#ifdef COOL_QUEUES_ATOMIC
 	// default_wait
 
 	class default_wait
@@ -119,6 +177,11 @@ namespace cool
 
 	public:
 
+		// 64 (bytes) is the most common value for _cache_line_size
+
+		static_assert((_cache_line_size & (_cache_line_size - 1)) == 0,
+			"cool::queue_spsc<value_type, cache_line_size, wait_type> requirement : cache_line_size must be a power of 2");
+
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
@@ -127,9 +190,9 @@ namespace cool
 		using size_type = std::size_t;
 		using difference_type = std::ptrdiff_t;
 
-		using wait_type = _wait_Ty;
-
 		static constexpr std::size_t cache_line_size = alignof(cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>);
+
+		using wait_type = _wait_Ty;
 
 		queue_spsc() = default;
 		queue_spsc(const cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>&) = delete;
@@ -186,6 +249,11 @@ namespace cool
 
 	public:
 
+		// 64 (bytes) is the most common value for _cache_line_size
+
+		static_assert((_cache_line_size & (_cache_line_size - 1)) == 0,
+			"cool::queue_mpmc<value_type, cache_line_size, wait_type, uintX_type> requirement : cache_line_size must be a power of 2");
+
 		static_assert(std::is_integral<_uintX_t>::value && std::is_unsigned<_uintX_t>::value, "cool::queue_mpmc<...> : uintX_type must be unsigned integral type");
 #ifdef UINT64_MAX
 		static_assert(!std::is_same<_uintX_t, std::uint64_t>::value, "cool::queue_mpmc<...> : uintX_type must be strictly smaller type than std::uint64_t");
@@ -199,14 +267,14 @@ namespace cool
 		using size_type = std::size_t;
 		using difference_type = std::ptrdiff_t;
 
+		static constexpr std::size_t cache_line_size = alignof(cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>);
+
 		using wait_type = _wait_Ty;
 
 		using uintX_type = _uintX_t;
 		using uint2X_type = decltype(_upcast(static_cast<_uintX_t>(0)));
 
 		class item_type;
-
-		static constexpr std::size_t cache_line_size = alignof(cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>);
 
 		queue_mpmc() = default;
 		queue_mpmc(const cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>&) = delete;
@@ -267,6 +335,7 @@ namespace cool
 
 		alignas(_cache_line_size) std::atomic<item_info_type> m_next_item_info{ item_info_type(0, 1) };
 	};
+#endif // COOL_QUEUES_ATOMIC
 
 #ifdef COOL_QUEUES_THREAD
 	// default_wait_wlock
@@ -285,6 +354,11 @@ namespace cool
 
 	public:
 
+		// 64 (bytes) is the most common value for _cache_line_size
+
+		static_assert((_cache_line_size & (_cache_line_size - 1)) == 0,
+			"cool::queue_wlock<value_type, cache_line_size, wait_type> requirement : cache_line_size must be a power of 2");
+
 		using value_type = Ty;
 		using pointer = Ty*;
 		using const_pointer = const Ty*;
@@ -293,9 +367,9 @@ namespace cool
 		using size_type = std::size_t;
 		using difference_type = std::ptrdiff_t;
 
-		using wait_type = _wait_Ty;
-
 		static constexpr std::size_t cache_line_size = alignof(cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>);
+
+		using wait_type = _wait_Ty;
 
 		queue_wlock() = default;
 		queue_wlock(const cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>&) = delete;
@@ -374,6 +448,148 @@ inline const char* cool::queue_init_result::message() const noexcept
 
 inline cool::queue_init_result::queue_init_result(int result) noexcept : m_result(result) {}
 
+template <class Ty>
+cool::queue_nosync<Ty>::queue_nosync::~queue_nosync()
+{
+	delete_buffer();
+}
+
+template <class Ty>
+inline cool::queue_init_result cool::queue_nosync<Ty>::init_new_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size)
+{
+	assert(data_ptr != nullptr);
+
+	delete_buffer();
+
+	if ((data_ptr == nullptr) || (new_item_buffer_size.value() == 0))
+	{
+		return cool::queue_init_result(cool::queue_init_result::bad_parameters);
+	}
+
+	m_item_buffer_data_ptr = data_ptr;
+	m_item_buffer_end_ptr = data_ptr + new_item_buffer_size.value() + 1;
+	m_last_item_ptr = m_item_buffer_data_ptr;
+	m_next_item_ptr = m_item_buffer_data_ptr;
+
+	m_good = true;
+	return cool::queue_init_result(cool::queue_init_result::success);
+}
+
+template <class Ty>
+inline cool::queue_init_result cool::queue_nosync<Ty>::init_new_buffer(cool::item_buffer_size new_item_buffer_size)
+{
+	delete_buffer();
+
+	if (new_item_buffer_size.value() == 0)
+	{
+		return cool::queue_init_result(cool::queue_init_result::bad_parameters);
+	}
+
+	std::size_t new_item_buffer_size_p1 = new_item_buffer_size.value() + 1;
+	m_item_buffer_data_ptr = static_cast<Ty*>(::operator new(new_item_buffer_size_p1 * sizeof(Ty), std::nothrow));
+
+	if (m_item_buffer_data_ptr == nullptr)
+	{
+		return cool::queue_init_result(cool::queue_init_result::bad_alloc);
+	}
+
+	m_item_buffer_end_ptr = m_item_buffer_data_ptr + new_item_buffer_size_p1;
+	m_last_item_ptr = m_item_buffer_data_ptr;
+	m_next_item_ptr = m_item_buffer_data_ptr;
+
+	for (std::size_t k = 0; k < new_item_buffer_size_p1; k++)
+	{
+		new (m_item_buffer_data_ptr + k) Ty();
+	}
+
+	m_good = true;
+	return cool::queue_init_result(cool::queue_init_result::success);
+}
+
+template <class Ty>
+inline bool cool::queue_nosync<Ty>::good() const noexcept
+{
+	return m_good;
+}
+
+template <class Ty>
+inline std::size_t cool::queue_nosync<Ty>::size() const noexcept
+{
+	if (m_item_buffer_data_ptr != nullptr)
+	{
+		return static_cast<std::size_t>(m_item_buffer_end_ptr - m_item_buffer_data_ptr) - 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+template <class Ty>
+inline bool cool::queue_nosync<Ty>::owns_buffer() const noexcept
+{
+	return m_owns_buffer;
+}
+
+template <class Ty>
+inline void cool::queue_nosync<Ty>::delete_buffer() noexcept
+{
+	m_good = false;
+
+	if (m_owns_buffer)
+	{
+		std::size_t item_buffer_size_p1 = static_cast<std::size_t>(m_item_buffer_end_ptr - m_item_buffer_data_ptr);
+		for (std::size_t k = 0; k < item_buffer_size_p1; k++)
+		{
+			(m_item_buffer_data_ptr + k)->~Ty();
+		}
+
+		::operator delete(m_item_buffer_data_ptr);
+	}
+
+	m_item_buffer_data_ptr = nullptr;
+	m_item_buffer_end_ptr = nullptr;
+	m_last_item_ptr = nullptr;
+	m_next_item_ptr = nullptr;
+
+	m_owns_buffer = false;
+}
+
+template <class Ty> template <class ... arg_Ty>
+inline bool cool::queue_nosync<Ty>::try_push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value)
+{
+	Ty* last_item_ptr_p1 = (m_last_item_ptr + 1 != m_item_buffer_end_ptr) ? m_last_item_ptr + 1 : m_item_buffer_data_ptr;
+
+	if (last_item_ptr_p1 != m_next_item_ptr)
+	{
+		new (m_last_item_ptr) Ty(std::forward<arg_Ty>(args)...);
+		m_last_item_ptr = last_item_ptr_p1;
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+template <class Ty>
+inline bool cool::queue_nosync<Ty>::try_pop(Ty* ptr) noexcept
+{
+	if (m_next_item_ptr != m_last_item_ptr)
+	{
+		*ptr = std::move(*m_next_item_ptr);
+		m_next_item_ptr = (m_next_item_ptr + 1 != m_item_buffer_end_ptr) ? m_next_item_ptr + 1 : m_item_buffer_data_ptr;
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+#ifdef COOL_QUEUES_ATOMIC
 inline void cool::default_wait::wait(value_type&) noexcept {}
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
@@ -874,6 +1090,7 @@ inline typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item
 		return item_info_type(0, info.round_number + 2);
 	}
 }
+#endif // COOL_QUEUES_ATOMIC
 
 #ifdef COOL_QUEUES_THREAD
 inline void cool::default_wait_wlock::wait(value_type&) noexcept
@@ -1035,7 +1252,7 @@ inline bool cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::try_push(arg_Ty&&
 
 		if (last_item_ptr_p1 != m_next_item_ptr)
 		{
-			new (m_last_item_ptr) Ty(std::forward<arg_Ty>(args)...);;
+			new (m_last_item_ptr) Ty(std::forward<arg_Ty>(args)...);
 			m_last_item_ptr = last_item_ptr_p1;
 		}
 		else
@@ -1058,6 +1275,7 @@ inline bool cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::try_pop(Ty* ptr)
 	{
 		*ptr = std::move(*m_next_item_ptr);
 		m_next_item_ptr = (m_next_item_ptr + 1 != m_item_buffer_end_ptr) ? m_next_item_ptr + 1 : m_item_buffer_data_ptr;
+
 		return true;
 	}
 	else
@@ -1080,7 +1298,7 @@ inline void cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ...
 
 			if (last_item_ptr_p1 != m_next_item_ptr)
 			{
-				new (m_last_item_ptr) Ty(std::forward<arg_Ty>(args)...);;
+				new (m_last_item_ptr) Ty(std::forward<arg_Ty>(args)...);
 				m_last_item_ptr = last_item_ptr_p1;
 
 				break;
