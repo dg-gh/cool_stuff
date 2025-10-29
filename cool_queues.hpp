@@ -39,7 +39,8 @@
 //
 //	using value_type = TYPE;
 //
-//	static inline void wait(value_type&) noexcept;
+//	static inline void push_wait(value_type&) noexcept;
+//	static inline void pop_wait(value_type&) noexcept;
 //};
 
 // TYPE must allow initialization with empty curly braces
@@ -49,15 +50,15 @@ namespace cool
 {
 	template <class Ty> class queue_nosync;
 
+	class wait_noop;
 #ifdef COOL_QUEUES_ATOMIC
-	class default_wait;
-	template <class Ty, std::size_t _cache_line_size, class _wait_Ty = default_wait> class queue_spsc;
-	template <class Ty, std::size_t _cache_line_size, class _wait_Ty = default_wait, class _uintX_t = std::uint32_t> class queue_mpmc;
+	template <class Ty, std::size_t _cache_line_size, class _wait_Ty = wait_noop> class queue_spsc;
+	template <class Ty, std::size_t _cache_line_size, class _wait_Ty = wait_noop, class _uintX_t = std::uint32_t> class queue_mpmc;
 #endif // COOL_QUEUES_ATOMIC
 
 #ifdef COOL_QUEUES_THREAD
-	class default_wait_wlock;
-	template <class Ty, std::size_t _cache_line_size, class _wait_Ty = default_wait_wlock> class queue_wlock;
+	class wait_yield;
+	template <class Ty, std::size_t _cache_line_size, class _wait_Ty = wait_yield> class queue_wlock;
 #endif // COOL_QUEUES_THREAD
 
 	class item_buffer_size;
@@ -160,15 +161,18 @@ namespace cool
 		bool m_owns_buffer = false;
 	};
 
-#ifdef COOL_QUEUES_ATOMIC
-	// default_wait
 
-	class default_wait
+	// wait_noop
+
+	class wait_noop
 	{
 	public:
 		using value_type = unsigned int;
-		static inline void wait(value_type&) noexcept;
+		static inline void push_wait(value_type&) noexcept;
+		static inline void pop_wait(value_type&) noexcept;
 	};
+
+#ifdef COOL_QUEUES_ATOMIC
 
 	// queue_spsc
 
@@ -338,13 +342,15 @@ namespace cool
 #endif // COOL_QUEUES_ATOMIC
 
 #ifdef COOL_QUEUES_THREAD
-	// default_wait_wlock
 
-	class default_wait_wlock
+	// wait_yield
+
+	class wait_yield
 	{
 	public:
 		using value_type = unsigned int;
-		static inline void wait(value_type&) noexcept;
+		static inline void push_wait(value_type&) noexcept;
+		static inline void pop_wait(value_type&) noexcept;
 	};
 
 	// queue_wlock
@@ -562,6 +568,7 @@ inline bool cool::queue_nosync<Ty>::try_push(arg_Ty&& ... args) noexcept(std::is
 
 	if (last_item_ptr_p1 != m_next_item_ptr)
 	{
+		m_last_item_ptr->~Ty();
 		new (m_last_item_ptr) Ty(std::forward<arg_Ty>(args)...);
 		m_last_item_ptr = last_item_ptr_p1;
 
@@ -589,9 +596,10 @@ inline bool cool::queue_nosync<Ty>::try_pop(Ty* ptr) noexcept
 	}
 }
 
-#ifdef COOL_QUEUES_ATOMIC
-inline void cool::default_wait::wait(value_type&) noexcept {}
+inline void cool::wait_noop::push_wait(value_type&) noexcept {}
+inline void cool::wait_noop::pop_wait(value_type&) noexcept {}
 
+#ifdef COOL_QUEUES_ATOMIC
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
 cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::queue_spsc::~queue_spsc()
 {
@@ -759,6 +767,7 @@ inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::try_push(arg_Ty&& 
 		}
 	}
 
+	last_item_ptr->~Ty();
 	new (last_item_ptr) Ty(std::forward<arg_Ty>(args)...);
 	m_last_item_aptr.store(last_item_ptr_p1, std::memory_order_release);
 	return true;
@@ -794,9 +803,10 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ... 
 	while (last_item_ptr_p1 == m_next_item_cached_ptr)
 	{
 		m_next_item_cached_ptr = m_next_item_aptr.load(std::memory_order_acquire);
-		_wait_Ty::wait(try_count);
+		_wait_Ty::push_wait(try_count);
 	}
 
+	last_item_ptr->~Ty();
 	new (last_item_ptr) Ty(std::forward<arg_Ty>(args)...);
 	m_last_item_aptr.store(last_item_ptr_p1, std::memory_order_release);
 }
@@ -810,7 +820,7 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::pop(Ty* ptr) noexc
 	while (next_item_ptr == m_last_item_cached_ptr)
 	{
 		m_last_item_cached_ptr = m_last_item_aptr.load(std::memory_order_acquire);
-		_wait_Ty::wait(try_count);
+		_wait_Ty::pop_wait(try_count);
 	}
 
 	*ptr = std::move(*next_item_ptr);
@@ -975,6 +985,7 @@ inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::try_push
 		{
 			if (m_last_item_info.compare_exchange_strong(last_item_info, update_info(last_item_info)))
 			{
+				item_ref.value.~Ty();
 				new (&item_ref.value) Ty(std::forward<arg_Ty>(args)...);
 				item_ref.round_number.store(last_item_info.round_number + 1, std::memory_order_release);
 
@@ -1037,9 +1048,10 @@ inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::push(arg
 	typename _wait_Ty::value_type try_count{};
 	while (last_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
 	{
-		_wait_Ty::wait(try_count);
+		_wait_Ty::push_wait(try_count);
 	}
 
+	item_ref.value.~Ty();
 	new (&item_ref.value) Ty(std::forward<arg_Ty>(args)...);
 	item_ref.round_number.store(last_item_info.round_number + 1, std::memory_order_release);
 }
@@ -1055,7 +1067,7 @@ inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::pop(Ty* 
 	typename _wait_Ty::value_type try_count{};
 	while (next_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
 	{
-		_wait_Ty::wait(try_count);
+		_wait_Ty::pop_wait(try_count);
 	}
 
 	*ptr = std::move(item_ref.value);
@@ -1093,7 +1105,12 @@ inline typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item
 #endif // COOL_QUEUES_ATOMIC
 
 #ifdef COOL_QUEUES_THREAD
-inline void cool::default_wait_wlock::wait(value_type&) noexcept
+inline void cool::wait_yield::push_wait(value_type&) noexcept
+{
+	std::this_thread::yield();
+}
+
+inline void cool::wait_yield::pop_wait(value_type&) noexcept
 {
 	std::this_thread::yield();
 }
@@ -1252,6 +1269,7 @@ inline bool cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::try_push(arg_Ty&&
 
 		if (last_item_ptr_p1 != m_next_item_ptr)
 		{
+			m_last_item_ptr->~Ty();
 			new (m_last_item_ptr) Ty(std::forward<arg_Ty>(args)...);
 			m_last_item_ptr = last_item_ptr_p1;
 		}
@@ -1298,6 +1316,7 @@ inline void cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ...
 
 			if (last_item_ptr_p1 != m_next_item_ptr)
 			{
+				m_last_item_ptr->~Ty();
 				new (m_last_item_ptr) Ty(std::forward<arg_Ty>(args)...);
 				m_last_item_ptr = last_item_ptr_p1;
 
@@ -1305,7 +1324,7 @@ inline void cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ...
 			}
 		}
 
-		_wait_Ty::wait(try_count);
+		_wait_Ty::push_wait(try_count);
 	}
 
 	m_condition_var.notify_one();
