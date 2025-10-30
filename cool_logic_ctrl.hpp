@@ -57,6 +57,28 @@ namespace cool
 	template <class cmp_Ty, class index_Ty> class logic_ctrl_observer_info;
 	template <class cmp_Ty, class index_Ty> class logic_ctrl_relation_info;
 
+
+	// init types
+
+	class variable_count {
+	public:
+		variable_count() = delete;
+		explicit inline constexpr variable_count(std::size_t new_variable_count) noexcept;
+		inline constexpr std::size_t value() const noexcept;
+	private:
+		std::size_t m_value;
+	};
+
+	class max_relation_count {
+	public:
+		max_relation_count() = delete;
+		explicit inline constexpr max_relation_count(std::size_t _max_relation_count) noexcept;
+		inline constexpr std::size_t value() const noexcept;
+	private:
+		std::size_t m_value;
+	};
+
+
 	// logic_ctrl_observed_info
 
 	template <class cmp_Ty, class index_Ty> class logic_ctrl_observed_info
@@ -357,13 +379,13 @@ namespace cool
 		// > 'observer_info_ptr' must have persistent ownership of 'new_max_relation_count' contiguous elements
 		// > 'relation_info_ptr' needs to own 'new_max_relation_count' elements and does not need to have persistent ownership after 'end_init'
 
-		init_result_type begin_init(
+		init_result_type init_begin(
 			Ty* variables_ptr,
 			variable_info_type* variable_info_ptr,
-			std::size_t new_variable_count,
+			cool::variable_count new_variable_count,
 			observer_info_type* observer_info_ptr,
 			relation_info_type* relation_info_ptr,
-			std::size_t new_max_relation_count,
+			cool::max_relation_count new_max_relation_count,
 			cool::max_depth new_default_max_depth = cool::max_depth(64),
 			cmp_Ty default_cmp = cmp_Ty{}
 		);
@@ -374,12 +396,13 @@ namespace cool
 		init_result_type init_add_relations(index_Ty variable_index, const observed_info_type* observed_variables_ptr, std::size_t observed_variable_count, refresh_func_type refresh_func) noexcept(std::is_nothrow_copy_assignable<cmp_Ty>::value);
 		init_result_type init_add_relations(index_Ty observer_variable_index, refresh_func_type refresh_func) noexcept;
 
-		init_result_type end_init();
+		init_result_type init_end();
 
 		void clear() noexcept;
 	};
 
 #ifdef COOL_LOGIC_CTRL_VECTOR
+
 	// logic_ctrl_vec
 
 	template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty> class logic_ctrl_vec
@@ -419,8 +442,8 @@ namespace cool
 
 		// setup and clear
 
-		init_result_type begin_init(
-			std::size_t new_variable_count,
+		init_result_type init_begin(
+			cool::variable_count new_variable_count,
 			cool::max_depth new_default_max_depth = cool::max_depth(64),
 			cmp_Ty default_cmp = cmp_Ty{}
 		);
@@ -431,7 +454,7 @@ namespace cool
 		init_result_type init_add_relations(index_Ty variable_index, const observed_info_type* observed_variables_ptr, std::size_t observed_variable_count, refresh_func_type refresh_func);
 		init_result_type init_add_relations(index_Ty observer_variable_index, refresh_func_type refresh_func) noexcept;
 
-		init_result_type end_init();
+		init_result_type init_end();
 
 		void clear() noexcept;
 
@@ -518,6 +541,14 @@ namespace cool
 
 
 // detail
+
+inline constexpr cool::variable_count::variable_count(std::size_t new_variable_count) noexcept : m_value(new_variable_count) {}
+
+inline constexpr std::size_t cool::variable_count::value() const noexcept { return m_value; }
+
+inline constexpr cool::max_relation_count::max_relation_count(std::size_t _max_relation_count) noexcept : m_value(_max_relation_count) {}
+
+inline constexpr std::size_t cool::max_relation_count::value() const noexcept { return m_value; }
 
 template <class cmp_Ty, class index_Ty>
 inline cool::logic_ctrl_observed_info<cmp_Ty, index_Ty>::logic_ctrl_observed_info(index_Ty _observed_index, cmp_Ty _cmp) noexcept
@@ -1043,13 +1074,13 @@ cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>& cool::logic
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::begin_init(
+typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_begin(
 	Ty* variables_ptr,
 	variable_info_type* variable_info_ptr,
-	std::size_t new_variable_count,
+	cool::variable_count new_variable_count,
 	observer_info_type* observer_info_ptr,
 	relation_info_type* relation_info_ptr,
-	std::size_t new_max_relation_count,
+	max_relation_count new_max_relation_count,
 	cool::max_depth new_default_max_depth,
 	cmp_Ty default_cmp)
 {
@@ -1058,7 +1089,10 @@ typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::in
 	assert(observer_info_ptr != nullptr);
 	assert(relation_info_ptr != nullptr);
 
-	if ((variables_ptr == nullptr) || (variable_info_ptr == nullptr) || (new_variable_count == 0)
+	std::size_t _new_variable_count = new_variable_count.value();
+	std::size_t _new_max_relation_count = new_max_relation_count.value();
+
+	if ((variables_ptr == nullptr) || (variable_info_ptr == nullptr) || (_new_variable_count == 0)
 		|| (observer_info_ptr == nullptr) || (relation_info_ptr == nullptr))
 	{
 		this->m_init = init_result_type::bad_parameters;
@@ -1072,19 +1106,19 @@ typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::in
 		this->m_default_max_depth = new_default_max_depth.value();
 		this->m_init = init_result_type::ongoing;
 
-		this->m_variable_count = new_variable_count;
+		this->m_variable_count = _new_variable_count;
 
 		this->m_relation_info_ptr = relation_info_ptr;
 		this->m_relation_count = 0;
-		this->m_max_relation_count = new_max_relation_count;
+		this->m_max_relation_count = _new_max_relation_count;
 
-		for (std::size_t n = 0; n < new_variable_count; n++)
+		for (std::size_t n = 0; n < _new_variable_count; n++)
 		{
 			*(this->m_variables_ptr + n) = refresh_result_Ty{};
 			*(this->m_variable_info_ptr + n) = variable_info_type(default_cmp);
 		}
 
-		for (std::size_t n = 0; n < new_max_relation_count; n++)
+		for (std::size_t n = 0; n < _new_max_relation_count; n++)
 		{
 			*(this->m_observer_info_ptr + n) = observer_info_type(static_cast<index_Ty>(0), default_cmp);
 			*(this->m_relation_info_ptr + n) = relation_info_type(default_cmp);
@@ -1243,7 +1277,7 @@ typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::in
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::end_init()
+typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_end()
 {
 	if (this->m_init == init_result_type::ongoing)
 	{
@@ -1352,12 +1386,13 @@ cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::logic_c
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::begin_init(
-	std::size_t new_variable_count,
+typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_begin(
+	cool::variable_count new_variable_count,
 	cool::max_depth new_default_max_depth,
 	cmp_Ty default_cmp)
 {
-	if (new_variable_count == 0)
+	std::size_t _new_variable_count = new_variable_count.value();
+	if (_new_variable_count == 0)
 	{
 		this->m_init = init_result_type::bad_parameters;
 	}
@@ -1365,11 +1400,11 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 	{
 		clear();
 
-		this->m_variables_ptr = static_cast<Ty*>(::operator new(new_variable_count * sizeof(Ty), std::nothrow));
+		this->m_variables_ptr = static_cast<Ty*>(::operator new(_new_variable_count * sizeof(Ty), std::nothrow));
 
 		if (this->m_variables_ptr != nullptr)
 		{
-			for (std::size_t n = 0; n < new_variable_count; n++)
+			for (std::size_t n = 0; n < _new_variable_count; n++)
 			{
 				new (this->m_variables_ptr + n) Ty{};
 			}
@@ -1380,11 +1415,11 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 			return init_result_type(this->m_init);
 		}
 
-		this->m_variable_info_ptr = static_cast<variable_info_type*>(::operator new(new_variable_count * sizeof(variable_info_type), std::nothrow));
+		this->m_variable_info_ptr = static_cast<variable_info_type*>(::operator new(_new_variable_count * sizeof(variable_info_type), std::nothrow));
 
 		if (this->m_variable_info_ptr != nullptr)
 		{
-			for (std::size_t n = 0; n < new_variable_count; n++)
+			for (std::size_t n = 0; n < _new_variable_count; n++)
 			{
 				new (this->m_variable_info_ptr + n) variable_info_type{ default_cmp };
 			}
@@ -1399,9 +1434,9 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 		this->m_default_max_depth = new_default_max_depth.value();
 		this->m_init = init_result_type::ongoing;
 
-		this->m_variable_count = new_variable_count;
+		this->m_variable_count = _new_variable_count;
 
-		m_relation_info_vec.reserve(new_variable_count);
+		m_relation_info_vec.reserve(_new_variable_count);
 		this->m_max_relation_count = static_cast<std::size_t>(-1);
 	}
 
@@ -1552,7 +1587,7 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::end_init()
+typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_end()
 {
 	if (this->m_init == init_result_type::ongoing)
 	{
