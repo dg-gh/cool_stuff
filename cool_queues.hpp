@@ -28,6 +28,10 @@
 #include <mutex>
 #include <condition_variable>
 
+#ifndef COOL_QUEUES_ATOMIC
+#include <atomic>
+
+#endif // COOL_QUEUES_ATOMIC
 #endif // COOL_QUEUES_THREAD
 
 
