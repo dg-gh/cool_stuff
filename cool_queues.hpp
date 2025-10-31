@@ -733,7 +733,7 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::delete_buffer() no
 {
 	m_good.store(false, std::memory_order_seq_cst);
 
-	if (m_item_buffer_unaligned_data_ptr)
+	if (m_item_buffer_unaligned_data_ptr != nullptr)
 	{
 		std::size_t item_buffer_size_p1 = static_cast<std::size_t>(m_item_buffer_end_ptr - m_item_buffer_data_ptr);
 		for (std::size_t k = 0; k < item_buffer_size_p1; k++)
@@ -960,7 +960,7 @@ inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::delete_b
 {
 	m_good.store(false, std::memory_order_seq_cst);
 
-	if (m_item_buffer_unaligned_data_ptr)
+	if (m_item_buffer_unaligned_data_ptr != nullptr)
 	{
 		for (std::size_t k = 0; k < m_item_buffer_size; k++)
 		{
@@ -1232,12 +1232,14 @@ inline void cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::delete_buffer() n
 
 	{
 		std::unique_lock<std::mutex> lock(m_mutex);
+		m_last_item_ptr = nullptr;
+		m_next_item_ptr = nullptr;
 		m_stop_queue = true;
 	}
 
 	m_condition_var.notify_all();
 
-	if (m_item_buffer_unaligned_data_ptr)
+	if (m_item_buffer_unaligned_data_ptr != nullptr)
 	{
 		std::size_t item_buffer_size_p1 = static_cast<std::size_t>(m_item_buffer_end_ptr - m_item_buffer_data_ptr);
 		for (std::size_t k = 0; k < item_buffer_size_p1; k++)
@@ -1250,8 +1252,6 @@ inline void cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::delete_buffer() n
 
 	m_item_buffer_data_ptr = nullptr;
 	m_item_buffer_end_ptr = nullptr;
-	m_last_item_ptr = nullptr;
-	m_next_item_ptr = nullptr;
 
 	m_item_buffer_unaligned_data_ptr = nullptr;
 }
