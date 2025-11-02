@@ -223,11 +223,17 @@ namespace cool
 		void set_variable(index_Ty variable_index, arg_value_type new_value);
 		void set_variable(index_Ty variable_index, arg_value_type new_value, cool::max_depth _max_depth);
 
+		// > set_variable_no_cmp writes and triggers observers
+
 		void set_variable_no_cmp(index_Ty variable_index, arg_value_type new_value);
 		void set_variable_no_cmp(index_Ty variable_index, arg_value_type new_value, cool::max_depth _max_depth);
 
+		// > refresh_variable runs the refresh function that returns the 'new_value' and triggers observers if 'cmp(new_value, previous_value)' returns true
+
 		void refresh_variable(index_Ty variable_index);
 		void refresh_variable(index_Ty variable_index, cool::max_depth _max_depth);
+
+		// > refresh_variable_no_cmp runs the refresh function and triggers observers
 
 		void refresh_variable_no_cmp(index_Ty variable_index);
 		void refresh_variable_no_cmp(index_Ty variable_index, cool::max_depth _max_depth);
