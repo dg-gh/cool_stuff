@@ -2400,7 +2400,7 @@ inline cool::rotation_status cool::rotation_axis_angle<traits_Ty, _dim_padded, _
 	value_type* v3_axis_ptr, value_type* angle_ptr, const value_type* m3x3_rotation_ptr, const value_type* v3_axis_way_ptr, value_type angle_tol) noexcept
 {
 	assert(v3_axis_ptr != nullptr);
-	assert(v3_angle_ptr != nullptr);
+	assert(angle_ptr != nullptr);
 	assert(m3x3_rotation_ptr != nullptr);
 	assert(v3_axis_way_ptr != nullptr);
 
