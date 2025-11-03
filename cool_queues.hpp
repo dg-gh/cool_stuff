@@ -39,15 +39,14 @@
 
 //class wait_example
 //{
+//
 //public:
 //
-//	using value_type = TYPE;
-//
-//	static inline void push_wait(value_type&) noexcept;
-//	static inline void pop_wait(value_type&) noexcept;
+//	inline void push_wait() noexcept;
+//	inline void pop_wait() noexcept;
 //};
 
-// TYPE must allow initialization with empty curly braces
+// wait_example has its default constructor called without '()'/'{}'
 
 
 namespace cool
@@ -170,10 +169,11 @@ namespace cool
 
 	class wait_noop
 	{
+
 	public:
-		using value_type = unsigned int;
-		static inline void push_wait(value_type&) noexcept;
-		static inline void pop_wait(value_type&) noexcept;
+
+		inline void push_wait() noexcept;
+		inline void pop_wait() noexcept;
 	};
 
 #ifdef COOL_QUEUES_ATOMIC
@@ -350,10 +350,11 @@ namespace cool
 
 	class wait_yield
 	{
+
 	public:
-		using value_type = unsigned int;
-		static inline void push_wait(value_type&) noexcept;
-		static inline void pop_wait(value_type&) noexcept;
+
+		inline void push_wait() noexcept;
+		inline void pop_wait() noexcept;
 	};
 
 	// queue_wlock
@@ -599,8 +600,9 @@ inline bool cool::queue_nosync<Ty>::try_pop(Ty& target) noexcept
 	}
 }
 
-inline void cool::wait_noop::push_wait(value_type&) noexcept {}
-inline void cool::wait_noop::pop_wait(value_type&) noexcept {}
+inline void cool::wait_noop::push_wait() noexcept {}
+
+inline void cool::wait_noop::pop_wait() noexcept {}
 
 #ifdef COOL_QUEUES_ATOMIC
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
@@ -802,11 +804,11 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ... 
 	Ty* last_item_ptr = m_last_item_aptr.load(std::memory_order_relaxed);
 	Ty* last_item_ptr_p1 = (last_item_ptr + 1 != m_item_buffer_end_ptr) ? last_item_ptr + 1 : m_item_buffer_data_ptr;
 
-	typename _wait_Ty::value_type try_count{};
+	_wait_Ty wait_obj;
 	while (last_item_ptr_p1 == m_next_item_cached_ptr)
 	{
 		m_next_item_cached_ptr = m_next_item_aptr.load(std::memory_order_acquire);
-		_wait_Ty::push_wait(try_count);
+		wait_obj.push_wait();
 	}
 
 	last_item_ptr->~Ty();
@@ -819,11 +821,11 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::pop(Ty& target) no
 {
 	Ty* next_item_ptr = m_next_item_aptr.load(std::memory_order_relaxed);
 
-	typename _wait_Ty::value_type try_count{};
+	_wait_Ty wait_obj;
 	while (next_item_ptr == m_last_item_cached_ptr)
 	{
 		m_last_item_cached_ptr = m_last_item_aptr.load(std::memory_order_acquire);
-		_wait_Ty::pop_wait(try_count);
+		wait_obj.pop_wait();
 	}
 
 	target = std::move(*next_item_ptr);
@@ -1048,10 +1050,10 @@ inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::push(arg
 
 	item_type& item_ref = *(m_item_buffer_data_ptr + static_cast<std::size_t>(last_item_info.item_number));
 
-	typename _wait_Ty::value_type try_count{};
+	_wait_Ty wait_obj;
 	while (last_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
 	{
-		_wait_Ty::push_wait(try_count);
+		wait_obj.push_wait();
 	}
 
 	item_ref.value.~Ty();
@@ -1067,10 +1069,10 @@ inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::pop(Ty& 
 
 	item_type& item_ref = *(m_item_buffer_data_ptr + static_cast<std::size_t>(next_item_info.item_number));
 
-	typename _wait_Ty::value_type try_count{};
+	_wait_Ty wait_obj;
 	while (next_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
 	{
-		_wait_Ty::pop_wait(try_count);
+		wait_obj.pop_wait();
 	}
 
 	target = std::move(item_ref.value);
@@ -1102,12 +1104,12 @@ inline typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item
 #endif // COOL_QUEUES_ATOMIC
 
 #ifdef COOL_QUEUES_THREAD
-inline void cool::wait_yield::push_wait(value_type&) noexcept
+inline void cool::wait_yield::push_wait() noexcept
 {
 	std::this_thread::yield();
 }
 
-inline void cool::wait_yield::pop_wait(value_type&) noexcept
+inline void cool::wait_yield::pop_wait() noexcept
 {
 	std::this_thread::yield();
 }
@@ -1302,7 +1304,7 @@ inline bool cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::try_pop(Ty& targe
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty> template <class ... arg_Ty>
 inline void cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ... args)
 {
-	typename _wait_Ty::value_type try_count{};
+	_wait_Ty wait_obj;
 
 	while (true)
 	{
@@ -1321,7 +1323,7 @@ inline void cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ...
 			}
 		}
 
-		_wait_Ty::push_wait(try_count);
+		wait_obj.push_wait();
 	}
 
 	m_condition_var.notify_one();
