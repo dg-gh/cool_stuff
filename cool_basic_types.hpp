@@ -116,18 +116,22 @@ namespace cool
 	using u64 = cool::integer<std::uint64_t>;
 #endif // UINT64_MAX
 
-	template <class int_Ty> inline constexpr cool::integer<int_Ty> operator&(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept;
-	template <class int_Ty> inline constexpr cool::integer<int_Ty> operator|(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept;
-	template <class int_Ty> inline constexpr cool::integer<int_Ty> operator^(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept;
+	template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> operator&(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept;
+	template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> operator|(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept;
+	template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> operator^(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept;
 
-	template <class int_Ty> inline constexpr cool::integer<int_Ty> operator+(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept;
-	template <class int_Ty> inline constexpr cool::integer<int_Ty> operator-(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept;
-	template <class int_Ty> inline constexpr cool::integer<int_Ty> operator*(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept;
-	template <class int_Ty> inline constexpr cool::integer<int_Ty> operator/(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept;
-	template <class int_Ty> inline constexpr cool::integer<int_Ty> operator%(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept;
+	template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> operator+(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept;
+	template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> operator-(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept;
+	template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> operator*(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept;
+	template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> operator/(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept;
+	template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> operator%(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept;
 
-	template <class int_Ty> inline constexpr cool::integer<int_Ty> operator<<(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept;
-	template <class int_Ty> inline constexpr cool::integer<int_Ty> operator>>(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept;
+	template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr bool operator==(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept;
+	template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr bool operator!=(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept;
+	template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr bool operator<=(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept;
+	template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr bool operator>=(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept;
+	template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr bool operator<(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept;
+	template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr bool operator>(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept;
 
 	template <class int_res_Ty, class int_Ty> inline constexpr int_res_Ty integral_cast(cool::integer<int_Ty> rhs) noexcept;
 
@@ -163,6 +167,28 @@ namespace cool
 	inline constexpr cool::u64 integral_upcast(cool::u32 rhs) noexcept;
 	inline constexpr cool::u32 integral_downcast(cool::u64 rhs) noexcept;
 #endif // if defined(UINT32_MAX) && defined(UINT64_MAX)
+
+
+	// enum_index
+
+	template <class enum_Ty> class enum_index;
+	// has arithmetic operators '+', '-', '++', '--', '+=', '-='
+	// has comparison operators '==', '!=', '<=', '>=', '<', '>'
+	// also has the following members :
+	// > using value_type = enum_Ty;
+	// > using underlying_type = typename std::underlying_type<enum_Ty>::type;
+	// > static constexpr std::size_t bit_count;
+	// > static constexpr bool is_signed;
+	// > inline constexpr enum_Ty get_value() const noexcept;
+	// > inline constexpr underlying_type get_underlying_value() const noexcept;
+	// > inline constexpr operator enum_Ty& () noexcept;
+	// > inline constexpr operator const enum_Ty& () const noexcept;
+
+	template <class enum_Ty> inline constexpr cool::enum_index<enum_Ty> ind() noexcept;
+	template <class enum_Ty> inline constexpr cool::enum_index<enum_Ty> ind(enum_Ty value) noexcept;
+
+	template <class lhs_Ty, class enum_Ty> inline constexpr cool::enum_index<enum_Ty> operator+(lhs_Ty lhs, cool::enum_index<enum_Ty> rhs) noexcept;
+	template <class lhs_Ty, class enum_Ty> inline constexpr cool::enum_index<enum_Ty> operator-(lhs_Ty lhs, cool::enum_index<enum_Ty> rhs) noexcept;
 
 
 	// type if
@@ -496,7 +522,7 @@ namespace cool
 
 	public:
 
-		static_assert(std::is_integral<int_Ty>::value, "value_type must be an integral type");
+		static_assert(std::is_integral<int_Ty>::value, "cool::integer<value_type> requirement : value_type must be an integral type");
 
 		using value_type = int_Ty;
 
@@ -512,6 +538,11 @@ namespace cool
 		inline cool::integer<value_type>& operator&=(cool::integer<value_type> rhs) noexcept { m_value &= rhs.m_value; return *this; }
 		inline cool::integer<value_type>& operator|=(cool::integer<value_type> rhs) noexcept { m_value |= rhs.m_value; return *this; }
 		inline cool::integer<value_type>& operator^=(cool::integer<value_type> rhs) noexcept { m_value ^= rhs.m_value; return *this; }
+
+		inline cool::integer<value_type>& operator++() noexcept { ++m_value; return *this; }
+		inline cool::integer<value_type>& operator--() noexcept { --m_value; return *this; }
+		inline cool::integer<value_type> operator++(int) noexcept { cool::integer<value_type> ret = *this; ++m_value; return ret; }
+		inline cool::integer<value_type> operator--(int) noexcept { cool::integer<value_type> ret = *this; --m_value; return ret; }
 
 		inline cool::integer<value_type>& operator+=(cool::integer<value_type> rhs) noexcept { m_value += rhs.m_value; return *this; }
 		inline cool::integer<value_type>& operator-=(cool::integer<value_type> rhs) noexcept { m_value -= rhs.m_value; return *this; }
@@ -598,18 +629,50 @@ namespace cool
 	};
 }
 
-template <class int_Ty> inline constexpr cool::integer<int_Ty> cool::operator&(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept { return cool::integer<int_Ty>(lhs & rhs.get_value()); }
-template <class int_Ty> inline constexpr cool::integer<int_Ty> cool::operator|(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept { return cool::integer<int_Ty>(lhs | rhs.get_value()); }
-template <class int_Ty> inline constexpr cool::integer<int_Ty> cool::operator^(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept { return cool::integer<int_Ty>(lhs ^ rhs.get_value()); }
+template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> cool::operator&(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
+	return cool::integer<rhs_int_Ty>(static_cast<rhs_int_Ty>(lhs) & rhs.get_value());
+}
+template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> cool::operator|(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
+	return cool::integer<rhs_int_Ty>(static_cast<rhs_int_Ty>(lhs) | rhs.get_value());
+}
+template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> cool::operator^(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
+	return cool::integer<rhs_int_Ty>(static_cast<rhs_int_Ty>(lhs) ^ rhs.get_value());
+}
 
-template <class int_Ty> inline constexpr cool::integer<int_Ty> cool::operator+(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept { return cool::integer<int_Ty>(lhs + rhs.get_value()); }
-template <class int_Ty> inline constexpr cool::integer<int_Ty> cool::operator-(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept { return cool::integer<int_Ty>(lhs - rhs.get_value()); }
-template <class int_Ty> inline constexpr cool::integer<int_Ty> cool::operator*(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept { return cool::integer<int_Ty>(lhs * rhs.get_value()); }
-template <class int_Ty> inline constexpr cool::integer<int_Ty> cool::operator/(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept { return cool::integer<int_Ty>(lhs / rhs.get_value()); }
-template <class int_Ty> inline constexpr cool::integer<int_Ty> cool::operator%(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept { return cool::integer<int_Ty>(lhs % rhs.get_value()); }
+template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> cool::operator+(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
+	return cool::integer<rhs_int_Ty>(static_cast<rhs_int_Ty>(lhs) + rhs.get_value());
+}
+template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> cool::operator-(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
+	return cool::integer<rhs_int_Ty>(static_cast<rhs_int_Ty>(lhs) - rhs.get_value());
+}
+template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> cool::operator*(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
+	return cool::integer<rhs_int_Ty>(static_cast<rhs_int_Ty>(lhs) * rhs.get_value());
+}
+template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> cool::operator/(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
+	return cool::integer<rhs_int_Ty>(static_cast<rhs_int_Ty>(lhs) / rhs.get_value());
+}
+template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> cool::operator%(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
+	return cool::integer<rhs_int_Ty>(static_cast<rhs_int_Ty>(lhs) % rhs.get_value());
+}
 
-template <class int_Ty> inline constexpr cool::integer<int_Ty> cool::operator<<(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept { return cool::integer<int_Ty>(lhs << rhs.get_value()); }
-template <class int_Ty> inline constexpr cool::integer<int_Ty> cool::operator>>(int_Ty lhs, cool::integer<int_Ty> rhs) noexcept { return cool::integer<int_Ty>(lhs >> rhs.get_value()); }
+template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr bool cool::operator==(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
+	return static_cast<rhs_int_Ty>(lhs) == rhs.get_value();
+}
+template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr bool cool::operator!=(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
+	return static_cast<rhs_int_Ty>(lhs) != rhs.get_value();
+}
+template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr bool cool::operator<=(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
+	return static_cast<rhs_int_Ty>(lhs) <= rhs.get_value();
+}
+template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr bool cool::operator>=(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
+	return static_cast<rhs_int_Ty>(lhs) >= rhs.get_value();
+}
+template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr bool cool::operator<(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
+	return static_cast<rhs_int_Ty>(lhs) < rhs.get_value();
+}
+template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr bool cool::operator>(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
+	return static_cast<rhs_int_Ty>(lhs) > rhs.get_value();
+}
 
 template <class int_res_Ty, class int_Ty> inline constexpr int_res_Ty cool::integral_cast(cool::integer<int_Ty> rhs) noexcept {
 	static_assert(cool::is_integral<int_res_Ty>::value, "result type must be a cool integer type");
@@ -655,6 +718,73 @@ inline constexpr cool::u16 cool::integral_downcast(cool::u32 rhs) noexcept { ret
 inline constexpr cool::u64 cool::integral_upcast(cool::u32 rhs) noexcept { return cool::u64(static_cast<std::uint64_t>(rhs.get_value())); }
 inline constexpr cool::u32 cool::integral_downcast(cool::u64 rhs) noexcept { return cool::u32(static_cast<std::uint32_t>(rhs.get_value())); }
 #endif // if defined(UINT32_MAX) && defined(UINT64_MAX)
+
+
+// enum_index
+
+namespace cool
+{
+	template <class enum_Ty> class enum_index
+	{
+
+	public:
+
+		static_assert(std::is_enum<enum_Ty>::value && !std::is_convertible<enum_Ty, typename std::underlying_type<enum_Ty>::type>::value,
+			"cool::enum_index<value_type> requirement : value_type must be a scoped enum type");
+
+		using value_type = enum_Ty;
+		using underlying_type = typename std::underlying_type<enum_Ty>::type;
+
+		static constexpr std::size_t bit_count = sizeof(value_type) * CHAR_BIT;
+		static constexpr bool is_signed = std::is_signed<underlying_type>::value;
+
+		constexpr enum_index() noexcept = default;
+		inline constexpr enum_index(enum_Ty value) noexcept : m_value(value) {}
+		inline constexpr enum_index(underlying_type value) noexcept : m_value(static_cast<enum_Ty>(value)) {}
+
+		inline cool::enum_index<enum_Ty>& operator++() noexcept { m_value = static_cast<enum_Ty>(static_cast<underlying_type>(m_value) + 1); return *this; }
+		inline cool::enum_index<enum_Ty>& operator--() noexcept { m_value = static_cast<enum_Ty>(static_cast<underlying_type>(m_value) - 1); return *this; }
+		inline cool::enum_index<enum_Ty> operator++(int) noexcept { cool::enum_index<enum_Ty> ret = *this; m_value = static_cast<enum_Ty>(static_cast<underlying_type>(m_value) + 1); return ret; }
+		inline cool::enum_index<enum_Ty> operator--(int) noexcept { cool::enum_index<enum_Ty> ret = *this; m_value = static_cast<enum_Ty>(static_cast<underlying_type>(m_value) - 1); return ret; }
+
+		inline cool::enum_index<enum_Ty>& operator+=(cool::enum_index<enum_Ty> rhs) noexcept { m_value = static_cast<enum_Ty>(static_cast<underlying_type>(m_value) + static_cast<underlying_type>(rhs.m_value)); return *this; }
+		inline cool::enum_index<enum_Ty>& operator-=(cool::enum_index<enum_Ty> rhs) noexcept { m_value = static_cast<enum_Ty>(static_cast<underlying_type>(m_value) - static_cast<underlying_type>(rhs.m_value)); return *this; }
+
+		inline constexpr cool::enum_index<enum_Ty> operator+(cool::enum_index<enum_Ty> rhs) const noexcept { return cool::enum_index<enum_Ty>(static_cast<underlying_type>(m_value) + static_cast<underlying_type>(rhs.m_value)); }
+		inline constexpr cool::enum_index<enum_Ty> operator-(cool::enum_index<enum_Ty> rhs) const noexcept { return cool::enum_index<enum_Ty>(static_cast<underlying_type>(m_value) - static_cast<underlying_type>(rhs.m_value)); }
+		inline constexpr cool::enum_index<enum_Ty> operator-() const noexcept { return cool::enum_index<enum_Ty>(-static_cast<underlying_type>(m_value)); }
+
+		inline constexpr enum_Ty get_value() const noexcept { return m_value; }
+		inline constexpr underlying_type get_underlying_value() const noexcept { return static_cast<underlying_type>(m_value); }
+
+		inline constexpr operator enum_Ty& () noexcept { return m_value; }
+		inline constexpr operator const enum_Ty& () const noexcept { return m_value; }
+
+	private:
+
+		enum_Ty m_value = static_cast<enum_Ty>(0);
+	};
+}
+
+template <class enum_Ty> inline constexpr cool::enum_index<enum_Ty> cool::ind() noexcept
+{
+	return cool::enum_index<enum_Ty>();
+}
+
+template <class enum_Ty> inline constexpr cool::enum_index<enum_Ty> cool::ind(enum_Ty value) noexcept
+{
+	return cool::enum_index<enum_Ty>(value);
+}
+
+template <class lhs_Ty, class enum_Ty> inline constexpr cool::enum_index<enum_Ty> cool::operator+(lhs_Ty lhs, cool::enum_index<enum_Ty> rhs) noexcept
+{
+	return cool::enum_index<enum_Ty>(static_cast<typename std::underlying_type<enum_Ty>::type>(lhs) + rhs.get_underlying_value());
+}
+
+template <class lhs_Ty, class enum_Ty> inline constexpr cool::enum_index<enum_Ty> cool::operator-(lhs_Ty lhs, cool::enum_index<enum_Ty> rhs) noexcept
+{
+	return cool::enum_index<enum_Ty>(static_cast<typename std::underlying_type<enum_Ty>::type>(lhs) - rhs.get_underlying_value());
+}
 
 
 // member function pointers
