@@ -37,16 +37,14 @@
 
 // custom wait class prototype
 
-//class wait_example
+//class custom_wait_example
 //{
-//
 //public:
-//
-//	inline void push_wait() noexcept;
-//	inline void pop_wait() noexcept;
+//	void push_wait() noexcept;
+//	void pop_wait() noexcept;
 //};
 
-// wait_example has its default constructor called without '()'/'{}'
+// custom_wait_example has its default constructor called without '()'/'{}'
 
 
 namespace cool
@@ -135,7 +133,7 @@ namespace cool
 		using size_type = std::size_t;
 		using difference_type = std::ptrdiff_t;
 
-		queue_nosync() = default;
+		queue_nosync() noexcept = default;
 		queue_nosync(const cool::queue_nosync<Ty>&) = delete;
 		cool::queue_nosync<Ty>& operator=(const cool::queue_nosync<Ty>&) = delete;
 		queue_nosync(cool::queue_nosync<Ty>&&) = delete;
@@ -167,11 +165,8 @@ namespace cool
 
 	// wait_noop
 
-	class wait_noop
-	{
-
+	class wait_noop {
 	public:
-
 		inline void push_wait() noexcept;
 		inline void pop_wait() noexcept;
 	};
@@ -202,7 +197,7 @@ namespace cool
 
 		using wait_type = _wait_Ty;
 
-		queue_spsc() = default;
+		queue_spsc() noexcept = default;
 		queue_spsc(const cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>&) = delete;
 		cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>& operator=(const cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>&) = delete;
 		queue_spsc(cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>&&) = delete;
@@ -284,7 +279,7 @@ namespace cool
 
 		class item_type;
 
-		queue_mpmc() = default;
+		queue_mpmc() noexcept = default;
 		queue_mpmc(const cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>&) = delete;
 		cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>& operator=(const cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>&) = delete;
 		queue_mpmc(cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>&&) = delete;
@@ -348,11 +343,8 @@ namespace cool
 
 	// wait_yield
 
-	class wait_yield
-	{
-
+	class wait_yield {
 	public:
-
 		inline void push_wait() noexcept;
 		inline void pop_wait() noexcept;
 	};
@@ -381,7 +373,7 @@ namespace cool
 
 		using wait_type = _wait_Ty;
 
-		queue_wlock() = default;
+		queue_wlock() noexcept = default;
 		queue_wlock(const cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>&) = delete;
 		cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>& operator=(const cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>&) = delete;
 		queue_wlock(cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>&&) = delete;
