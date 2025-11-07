@@ -454,7 +454,7 @@ namespace cool
 
 	template <class object_Ty, class function_Ty> class object_member_func_ptr : public cool::error_type<cool::static_error>
 	{
-		static_assert(std::is_class<object_Ty>::value&& std::is_function<function_Ty>::value,
+		static_assert(std::is_class<object_Ty>::value && std::is_function<function_Ty>::value,
 			"cool::object_member_func_ptr only accepts classes and function types as first and second template arguments");
 	};
 
