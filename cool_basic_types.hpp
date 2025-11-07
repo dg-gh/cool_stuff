@@ -661,6 +661,61 @@ namespace cool
 			return static_cast<int_res_Ty>(value);
 		}
 	}
+
+	template <class int_Ty> class _wider_integer {
+	public:
+		using type = int_Ty;
+	};
+
+#if defined(INT8_MAX) && defined(INT16_MAX)
+	template <> class _wider_integer<std::int8_t> {
+	public:
+		using type = std::int16_t;
+	};
+#endif // if defined(INT8_MAX) && defined(INT16_MAX)
+
+#if defined(INT16_MAX) && defined(INT32_MAX)
+	template <> class _wider_integer<std::int16_t> {
+	public:
+		using type = std::int32_t;
+	};
+#endif // if defined(INT16_MAX) && defined(INT32_MAX)
+
+#if defined(INT32_MAX) && defined(INT64_MAX)
+	template <> class _wider_integer<std::int32_t> {
+	public:
+		using type = std::int64_t;
+	};
+#endif // if defined(INT32_MAX) && defined(INT64_MAX)
+
+#if defined(UINT8_MAX) && defined(UINT16_MAX)
+	template <> class _wider_integer<std::uint8_t> {
+	public:
+		using type = std::uint16_t;
+	};
+#endif // if defined(UINT8_MAX) && defined(UINT16_MAX)
+
+#if defined(UINT16_MAX) && defined(UINT32_MAX)
+	template <> class _wider_integer<std::uint16_t> {
+	public:
+		using type = std::uint32_t;
+	};
+#endif // if defined(UINT16_MAX) && defined(UINT32_MAX)
+
+#if defined(UINT32_MAX) && defined(UINT64_MAX)
+	template <> class _wider_integer<std::uint32_t> {
+	public:
+		using type = std::uint64_t;
+	};
+#endif // if defined(UINT32_MAX) && defined(UINT64_MAX)
+
+	template <> class _wider_integer<char> {
+	public:
+		using type = typename cool::type_if<std::is_signed<char>::value,
+			typename cool::_wider_integer<signed char>::type,
+			typename cool::_wider_integer<unsigned char>::type
+		>;
+	};
 }
 
 
@@ -762,10 +817,25 @@ inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator-(cool::in
 	return cool::integer<int_Ty>(ret);
 }
 template <class int_Ty>
-inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator*(cool::integer<int_Ty> rhs) const noexcept {
-	int_Ty ret = m_value;
-	ret *= rhs.m_value;
-	return cool::integer<int_Ty>(ret);
+inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator*(cool::integer<int_Ty> rhs) const noexcept
+{
+	using _wider_integer_type = typename cool::_wider_integer<int_Ty>::type;
+	constexpr bool _upcast = !std::is_signed<int_Ty>::value && !std::is_same<_wider_integer_type, int_Ty>::value;
+
+	if (_upcast)
+	{
+		_wider_integer_type prod = static_cast<_wider_integer_type>(m_value);
+		prod *= static_cast<_wider_integer_type>(rhs.m_value);
+		constexpr std::size_t _shift = _upcast ? sizeof(int_Ty) * CHAR_BIT : 0;
+		constexpr _wider_integer_type _mod_val = (static_cast<_wider_integer_type>(1) << _shift);
+		return cool::integer<int_Ty>(static_cast<int_Ty>(prod % _mod_val));
+	}
+	else
+	{
+		int_Ty ret = m_value;
+		ret *= rhs.m_value;
+		return cool::integer<int_Ty>(ret);
+	}
 }
 template <class int_Ty>
 inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator/(cool::integer<int_Ty> rhs) const noexcept {
