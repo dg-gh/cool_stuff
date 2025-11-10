@@ -6,7 +6,6 @@
 #define xCOOL_LOGIC_CTRL_HPP
 
 #include <cstddef>
-#include <cstdint>
 #include <initializer_list>
 #include <type_traits>
 #include <functional>
@@ -965,6 +964,7 @@ std::size_t cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, smal
 	index_Ty variable_index, index_Ty* observer_list_optional_ptr, std::size_t max_observer_list_size, cool::max_depth _max_depth) const noexcept
 {
 	assert(good());
+	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
 
 	std::size_t observer_count = 0;
 	variable_info_type& variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(variable_index));
@@ -1024,6 +1024,7 @@ template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool 
 std::vector<index_Ty> cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_observers_vec(index_Ty variable_index, cool::max_depth _max_depth) const
 {
 	assert(good());
+	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
 
 	std::vector<index_Ty> observers_vec;
 	variable_info_type& variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(variable_index));
