@@ -179,6 +179,39 @@ namespace cool
 		int m_value;
 	};
 
+
+	// logic_ctrl_get_observers_result
+
+	template <class index_Ty> class logic_ctrl_get_observers_result
+	{
+
+	public:
+
+		using index_type = index_Ty;
+
+		std::size_t observer_count = 0;
+
+		int depth_reached = 0;
+		bool max_depth_is_reached = false;
+		bool lock_is_reached = false;
+		index_Ty index_if_lock_is_reached = static_cast<index_Ty>(0);
+	};
+
+#ifdef COOL_LOGIC_CTRL_VECTOR
+
+	// logic_ctrl_get_observers_vec_result
+
+	template <class index_Ty> class logic_ctrl_get_observers_vec_result : public logic_ctrl_get_observers_result<index_Ty>
+	{
+
+	public:
+
+		using typename cool::logic_ctrl_get_observers_result<index_Ty>::index_type;
+
+		std::vector<index_Ty> observers;
+	};
+#endif // COOL_LOGIC_CTRL_VECTOR
+
 	// _logic_ctrl_base
 
 	template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty> class _logic_ctrl_base
@@ -215,6 +248,11 @@ namespace cool
 		// > 2nt arg provides a view/array of all variables
 		// > 3rd arg points to shared data of observer
 		using refresh_func_type = refresh_result_Ty(*)(index_Ty, typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::variable_view, void*);
+
+		using get_observers_result_type = cool::logic_ctrl_get_observers_result<index_Ty>;
+#ifdef COOL_LOGIC_CTRL_VECTOR
+		using get_observers_vec_result_type = cool::logic_ctrl_get_observers_vec_result<index_Ty>;
+#endif // COOL_LOGIC_CTRL_VECTOR
 
 		// set
 
@@ -263,11 +301,11 @@ namespace cool
 		inline int default_max_depth() const noexcept;
 		inline std::size_t relation_count() const noexcept;
 		inline std::size_t max_relation_count() const noexcept;
-		std::size_t get_observers(index_Ty variable_index, index_Ty* observer_list_optional_ptr, std::size_t max_observer_list_size) const noexcept;
-		std::size_t get_observers(index_Ty variable_index, index_Ty* observer_list_optional_ptr, std::size_t max_observer_list_size, cool::max_depth _max_depth) const noexcept;
+		cool::logic_ctrl_get_observers_result<index_Ty> get_observers(index_Ty variable_index, index_Ty* observer_list_optional_ptr, std::size_t max_observer_list_size) const noexcept;
+		cool::logic_ctrl_get_observers_result<index_Ty> get_observers(index_Ty variable_index, index_Ty* observer_list_optional_ptr, std::size_t max_observer_list_size, cool::max_depth _max_depth) const noexcept;
 #ifdef COOL_LOGIC_CTRL_VECTOR
-		std::vector<index_Ty> get_observers_vec(index_Ty variable_index) const;
-		std::vector<index_Ty> get_observers_vec(index_Ty variable_index, cool::max_depth _max_depth) const;
+		cool::logic_ctrl_get_observers_vec_result<index_Ty> get_observers_vec(index_Ty variable_index) const;
+		cool::logic_ctrl_get_observers_vec_result<index_Ty> get_observers_vec(index_Ty variable_index, cool::max_depth _max_depth) const;
 #endif // COOL_LOGIC_CTRL_VECTOR
 
 		init_result_type init_set_cmp(index_Ty variable_index, cmp_Ty cmp) noexcept;
@@ -331,9 +369,11 @@ namespace cool
 			bool* m_ptr;
 		};
 
-		void _get_observers_sub(index_Ty variable_index, index_Ty* observer_list_optional_ptr, std::size_t max_observer_list_size, cool::max_depth _max_depth, std::size_t& observer_count_ref) const noexcept;
+		void _get_observers_sub(index_Ty variable_index, index_Ty* observer_list_optional_ptr, std::size_t max_observer_list_size, int _max_depth_value, int _max_depth_initial_value,
+			cool::logic_ctrl_get_observers_result<index_Ty>& obs_result_ref) const noexcept;
 #ifdef COOL_LOGIC_CTRL_VECTOR
-		void _get_observers_vec_sub(index_Ty variable_index, cool::max_depth _max_depth, std::vector<index_Ty>& observers_vec_ref) const;
+		void _get_observers_vec_sub(index_Ty variable_index, int _max_depth_value, int _max_depth_initial_value,
+			cool::logic_ctrl_get_observers_vec_result<index_Ty>& obs_result_ref) const;
 #endif // COOL_LOGIC_CTRL_VECTOR
 		void _clear() noexcept;
 
@@ -380,6 +420,11 @@ namespace cool
 		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::arg_value_type;
 		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::variable_view;
 		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::refresh_func_type;
+
+		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_observers_result_type;
+#ifdef COOL_LOGIC_CTRL_VECTOR
+		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_observers_vec_result_type;
+#endif // COOL_LOGIC_CTRL_VECTOR
 
 		logic_ctrl() noexcept = default;
 		logic_ctrl(const cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>&) = delete;
@@ -448,6 +493,11 @@ namespace cool
 		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::arg_value_type;
 		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::variable_view;
 		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::refresh_func_type;
+
+		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_observers_result_type;
+#ifdef COOL_LOGIC_CTRL_VECTOR
+		using typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_observers_vec_result_type;
+#endif // COOL_LOGIC_CTRL_VECTOR
 
 		logic_ctrl_vec() noexcept = default;
 		logic_ctrl_vec(const cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>&) = delete;
@@ -954,20 +1004,20 @@ template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool 
 inline std::size_t cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::max_relation_count() const noexcept { return m_max_relation_count; }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-std::size_t cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_observers(
+cool::logic_ctrl_get_observers_result<index_Ty> cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_observers(
 	index_Ty variable_index, index_Ty* observer_list_optional_ptr, std::size_t max_observer_list_size) const noexcept
 {
 	return get_observers(variable_index, observer_list_optional_ptr, max_observer_list_size, cool::max_depth(m_default_max_depth));
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-std::size_t cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_observers(
+cool::logic_ctrl_get_observers_result<index_Ty> cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_observers(
 	index_Ty variable_index, index_Ty* observer_list_optional_ptr, std::size_t max_observer_list_size, cool::max_depth _max_depth) const noexcept
 {
 	assert(good());
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
 
-	std::size_t observer_count = 0;
+	cool::logic_ctrl_get_observers_result<index_Ty> obs_result;
 	variable_info_type& variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(variable_index));
 
 	if (!variable_info_ref.locked)
@@ -979,55 +1029,80 @@ std::size_t cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, smal
 			observer_index++)
 		{
 			observer_info_type& observer_info_ref = *(m_observer_info_ptr + observer_index);
-			_get_observers_sub(observer_info_ref.observer_index, observer_list_optional_ptr, max_observer_list_size, _max_depth, observer_count);
+			_get_observers_sub(observer_info_ref.observer_index, observer_list_optional_ptr, max_observer_list_size, _max_depth.value(), _max_depth.value(), obs_result);
 		}
 	}
+	else
+	{
+		obs_result.lock_is_reached = true;
+		obs_result.index_if_lock_is_reached = variable_index;
+	}
 
-	return observer_count;
+	return obs_result;
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
 void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::_get_observers_sub(
-	index_Ty variable_index, index_Ty* observer_list_optional_ptr, std::size_t max_observer_list_size, cool::max_depth _max_depth, std::size_t& observer_count_ref) const noexcept
+	index_Ty variable_index, index_Ty* observer_list_optional_ptr, std::size_t max_observer_list_size, int _max_depth_value, int _max_depth_initial_value,
+	cool::logic_ctrl_get_observers_result<index_Ty>& obs_result_ref) const noexcept
 {
 	variable_info_type& variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(variable_index));
-	int _max_depth_value = _max_depth.value();
 
-	if (!variable_info_ref.locked && (_max_depth_value > 0))
+	if (_max_depth_value > 0)
 	{
-		if ((observer_list_optional_ptr != nullptr) && (observer_count_ref < max_observer_list_size))
+		if (!variable_info_ref.locked)
 		{
-			*(observer_list_optional_ptr + observer_count_ref) = variable_index;
+			if ((observer_list_optional_ptr != nullptr) && (obs_result_ref.observer_count < max_observer_list_size))
+			{
+				*(observer_list_optional_ptr + obs_result_ref.observer_count) = variable_index;
+			}
+
+			obs_result_ref.observer_count++;
+
+			{
+				int new_depth = _max_depth_initial_value - _max_depth_value + 1;
+				if (obs_result_ref.depth_reached < new_depth)
+				{
+					obs_result_ref.depth_reached = new_depth;
+				}
+			}
+
+			_logic_ctrl_base::_lock_guard lock(variable_info_ref.locked);
+
+			for (std::size_t observer_index = variable_info_ref.observer_index_begin;
+				observer_index < variable_info_ref.observer_index_end;
+				observer_index++)
+			{
+				observer_info_type& observer_info_ref = *(m_observer_info_ptr + observer_index);
+				_get_observers_sub(observer_info_ref.observer_index, observer_list_optional_ptr, max_observer_list_size, _max_depth_value - 1, _max_depth_initial_value, obs_result_ref);
+			}
 		}
-
-		observer_count_ref++;
-
-		_logic_ctrl_base::_lock_guard lock(variable_info_ref.locked);
-
-		for (std::size_t observer_index = variable_info_ref.observer_index_begin;
-			observer_index < variable_info_ref.observer_index_end;
-			observer_index++)
+		else if (!obs_result_ref.lock_is_reached)
 		{
-			observer_info_type& observer_info_ref = *(m_observer_info_ptr + observer_index);
-			_get_observers_sub(observer_info_ref.observer_index, observer_list_optional_ptr, max_observer_list_size, cool::max_depth(_max_depth_value - 1), observer_count_ref);
+			obs_result_ref.lock_is_reached = true;
+			obs_result_ref.index_if_lock_is_reached = variable_index;
 		}
+	}
+	else
+	{
+		obs_result_ref.max_depth_is_reached = true;
 	}
 }
 
 #ifdef COOL_LOGIC_CTRL_VECTOR
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-std::vector<index_Ty> cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_observers_vec(index_Ty variable_index) const
+cool::logic_ctrl_get_observers_vec_result<index_Ty> cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_observers_vec(index_Ty variable_index) const
 {
 	return get_observers_vec(variable_index, cool::max_depth(m_default_max_depth));
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-std::vector<index_Ty> cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_observers_vec(index_Ty variable_index, cool::max_depth _max_depth) const
+cool::logic_ctrl_get_observers_vec_result<index_Ty> cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_observers_vec(index_Ty variable_index, cool::max_depth _max_depth) const
 {
 	assert(good());
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
 
-	std::vector<index_Ty> observers_vec;
+	cool::logic_ctrl_get_observers_vec_result<index_Ty> obs_result;
 	variable_info_type& variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(variable_index));
 
 	if (!variable_info_ref.locked)
@@ -1039,33 +1114,59 @@ std::vector<index_Ty> cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_resul
 			observer_index++)
 		{
 			observer_info_type& observer_info_ref = *(m_observer_info_ptr + observer_index);
-			_get_observers_vec_sub(observer_info_ref.observer_index, _max_depth, observers_vec);
+			_get_observers_vec_sub(observer_info_ref.observer_index, _max_depth.value(), _max_depth.value(), obs_result);
 		}
 	}
+	else
+	{
+		obs_result.lock_is_reached = true;
+		obs_result.index_if_lock_is_reached = variable_index;
+	}
 
-	return observers_vec;
+	return obs_result;
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
 void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::_get_observers_vec_sub(
-	index_Ty variable_index, cool::max_depth _max_depth, std::vector<index_Ty>& observers_vec_ref) const
+	index_Ty variable_index, int _max_depth_value, int _max_depth_initial_value,
+	cool::logic_ctrl_get_observers_vec_result<index_Ty>& obs_result_ref) const
 {
 	variable_info_type& variable_info_ref = *(m_variable_info_ptr + static_cast<std::size_t>(variable_index));
-	int _max_depth_value = _max_depth.value();
 
-	if (!variable_info_ref.locked && (_max_depth_value > 0))
+	if (_max_depth_value > 0)
 	{
-		observers_vec_ref.push_back(variable_index);
-
-		_logic_ctrl_base::_lock_guard lock(variable_info_ref.locked);
-
-		for (std::size_t observer_index = variable_info_ref.observer_index_begin;
-			observer_index < variable_info_ref.observer_index_end;
-			observer_index++)
+		if (!variable_info_ref.locked)
 		{
-			observer_info_type& observer_info_ref = *(m_observer_info_ptr + observer_index);
-			_get_observers_vec_sub(observer_info_ref.observer_index, cool::max_depth(_max_depth_value - 1), observers_vec_ref);
+			obs_result_ref.observers.push_back(variable_index);
+			obs_result_ref.observer_count++;
+
+			{
+				int new_depth = _max_depth_initial_value - _max_depth_value + 1;
+				if (obs_result_ref.depth_reached < new_depth)
+				{
+					obs_result_ref.depth_reached = new_depth;
+				}
+			}
+
+			_logic_ctrl_base::_lock_guard lock(variable_info_ref.locked);
+
+			for (std::size_t observer_index = variable_info_ref.observer_index_begin;
+				observer_index < variable_info_ref.observer_index_end;
+				observer_index++)
+			{
+				observer_info_type& observer_info_ref = *(m_observer_info_ptr + observer_index);
+				_get_observers_vec_sub(observer_info_ref.observer_index, _max_depth_value - 1, _max_depth_initial_value, obs_result_ref);
+			}
 		}
+		else if (!obs_result_ref.lock_is_reached)
+		{
+			obs_result_ref.lock_is_reached = true;
+			obs_result_ref.index_if_lock_is_reached = variable_index;
+		}
+	}
+	else
+	{
+		obs_result_ref.max_depth_is_reached = true;
 	}
 }
 #endif // COOL_LOGIC_CTRL_VECTOR
