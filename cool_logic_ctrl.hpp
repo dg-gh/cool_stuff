@@ -114,7 +114,7 @@ namespace cool
 		unsigned char trigger = logic_ctrl_cmp::change;
 
 		constexpr logic_ctrl_cmp() = default;
-		inline constexpr logic_ctrl_cmp(unsigned char _detect) noexcept;
+		inline constexpr logic_ctrl_cmp(unsigned char _trigger) noexcept;
 		constexpr logic_ctrl_cmp(const cool::logic_ctrl_cmp<refresh_result_Ty>&) noexcept = default;
 		cool::logic_ctrl_cmp<refresh_result_Ty>& operator=(const cool::logic_ctrl_cmp<refresh_result_Ty>&) noexcept = default;
 
@@ -131,14 +131,14 @@ namespace cool
 		using index_type = index_Ty;
 
 		static constexpr int success = 0;
-		static constexpr int ongoing = 1;
+		static constexpr int init_ongoing = 1;
 		static constexpr int bad_parameters = 2;
 		static constexpr int bad_alloc = 3;
 		static constexpr int bad_observer_variable_index = 4;
 		static constexpr int bad_observed_variable_index = 5;
 		static constexpr int bad_relation_count = 6;
 		static constexpr int bad_refresh_func_assignment = 7;
-		static constexpr int modification_after_end_init = 8;
+		static constexpr int modification_after_init_end = 8;
 
 		static constexpr int undefined = -1;
 
@@ -393,7 +393,7 @@ namespace cool
 		// > 'variables_ptr' must have persistent ownership of 'new_variable_count' contiguous elements
 		// > 'variables_info_ptr' must have persistent ownership of 'new_variable_count' contiguous elements
 		// > 'observer_info_ptr' must have persistent ownership of 'new_max_relation_count' contiguous elements
-		// > 'relation_info_ptr' needs to own 'new_max_relation_count' elements and does not need to have persistent ownership after 'end_init'
+		// > 'relation_info_ptr' needs to own 'new_max_relation_count' elements and does not need to have persistent ownership after 'init_end'
 
 		init_result_type init_begin(
 			Ty* variables_ptr,
@@ -609,13 +609,14 @@ inline const char* cool::logic_ctrl_init_result<index_Ty>::message() const noexc
 	switch (m_result)
 	{
 	case logic_ctrl_init_result::success: return "cool logic_ctrl init success"; break;
+	case logic_ctrl_init_result::init_ongoing: return "cool logic_ctrl init is ongoing"; break;
 	case logic_ctrl_init_result::bad_parameters: return "cool logic_ctrl init failed : bad parameters"; break;
 	case logic_ctrl_init_result::bad_alloc: return "cool logic_ctrl init failed : bad allocation"; break;
 	case logic_ctrl_init_result::bad_observer_variable_index: return "cool logic_ctrl init failed : observer variable index out of bound"; break;
 	case logic_ctrl_init_result::bad_observed_variable_index: return "cool logic_ctrl init failed : observed variable index out of bound"; break;
 	case logic_ctrl_init_result::bad_relation_count: return "cool logic_ctrl init failed : maximum relation count is too low"; break;
 	case logic_ctrl_init_result::bad_refresh_func_assignment: return "cool logic_ctrl init failed : double assignement of refresh functions on one variable"; break;
-	case logic_ctrl_init_result::modification_after_end_init: return "cool logic_ctrl warning : modification added after end_init"; break;
+	case logic_ctrl_init_result::modification_after_init_end: return "cool logic_ctrl warning : modification added after init_end"; break;
 	default: return "cool logic_ctrl init result undefined"; break;
 	}
 }
@@ -629,7 +630,7 @@ inline index_Ty cool::logic_ctrl_init_result<index_Ty>::index_if_init_failed() c
 template <class index_Ty>
 cool::logic_ctrl_init_result<index_Ty>& cool::logic_ctrl_init_result<index_Ty>::operator&=(const cool::logic_ctrl_init_result<index_Ty>& rhs) noexcept
 {
-	if ((m_result == logic_ctrl_init_result::success) || (m_result == logic_ctrl_init_result::ongoing) || (m_result == logic_ctrl_init_result::undefined))
+	if ((m_result == logic_ctrl_init_result::success) || (m_result == logic_ctrl_init_result::init_ongoing) || (m_result == logic_ctrl_init_result::undefined))
 	{
 		m_result = rhs.m_result;
 		m_index = rhs.m_index;
@@ -641,7 +642,7 @@ cool::logic_ctrl_init_result<index_Ty>& cool::logic_ctrl_init_result<index_Ty>::
 template <class index_Ty>
 cool::logic_ctrl_init_result<index_Ty> cool::logic_ctrl_init_result<index_Ty>::operator&(const cool::logic_ctrl_init_result<index_Ty>& rhs) noexcept
 {
-	return ((m_result == logic_ctrl_init_result::success) || (m_result == logic_ctrl_init_result::ongoing) || (m_result == logic_ctrl_init_result::undefined)) ? rhs : *this;
+	return ((m_result == logic_ctrl_init_result::success) || (m_result == logic_ctrl_init_result::init_ongoing) || (m_result == logic_ctrl_init_result::undefined)) ? rhs : *this;
 }
 
 template <class index_Ty>
@@ -938,7 +939,7 @@ template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool 
 inline bool cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::good() const noexcept { return m_init == init_result_type::success; }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-inline bool cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_ongoing() const noexcept { return m_init == init_result_type::ongoing; }
+inline bool cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_ongoing() const noexcept { return m_init == init_result_type::init_ongoing; }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
 inline std::size_t cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::variable_count() const noexcept { return m_variable_count; }
@@ -1075,7 +1076,7 @@ typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_T
 {
 	index_Ty return_index = variable_index;
 
-	if (m_init == init_result_type::ongoing)
+	if (m_init == init_result_type::init_ongoing)
 	{
 		if (static_cast<std::size_t>(variable_index) < m_variable_count)
 		{
@@ -1089,7 +1090,7 @@ typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_T
 	}
 	else if (m_init == init_result_type::success)
 	{
-		m_init = init_result_type::modification_after_end_init;
+		m_init = init_result_type::modification_after_init_end;
 	}
 	else
 	{
@@ -1105,7 +1106,7 @@ typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_T
 {
 	index_Ty return_index = variable_index;
 
-	if (m_init == init_result_type::ongoing)
+	if (m_init == init_result_type::init_ongoing)
 	{
 		if (static_cast<std::size_t>(variable_index) < m_variable_count)
 		{
@@ -1119,7 +1120,7 @@ typename cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_T
 	}
 	else if (m_init == init_result_type::success)
 	{
-		m_init = init_result_type::modification_after_end_init;
+		m_init = init_result_type::modification_after_init_end;
 	}
 	else
 	{
@@ -1237,7 +1238,7 @@ typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::in
 		this->m_observer_info_ptr = observer_info_ptr;
 
 		this->m_default_max_depth = new_default_max_depth.value();
-		this->m_init = init_result_type::ongoing;
+		this->m_init = init_result_type::init_ongoing;
 
 		this->m_variable_count = _new_variable_count;
 
@@ -1277,7 +1278,7 @@ typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::in
 
 	index_Ty return_index = observer_variable_index;
 
-	if (this->m_init == init_result_type::ongoing)
+	if (this->m_init == init_result_type::init_ongoing)
 	{
 		if ((refresh_func == nullptr) || ((observed_variables_ptr == nullptr) && (observed_variable_count != 0)))
 		{
@@ -1321,7 +1322,7 @@ typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::in
 	}
 	else if (this->m_init == init_result_type::success)
 	{
-		this->m_init = init_result_type::modification_after_end_init;
+		this->m_init = init_result_type::modification_after_init_end;
 	}
 	else
 	{
@@ -1347,7 +1348,7 @@ typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::in
 
 	index_Ty return_index = observer_variable_index;
 
-	if (this->m_init == init_result_type::ongoing)
+	if (this->m_init == init_result_type::init_ongoing)
 	{
 		if ((refresh_func == nullptr) || ((observed_variables_ptr == nullptr) && (observed_variable_count != 0)))
 		{
@@ -1392,7 +1393,7 @@ typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::in
 	}
 	else if (this->m_init == init_result_type::success)
 	{
-		this->m_init = init_result_type::modification_after_end_init;
+		this->m_init = init_result_type::modification_after_init_end;
 	}
 	else
 	{
@@ -1412,7 +1413,7 @@ typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::in
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
 typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_end()
 {
-	if (this->m_init == init_result_type::ongoing)
+	if (this->m_init == init_result_type::init_ongoing)
 	{
 		this->m_init = init_result_type::success;
 
@@ -1465,7 +1466,7 @@ typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::in
 	}
 	else if (this->m_init == init_result_type::success)
 	{
-		this->m_init = init_result_type::modification_after_end_init;
+		this->m_init = init_result_type::modification_after_init_end;
 	}
 
 	return init_result_type(this->m_init);
@@ -1565,7 +1566,7 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 		}
 
 		this->m_default_max_depth = new_default_max_depth.value();
-		this->m_init = init_result_type::ongoing;
+		this->m_init = init_result_type::init_ongoing;
 
 		this->m_variable_count = _new_variable_count;
 
@@ -1592,7 +1593,7 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 
 	index_Ty return_index = observer_variable_index;
 
-	if (this->m_init == init_result_type::ongoing)
+	if (this->m_init == init_result_type::init_ongoing)
 	{
 		if ((refresh_func == nullptr) || ((observed_variables_ptr == nullptr) && (observed_variable_count != 0)))
 		{
@@ -1632,7 +1633,7 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 	}
 	else if (this->m_init == init_result_type::success)
 	{
-		this->m_init = init_result_type::modification_after_end_init;
+		this->m_init = init_result_type::modification_after_init_end;
 	}
 	else
 	{
@@ -1660,7 +1661,7 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 
 	index_Ty return_index = observer_variable_index;
 
-	if (this->m_init == init_result_type::ongoing)
+	if (this->m_init == init_result_type::init_ongoing)
 	{
 		if ((refresh_func == nullptr) || ((observed_variables_ptr == nullptr) && (observed_variable_count != 0)))
 		{
@@ -1700,7 +1701,7 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 	}
 	else if (this->m_init == init_result_type::success)
 	{
-		this->m_init = init_result_type::modification_after_end_init;
+		this->m_init = init_result_type::modification_after_init_end;
 	}
 	else
 	{
@@ -1722,7 +1723,7 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
 typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_end()
 {
-	if (this->m_init == init_result_type::ongoing)
+	if (this->m_init == init_result_type::init_ongoing)
 	{
 		this->m_init = init_result_type::success;
 
@@ -1773,7 +1774,7 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 	}
 	else if (this->m_init == init_result_type::success)
 	{
-		this->m_init = init_result_type::modification_after_end_init;
+		this->m_init = init_result_type::modification_after_init_end;
 	}
 
 	m_relation_info_vec.clear();
