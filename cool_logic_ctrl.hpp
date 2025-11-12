@@ -1123,6 +1123,7 @@ cool::logic_ctrl_get_observers_vec_result<index_Ty> cool::_logic_ctrl_base<Ty, c
 		obs_result.index_if_lock_is_reached = variable_index;
 	}
 
+	obs_result.observer_count = obs_result.observers.size();
 	return obs_result;
 }
 
@@ -1138,7 +1139,6 @@ void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::
 		if (!variable_info_ref.locked)
 		{
 			obs_result_ref.observers.push_back(variable_index);
-			obs_result_ref.observer_count++;
 
 			{
 				int new_depth = _max_depth_initial_value - _max_depth_value + 1;
