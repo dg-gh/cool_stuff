@@ -375,7 +375,7 @@ namespace cool
 		void _get_observers_vec_sub(index_Ty variable_index, int _max_depth_value, int _max_depth_initial_value,
 			cool::logic_ctrl_get_observers_vec_result<index_Ty>& obs_result_ref) const;
 #endif // COOL_LOGIC_CTRL_VECTOR
-		void _clear() noexcept;
+		void _delete_logic_ctrl_sub() noexcept;
 
 		Ty* m_variables_ptr = nullptr;
 		variable_info_type* m_variable_info_ptr = nullptr;
@@ -440,7 +440,7 @@ namespace cool
 		// > 'observer_info_ptr' must have persistent ownership of 'new_max_relation_count' contiguous elements
 		// > 'relation_info_ptr' needs to own 'new_max_relation_count' elements and does not need to have persistent ownership after 'init_end'
 
-		init_result_type init_begin(
+		init_result_type init_logic_ctrl_begin(
 			Ty* variables_ptr,
 			variable_info_type* variable_info_ptr,
 			cool::variable_count new_variable_count,
@@ -457,9 +457,9 @@ namespace cool
 		init_result_type init_add_relations(index_Ty variable_index, const observed_info_type* observed_variables_ptr, std::size_t observed_variable_count, refresh_func_type refresh_func) noexcept(std::is_nothrow_copy_assignable<cmp_Ty>::value);
 		init_result_type init_add_relations(index_Ty observer_variable_index, refresh_func_type refresh_func) noexcept;
 
-		init_result_type init_end();
+		init_result_type init_logic_ctrl_end();
 
-		void clear() noexcept;
+		void delete_logic_ctrl() noexcept;
 	};
 
 #ifdef COOL_LOGIC_CTRL_VECTOR
@@ -508,7 +508,7 @@ namespace cool
 
 		// setup and clear
 
-		init_result_type init_begin(
+		init_result_type init_new_logic_ctrl_begin(
 			cool::variable_count new_variable_count,
 			cool::max_depth new_default_max_depth = cool::max_depth(64),
 			cmp_Ty default_cmp = cmp_Ty{}
@@ -520,9 +520,9 @@ namespace cool
 		init_result_type init_add_relations(index_Ty variable_index, const observed_info_type* observed_variables_ptr, std::size_t observed_variable_count, refresh_func_type refresh_func);
 		init_result_type init_add_relations(index_Ty observer_variable_index, refresh_func_type refresh_func) noexcept;
 
-		init_result_type init_end();
+		init_result_type init_logic_ctrl_end();
 
-		void clear() noexcept;
+		void delete_logic_ctrl() noexcept;
 
 	private:
 
@@ -1257,7 +1257,7 @@ template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool 
 inline const Ty* cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::variable_view::data() const noexcept { return m_ptr; }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::_clear() noexcept
+void cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::_delete_logic_ctrl_sub() noexcept
 {
 	this->m_variables_ptr = nullptr;
 	this->m_variable_info_ptr = nullptr;
@@ -1283,7 +1283,7 @@ template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool 
 cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::logic_ctrl(cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>&& rhs) noexcept
 	: cool::_logic_ctrl_base<Ty, cmp_Ty, refresh_result_Ty, index_Ty, small_Ty>(rhs)
 {
-	rhs._clear();
+	rhs._delete_logic_ctrl_sub();
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
@@ -1303,13 +1303,13 @@ cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>& cool::logic
 	this->m_relation_count = rhs.m_relation_count;
 	this->m_max_relation_count = rhs.m_max_relation_count;
 
-	rhs._clear();
+	rhs._delete_logic_ctrl_sub();
 
 	return *this;
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_begin(
+typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_logic_ctrl_begin(
 	Ty* variables_ptr,
 	variable_info_type* variable_info_ptr,
 	cool::variable_count new_variable_count,
@@ -1512,7 +1512,7 @@ typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::in
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_end()
+typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_logic_ctrl_end()
 {
 	if (this->m_init == init_result_type::init_ongoing)
 	{
@@ -1574,9 +1574,9 @@ typename cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::in
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-void cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::clear() noexcept
+void cool::logic_ctrl<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::delete_logic_ctrl() noexcept
 {
-	this->_clear();
+	this->_delete_logic_ctrl_sub();
 }
 
 #ifdef COOL_LOGIC_CTRL_VECTOR
@@ -1586,7 +1586,7 @@ cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::logic_c
 	m_observer_info_vec(std::move(rhs.m_observer_info_vec)),
 	m_relation_info_vec(std::move(rhs.m_relation_info_vec))
 {
-	rhs._clear();
+	rhs._delete_logic_ctrl_sub();
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
@@ -1609,7 +1609,7 @@ cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>& cool::l
 	m_observer_info_vec = std::move(rhs.m_observer_info_vec);
 	m_relation_info_vec = std::move(rhs.m_relation_info_vec);
 
-	rhs._clear();
+	rhs._delete_logic_ctrl_sub();
 
 	return *this;
 }
@@ -1617,11 +1617,11 @@ cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>& cool::l
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
 cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::logic_ctrl_vec::~logic_ctrl_vec()
 {
-	clear();
+	delete_logic_ctrl();
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_begin(
+typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_new_logic_ctrl_begin(
 	cool::variable_count new_variable_count,
 	cool::max_depth new_default_max_depth,
 	cmp_Ty default_cmp)
@@ -1633,7 +1633,7 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 	}
 	else
 	{
-		clear();
+		delete_logic_ctrl();
 
 		this->m_variables_ptr = static_cast<Ty*>(::operator new(_new_variable_count * sizeof(Ty), std::nothrow));
 
@@ -1661,7 +1661,7 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 		}
 		else
 		{
-			clear();
+			delete_logic_ctrl();
 			this->m_init = init_result_type::bad_alloc;
 			return init_result_type(this->m_init);
 		}
@@ -1822,7 +1822,7 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_end()
+typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_result_type cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::init_logic_ctrl_end()
 {
 	if (this->m_init == init_result_type::init_ongoing)
 	{
@@ -1884,7 +1884,7 @@ typename cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
-void cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::clear() noexcept
+void cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::delete_logic_ctrl() noexcept
 {
 	m_relation_info_vec.clear();
 	m_observer_info_vec.clear();
@@ -1911,7 +1911,7 @@ void cool::logic_ctrl_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::cl
 		::operator delete(this->m_variables_ptr);
 	}
 
-	this->_clear();
+	this->_delete_logic_ctrl_sub();
 }
 #endif // COOL_LOGIC_CTRL_VECTOR
 

@@ -29,12 +29,6 @@ namespace cool
 		inline cool::mem_blocks<bad_alloc_address>& operator=(cool::mem_blocks<bad_alloc_address>&& rhs) noexcept;
 		~mem_blocks() = default;
 
-		explicit inline mem_blocks(
-			void* data_ptr,
-			std::size_t _block_size,
-			std::size_t _block_count,
-			std::size_t _block_alignment = alignof(std::max_align_t)) noexcept;
-
 		static inline constexpr std::size_t eval_data_max_size(
 			std::size_t _block_size,
 			std::size_t _block_count,
@@ -52,7 +46,7 @@ namespace cool
 			std::size_t _block_count,
 			std::size_t _block_alignment = alignof(std::max_align_t)) noexcept;
 
-		inline void* init_set_data(
+		inline void* init_mem_blocks(
 			void* data_ptr,
 			std::size_t _block_size,
 			std::size_t _block_count,
@@ -74,7 +68,7 @@ namespace cool
 		inline void* data_end() noexcept;
 		inline const void* data_end() const noexcept;
 
-		inline cool::mem_blocks<bad_alloc_address>& clear() noexcept;
+		inline cool::mem_blocks<bad_alloc_address>& delete_mem_blocks() noexcept;
 
 		// use only if this mem_blocks instance is known to have at least one block remaining
 		inline void* allocate_unchecked() noexcept;
@@ -106,17 +100,6 @@ namespace cool
 		cool::mem_pools<_pool_count, bad_alloc_address>& operator=(cool::mem_pools<_pool_count, bad_alloc_address>&& rhs) noexcept = default;
 		~mem_pools() = default;
 
-		explicit inline mem_pools(
-			void* data_ptr,
-			std::initializer_list<std::size_t> block_sizes,
-			std::initializer_list<std::size_t> block_counts,
-			std::size_t block_alignment = alignof(std::max_align_t)) noexcept;
-		explicit inline mem_pools(
-			void* data_ptr,
-			std::initializer_list<std::size_t> block_sizes,
-			std::initializer_list<std::size_t> block_counts,
-			std::initializer_list<std::size_t> block_alignments) noexcept;
-
 		template <class uint_Ty> inline cool::mem_blocks<bad_alloc_address>& operator[](uint_Ty pool_number) noexcept;
 		template <class uint_Ty> inline const cool::mem_blocks<bad_alloc_address>& operator[](uint_Ty pool_number) const noexcept;
 
@@ -124,6 +107,7 @@ namespace cool
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
 			std::size_t block_alignment = alignof(std::max_align_t)) noexcept;
+
 		static inline constexpr std::size_t eval_data_max_size(
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
@@ -134,6 +118,7 @@ namespace cool
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
 			std::size_t block_alignment = alignof(std::max_align_t)) noexcept;
+
 		static inline void* eval_data_end(
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
@@ -145,18 +130,20 @@ namespace cool
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
 			std::size_t block_alignment = alignof(std::max_align_t)) noexcept;
+
 		static inline constexpr std::uintptr_t eval_data_address_end(
 			std::uintptr_t data_ptr_address,
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
 			std::initializer_list<std::size_t> block_alignments) noexcept;
 
-		inline void* init_set_data(
+		inline void* init_mem_pools(
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
 			std::size_t block_alignment = alignof(std::max_align_t)) noexcept;
-		inline void* init_set_data(
+
+		inline void* init_mem_pools(
 			void* data_ptr,
 			std::initializer_list<std::size_t> block_sizes,
 			std::initializer_list<std::size_t> block_counts,
@@ -168,7 +155,7 @@ namespace cool
 
 		static inline constexpr void* bad_alloc_ptr() noexcept;
 
-		inline cool::mem_pools<_pool_count, bad_alloc_address>& clear() noexcept;
+		inline cool::mem_pools<_pool_count, bad_alloc_address>& delete_mem_pools() noexcept;
 
 	private:
 
@@ -223,66 +210,6 @@ inline cool::mem_blocks<bad_alloc_address>& cool::mem_blocks<bad_alloc_address>:
 	rhs.m_last_block_ptr = static_cast<void**>(bad_alloc_ptr());
 
 	return *this;
-}
-
-template <std::uintptr_t bad_alloc_address>
-inline cool::mem_blocks<bad_alloc_address>::mem_blocks(
-	void* data_ptr,
-	std::size_t _block_size,
-	std::size_t _block_count,
-	std::size_t _block_alignment) noexcept
-{
-	if ((_block_size != 0) && (_block_count != 0))
-	{
-		_block_alignment = _next_power_of_two(_block_alignment);
-
-		{
-			std::size_t block_size_remainder = _block_size % _block_alignment;
-			if (block_size_remainder != 0)
-			{
-				_block_size += (_block_alignment - block_size_remainder);
-			}
-		}
-
-		std::size_t block_offset = _block_size / sizeof(void*);
-
-		{
-			std::uintptr_t ptr_remainder = reinterpret_cast<std::uintptr_t>(data_ptr) % _block_alignment;
-			if (ptr_remainder != 0)
-			{
-				data_ptr = static_cast<void*>(static_cast<char*>(data_ptr) + (_block_alignment - ptr_remainder));
-			}
-		}
-
-		m_block_size = _block_size;
-		m_next_block_ptr = static_cast<void**>(data_ptr);
-		m_blocks_remaining = _block_count;
-		m_first_block_ptr = static_cast<void**>(data_ptr);
-		m_last_block_ptr = static_cast<void**>(data_ptr) + _block_count * block_offset;
-
-		void** _current_ptr = static_cast<void**>(data_ptr);
-		void** _next_ptr = static_cast<void**>(data_ptr) + block_offset;
-		std::size_t block_count_m1 = _block_count - 1;
-#ifdef __clang__
-#pragma unroll 1
-#endif // __clang__
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC unroll 1
-#endif // defined(__GNUC__) && !defined(__clang__)
-		for (std::size_t n = 0; n < block_count_m1; n++)
-		{
-			new (_current_ptr + n * block_offset) void* (static_cast<void*>(_next_ptr + n * block_offset));
-		}
-		new (_current_ptr + _block_count * block_offset) void* (static_cast<void*>(bad_alloc_ptr()));
-	}
-	else
-	{
-		m_block_size = 0;
-		m_next_block_ptr = static_cast<void**>(bad_alloc_ptr());
-		m_blocks_remaining = 0;
-		m_first_block_ptr = static_cast<void**>(bad_alloc_ptr());
-		m_last_block_ptr = static_cast<void**>(bad_alloc_ptr());
-	}
 }
 
 template <std::uintptr_t bad_alloc_address>
@@ -382,7 +309,7 @@ inline constexpr std::uintptr_t cool::mem_blocks<bad_alloc_address>::eval_data_a
 }
 
 template <std::uintptr_t bad_alloc_address>
-inline void* cool::mem_blocks<bad_alloc_address>::init_set_data(
+inline void* cool::mem_blocks<bad_alloc_address>::init_mem_blocks(
 	void* data_ptr,
 	std::size_t _block_size,
 	std::size_t _block_count,
@@ -420,10 +347,10 @@ inline void* cool::mem_blocks<bad_alloc_address>::init_set_data(
 		void** _next_ptr = static_cast<void**>(data_ptr) + block_offset;
 		std::size_t block_count_m1 = _block_count - 1;
 #ifdef __clang__
-#pragma unroll 1
+#pragma unroll 4
 #endif // __clang__
 #if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC unroll 1
+#pragma GCC unroll 4
 #endif // defined(__GNUC__) && !defined(__clang__)
 		for (std::size_t n = 0; n < block_count_m1; n++)
 		{
@@ -533,7 +460,7 @@ inline const void* cool::mem_blocks<bad_alloc_address>::data_end() const noexcep
 }
 
 template <std::uintptr_t bad_alloc_address>
-inline cool::mem_blocks<bad_alloc_address>& cool::mem_blocks<bad_alloc_address>::clear() noexcept
+inline cool::mem_blocks<bad_alloc_address>& cool::mem_blocks<bad_alloc_address>::delete_mem_blocks() noexcept
 {
 	m_block_size = 0;
 	m_next_block_ptr = static_cast<void**>(bad_alloc_ptr());
@@ -582,60 +509,6 @@ inline std::size_t cool::mem_blocks<bad_alloc_address>::_next_power_of_two(std::
 
 
 // mem_pools
-
-template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
-inline cool::mem_pools<_pool_count, bad_alloc_address>::mem_pools(
-	void* data_ptr,
-	std::initializer_list<std::size_t> block_sizes,
-	std::initializer_list<std::size_t> block_counts,
-	std::size_t block_alignment) noexcept
-{
-	std::size_t m = _pool_count;
-	m = (m < block_sizes.size()) ? m : block_sizes.size();
-	m = (m < block_counts.size()) ? m : block_counts.size();
-
-	const std::size_t* block_sizes_ptr = block_sizes.begin();
-	const std::size_t* block_counts_ptr = block_counts.begin();
-	void* ptr = data_ptr;
-#ifdef __clang__
-#pragma unroll 1
-#endif // __clang__
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC unroll 1
-#endif // defined(__GNUC__) && !defined(__clang__)
-	for (std::size_t n = 0; n < m; n++)
-	{
-		ptr = m_pools[n].init_set_data(ptr, *block_sizes_ptr++, *block_counts_ptr++, block_alignment);
-	}
-}
-
-template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
-inline cool::mem_pools<_pool_count, bad_alloc_address>::mem_pools(
-	void* data_ptr,
-	std::initializer_list<std::size_t> block_sizes,
-	std::initializer_list<std::size_t> block_counts,
-	std::initializer_list<std::size_t> block_alignments) noexcept
-{
-	std::size_t m = _pool_count;
-	m = (m < block_sizes.size()) ? m : block_sizes.size();
-	m = (m < block_counts.size()) ? m : block_counts.size();
-	m = (m < block_alignments.size()) ? m : block_alignments.size();
-
-	const std::size_t* block_sizes_ptr = block_sizes.begin();
-	const std::size_t* block_counts_ptr = block_counts.begin();
-	const std::size_t* block_alignments_ptr = block_alignments.begin();
-	void* ptr = data_ptr;
-#ifdef __clang__
-#pragma unroll 1
-#endif // __clang__
-#if defined(__GNUC__) && !defined(__clang__)
-#pragma GCC unroll 1
-#endif // defined(__GNUC__) && !defined(__clang__)
-	for (std::size_t n = 0; n < m; n++)
-	{
-		ptr = m_pools[n].init_set_data(ptr, *block_sizes_ptr++, *block_counts_ptr++, *block_alignments_ptr++);
-	}
-}
 
 template <std::size_t _pool_count, std::uintptr_t bad_alloc_address> template <class uint_Ty>
 inline cool::mem_blocks<bad_alloc_address>& cool::mem_pools<_pool_count, bad_alloc_address>::operator[](uint_Ty pool_number) noexcept
@@ -827,13 +700,13 @@ inline constexpr std::uintptr_t cool::mem_pools<_pool_count, bad_alloc_address>:
 }
 
 template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
-inline void* cool::mem_pools<_pool_count, bad_alloc_address>::init_set_data(
+inline void* cool::mem_pools<_pool_count, bad_alloc_address>::init_mem_pools(
 	void* data_ptr,
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,
 	std::size_t block_alignment) noexcept
 {
-	clear();
+	delete_mem_pools();
 
 	std::size_t m = _pool_count;
 	m = (m < block_sizes.size()) ? m : block_sizes.size();
@@ -850,20 +723,20 @@ inline void* cool::mem_pools<_pool_count, bad_alloc_address>::init_set_data(
 #endif // defined(__GNUC__) && !defined(__clang__)
 	for (std::size_t n = 0; n < m; n++)
 	{
-		ptr = m_pools[n].init_set_data(ptr, *block_sizes_ptr++, *block_counts_ptr++, block_alignment);
+		ptr = m_pools[n].init_mem_blocks(ptr, *block_sizes_ptr++, *block_counts_ptr++, block_alignment);
 	}
 
 	return ptr;
 }
 
 template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
-inline void* cool::mem_pools<_pool_count, bad_alloc_address>::init_set_data(
+inline void* cool::mem_pools<_pool_count, bad_alloc_address>::init_mem_pools(
 	void* data_ptr,
 	std::initializer_list<std::size_t> block_sizes,
 	std::initializer_list<std::size_t> block_counts,
 	std::initializer_list<std::size_t> block_alignments) noexcept
 {
-	clear();
+	delete_mem_pools();
 
 	std::size_t m = _pool_count;
 	m = (m < block_sizes.size()) ? m : block_sizes.size();
@@ -882,7 +755,7 @@ inline void* cool::mem_pools<_pool_count, bad_alloc_address>::init_set_data(
 #endif // defined(__GNUC__) && !defined(__clang__)
 	for (std::size_t n = 0; n < m; n++)
 	{
-		ptr = m_pools[n].init_set_data(ptr, *block_sizes_ptr++, *block_counts_ptr++, *block_alignments_ptr++);
+		ptr = m_pools[n].init_mem_blocks(ptr, *block_sizes_ptr++, *block_counts_ptr++, *block_alignments_ptr++);
 	}
 
 	return ptr;
@@ -933,11 +806,11 @@ inline constexpr void* cool::mem_pools<_pool_count, bad_alloc_address>::bad_allo
 }
 
 template <std::size_t _pool_count, std::uintptr_t bad_alloc_address>
-inline cool::mem_pools<_pool_count, bad_alloc_address>& cool::mem_pools<_pool_count, bad_alloc_address>::clear() noexcept
+inline cool::mem_pools<_pool_count, bad_alloc_address>& cool::mem_pools<_pool_count, bad_alloc_address>::delete_mem_pools() noexcept
 {
 	for (std::size_t n = 0; n < _pool_count; n++)
 	{
-		m_pools[n].clear();
+		m_pools[n].delete_mem_blocks();
 	}
 
 	return *this;
