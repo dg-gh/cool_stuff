@@ -40,11 +40,14 @@
 //class custom_wait_example
 //{
 //public:
-//	void push_wait() noexcept;
-//	void pop_wait() noexcept;
+//	custom_wait_example(void* shared_data_ptr) noexcept; // required for queue_spsc, queue_spsc, queue_wlock
+//	void push_wait() noexcept; // required for queue_spsc, queue_spsc, queue_wlock
+//	void pop_wait() noexcept; // required for queue_spsc, queue_spsc
+//	bool good() noexcept; // required for queue_spsc, queue_spsc
 //};
 
-// custom_wait_example has its default constructor called without '()'/'{}'
+// 'good()' should return false when the queue and all its items are to be discarded
+// in this case, a member function 'pop()' running will return false
 
 
 namespace cool
@@ -140,7 +143,7 @@ namespace cool
 		cool::queue_nosync<Ty>& operator=(cool::queue_nosync<Ty>&&) = delete;
 		~queue_nosync();
 
-		// WARNING : array at data_ptr must have space for new_item_buffer_size.value() + 1 elements
+		// WARNING : in 'init_queue_buffer', array at 'data_ptr' must have space for new_item_buffer_size.value() + 1 elements
 		inline cool::queue_init_result init_queue_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size);
 		inline cool::queue_init_result init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size);
 		inline bool good() const noexcept;
@@ -167,8 +170,10 @@ namespace cool
 
 	class wait_noop {
 	public:
+		inline wait_noop(void*) noexcept;
 		inline void push_wait() noexcept;
 		inline void pop_wait() noexcept;
+		static inline constexpr bool good() noexcept;
 	};
 
 #ifdef COOL_QUEUES_ATOMIC
@@ -204,9 +209,9 @@ namespace cool
 		cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>& operator=(cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>&&) = delete;
 		~queue_spsc();
 
-		// WARNING : array at data_ptr must have space for new_item_buffer_size.value() + 1 elements
-		inline cool::queue_init_result init_queue_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size);
-		inline cool::queue_init_result init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size);
+		// WARNING : in 'init_queue_buffer', array at 'data_ptr' must have space for new_item_buffer_size.value() + 1 elements
+		inline cool::queue_init_result init_queue_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr = nullptr);
+		inline cool::queue_init_result init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr = nullptr);
 		inline bool good() const noexcept;
 		inline std::size_t size() const noexcept;
 		inline bool owns_buffer() const noexcept;
@@ -215,13 +220,14 @@ namespace cool
 		template <class ... arg_Ty> inline bool try_push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value);
 		inline bool try_pop(Ty& target) noexcept;
 		template <class ... arg_Ty> inline void push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value);
-		inline void pop(Ty& target) noexcept;
+		inline bool pop(Ty& target) noexcept;
 
 	private:
 
 		Ty* m_item_buffer_data_ptr = nullptr;
 		Ty* m_item_buffer_end_ptr = nullptr;
 		std::atomic<bool> m_good{ false };
+		void* m_shared_data_ptr = nullptr;
 		char* m_item_buffer_unaligned_data_ptr = nullptr;
 
 		alignas(_cache_line_size) std::atomic<Ty*> m_last_item_aptr{ nullptr };
@@ -286,9 +292,9 @@ namespace cool
 		cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>& operator=(cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>&&) = delete;
 		inline ~queue_mpmc();
 
-		// WARNING : array at data_ptr must have space for new_item_buffer_size.value() + 1 elements
-		inline cool::queue_init_result init_queue_buffer(item_type* data_ptr, cool::item_buffer_size new_item_buffer_size);
-		inline cool::queue_init_result init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size);
+		// WARNING : in 'init_queue_buffer', array at 'data_ptr' must have space for new_item_buffer_size.value() + 1 elements
+		inline cool::queue_init_result init_queue_buffer(item_type* data_ptr, cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr = nullptr);
+		inline cool::queue_init_result init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr = nullptr);
 		inline bool good() const noexcept;
 		inline std::size_t size() const noexcept;
 		inline bool owns_buffer() const noexcept;
@@ -297,7 +303,7 @@ namespace cool
 		template <class ... arg_Ty> inline bool try_push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value);
 		inline bool try_pop(Ty& target) noexcept;
 		template <class ... arg_Ty> inline void push(arg_Ty&& ... args)  noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value);
-		inline void pop(Ty& target) noexcept;
+		inline bool pop(Ty& target) noexcept;
 
 		class item_type {
 		public:
@@ -331,6 +337,7 @@ namespace cool
 		item_type* m_item_buffer_data_ptr = nullptr;
 		std::size_t m_item_buffer_size = 0;
 		std::atomic<bool> m_good{ false };
+		void* m_shared_data_ptr = nullptr;
 		char* m_item_buffer_unaligned_data_ptr = nullptr;
 
 		alignas(_cache_line_size) std::atomic<item_info_type> m_last_item_info{ item_info_type(0, 0) };
@@ -345,8 +352,10 @@ namespace cool
 
 	class wait_yield {
 	public:
+		inline wait_yield(void*) noexcept;
 		inline void push_wait() noexcept;
 		inline void pop_wait() noexcept;
+		static inline constexpr bool good() noexcept;
 	};
 
 	// queue_wlock
@@ -380,9 +389,9 @@ namespace cool
 		cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>& operator=(cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>&&) = delete;
 		~queue_wlock();
 
-		// WARNING : array at data_ptr must have space for new_item_buffer_size.value() + 1 elements
-		inline cool::queue_init_result init_queue_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size);
-		inline cool::queue_init_result init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size);
+		// WARNING : in 'init_queue_buffer', array at 'data_ptr' must have space for new_item_buffer_size.value() + 1 elements
+		inline cool::queue_init_result init_queue_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr = nullptr);
+		inline cool::queue_init_result init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr = nullptr);
 		inline bool good() const noexcept;
 		inline bool owns_buffer() const noexcept;
 		inline std::size_t size() const noexcept;
@@ -402,6 +411,7 @@ namespace cool
 
 		bool m_stop_queue = true;
 		std::atomic<bool> m_good{ false };
+		void* m_shared_data_ptr = nullptr;
 		char* m_item_buffer_unaligned_data_ptr = nullptr;
 
 		alignas(_cache_line_size) std::condition_variable m_condition_var;
@@ -592,9 +602,13 @@ inline bool cool::queue_nosync<Ty>::try_pop(Ty& target) noexcept
 	}
 }
 
+inline cool::wait_noop::wait_noop(void*) noexcept {}
+
 inline void cool::wait_noop::push_wait() noexcept {}
 
 inline void cool::wait_noop::pop_wait() noexcept {}
+
+inline constexpr bool cool::wait_noop::good() noexcept { return true; }
 
 #ifdef COOL_QUEUES_ATOMIC
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
@@ -604,7 +618,7 @@ cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::queue_spsc::~queue_spsc()
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::init_queue_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size)
+inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::init_queue_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr)
 {
 	assert((reinterpret_cast<std::uintptr_t>(this) % cache_line_size == 0) && "cool::queue_spsc<...> : object location must be aligned in memory");
 	assert(data_ptr != nullptr);
@@ -630,6 +644,7 @@ inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>:
 
 	m_item_buffer_data_ptr = data_ptr;
 	m_item_buffer_end_ptr = data_ptr + new_item_buffer_size.value() + 1;
+	m_shared_data_ptr = shared_data_ptr;
 	m_item_buffer_unaligned_data_ptr = nullptr;
 
 	m_last_item_aptr.store(m_item_buffer_data_ptr, std::memory_order_relaxed);
@@ -642,7 +657,7 @@ inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>:
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size)
+inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr)
 {
 	assert((reinterpret_cast<std::uintptr_t>(this) % cache_line_size == 0) && "cool::queue_spsc<...> : object location must be aligned in memory");
 
@@ -682,6 +697,7 @@ inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>:
 			+ static_cast<std::size_t>(ptr_remainder != 0) * (item_buffer_padding - static_cast<std::size_t>(ptr_remainder)));
 	}
 
+	m_shared_data_ptr = shared_data_ptr;
 	m_item_buffer_end_ptr = m_item_buffer_data_ptr + new_item_buffer_size_p1;
 	m_last_item_aptr.store(m_item_buffer_data_ptr, std::memory_order_relaxed);
 	m_last_item_cached_ptr = m_item_buffer_data_ptr;
@@ -740,6 +756,7 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::delete_queue_buffe
 
 	m_item_buffer_data_ptr = nullptr;
 	m_item_buffer_end_ptr = nullptr;
+	m_shared_data_ptr = nullptr;
 	m_item_buffer_unaligned_data_ptr = nullptr;
 
 	m_last_item_aptr.store(nullptr, std::memory_order_relaxed);
@@ -796,7 +813,7 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ... 
 	Ty* last_item_ptr = m_last_item_aptr.load(std::memory_order_relaxed);
 	Ty* last_item_ptr_p1 = (last_item_ptr + 1 != m_item_buffer_end_ptr) ? last_item_ptr + 1 : m_item_buffer_data_ptr;
 
-	_wait_Ty wait_obj;
+	_wait_Ty wait_obj(m_shared_data_ptr);
 	while (last_item_ptr_p1 == m_next_item_cached_ptr)
 	{
 		m_next_item_cached_ptr = m_next_item_aptr.load(std::memory_order_acquire);
@@ -809,20 +826,25 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ... 
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::pop(Ty& target) noexcept
+inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::pop(Ty& target) noexcept
 {
 	Ty* next_item_ptr = m_next_item_aptr.load(std::memory_order_relaxed);
 
-	_wait_Ty wait_obj;
+	_wait_Ty wait_obj(m_shared_data_ptr);
 	while (next_item_ptr == m_last_item_cached_ptr)
 	{
 		m_last_item_cached_ptr = m_last_item_aptr.load(std::memory_order_acquire);
 		wait_obj.pop_wait();
+		if (!wait_obj.good())
+		{
+			return false;
+		}
 	}
 
 	target = std::move(*next_item_ptr);
 	Ty* next_item_ptr_p1 = (next_item_ptr + 1 != m_item_buffer_end_ptr) ? next_item_ptr + 1 : m_item_buffer_data_ptr;
 	m_next_item_aptr.store(next_item_ptr_p1, std::memory_order_release);
+	return true;
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
@@ -832,7 +854,7 @@ cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::queue_mpmc::~queue_m
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
-inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::init_queue_buffer(item_type* data_ptr, cool::item_buffer_size new_item_buffer_size)
+inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::init_queue_buffer(item_type* data_ptr, cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr)
 {
 	assert((reinterpret_cast<std::uintptr_t>(this) % cache_line_size == 0) && "cool::queue_mpmc<...> : object location must be aligned in memory");
 	assert(data_ptr != nullptr);
@@ -859,6 +881,7 @@ inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, 
 
 	m_item_buffer_data_ptr = data_ptr;
 	m_item_buffer_size = new_item_buffer_size.value() + 1;
+	m_shared_data_ptr = shared_data_ptr;
 	m_item_buffer_unaligned_data_ptr = nullptr;
 
 	m_last_item_info.store(item_info_type(0, 0), std::memory_order_relaxed);
@@ -875,7 +898,7 @@ inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, 
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
-inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size)
+inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr)
 {
 	assert((reinterpret_cast<std::uintptr_t>(this) % cache_line_size == 0) && "cool::queue_mpmc<...> : object location must be aligned in memory");
 
@@ -900,8 +923,7 @@ inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, 
 	}
 
 	constexpr std::size_t item_buffer_padding = (cache_line_size > alignof(item_type)) ? cache_line_size : alignof(item_type);
-	m_item_buffer_size = new_item_buffer_size.value() + 1;
-	m_item_buffer_unaligned_data_ptr = static_cast<char*>(::operator new(m_item_buffer_size * sizeof(item_type) + item_buffer_padding + cache_line_size, std::nothrow));
+	m_item_buffer_unaligned_data_ptr = static_cast<char*>(::operator new((new_item_buffer_size.value() + 1) * sizeof(item_type) + item_buffer_padding + cache_line_size, std::nothrow));
 
 	if (m_item_buffer_unaligned_data_ptr == nullptr)
 	{
@@ -917,6 +939,7 @@ inline cool::queue_init_result cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, 
 	}
 
 	m_item_buffer_size = new_item_buffer_size.value() + 1;
+	m_shared_data_ptr = shared_data_ptr;
 
 	m_last_item_info.store(item_info_type(0, 0), std::memory_order_relaxed);
 	m_next_item_info.store(item_info_type(0, 1), std::memory_order_relaxed);
@@ -966,6 +989,7 @@ inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::delete_q
 
 	m_item_buffer_data_ptr = nullptr;
 	m_item_buffer_size = 0;
+	m_shared_data_ptr = nullptr;
 	m_item_buffer_unaligned_data_ptr = nullptr;
 }
 
@@ -1042,7 +1066,7 @@ inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::push(arg
 
 	item_type& item_ref = *(m_item_buffer_data_ptr + static_cast<std::size_t>(last_item_info.item_number));
 
-	_wait_Ty wait_obj;
+	_wait_Ty wait_obj(m_shared_data_ptr);
 	while (last_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
 	{
 		wait_obj.push_wait();
@@ -1054,21 +1078,26 @@ inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::push(arg
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
-inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::pop(Ty& target) noexcept
+inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::pop(Ty& target) noexcept
 {
 	item_info_type next_item_info = m_next_item_info.load(std::memory_order_acquire);
 	while (!m_next_item_info.compare_exchange_weak(next_item_info, update_info(next_item_info))) {}
 
 	item_type& item_ref = *(m_item_buffer_data_ptr + static_cast<std::size_t>(next_item_info.item_number));
 
-	_wait_Ty wait_obj;
+	_wait_Ty wait_obj(m_shared_data_ptr);
 	while (next_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
 	{
 		wait_obj.pop_wait();
+		if (!wait_obj.good())
+		{
+			return false;
+		}
 	}
 
 	target = std::move(item_ref.value);
 	item_ref.round_number.store(next_item_info.round_number + 1, std::memory_order_release);
+	return true;
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
@@ -1096,6 +1125,8 @@ inline typename cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::item
 #endif // COOL_QUEUES_ATOMIC
 
 #ifdef COOL_QUEUES_THREAD
+inline cool::wait_yield::wait_yield(void*) noexcept {}
+
 inline void cool::wait_yield::push_wait() noexcept
 {
 	std::this_thread::yield();
@@ -1106,6 +1137,8 @@ inline void cool::wait_yield::pop_wait() noexcept
 	std::this_thread::yield();
 }
 
+inline constexpr bool cool::wait_yield::good() noexcept { return true; }
+
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
 cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::queue_wlock::~queue_wlock()
 {
@@ -1113,7 +1146,7 @@ cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::queue_wlock::~queue_wlock()
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline cool::queue_init_result cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::init_queue_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size)
+inline cool::queue_init_result cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::init_queue_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr)
 {
 	assert((reinterpret_cast<std::uintptr_t>(this) % cache_line_size == 0) && "cool::queue_wlock<...> : object location must be aligned in memory");
 	assert(data_ptr != nullptr);
@@ -1145,7 +1178,7 @@ inline cool::queue_init_result cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline cool::queue_init_result cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size)
+inline cool::queue_init_result cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr)
 {
 	assert((reinterpret_cast<std::uintptr_t>(this) % cache_line_size == 0) && "cool::queue_wlock<...> : object location must be aligned in memory");
 
@@ -1181,6 +1214,7 @@ inline cool::queue_init_result cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>
 			+ static_cast<std::size_t>(ptr_remainder != 0) * (item_buffer_padding - static_cast<std::size_t>(ptr_remainder)));
 	}
 
+	m_shared_data_ptr = shared_data_ptr;
 	m_item_buffer_end_ptr = m_item_buffer_data_ptr + new_item_buffer_size_p1;
 	m_last_item_ptr = m_item_buffer_data_ptr;
 	m_next_item_ptr = m_item_buffer_data_ptr;
@@ -1247,6 +1281,7 @@ inline void cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::delete_queue_buff
 	m_item_buffer_data_ptr = nullptr;
 	m_item_buffer_end_ptr = nullptr;
 
+	m_shared_data_ptr = nullptr;
 	m_item_buffer_unaligned_data_ptr = nullptr;
 }
 
@@ -1296,7 +1331,7 @@ inline bool cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::try_pop(Ty& targe
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty> template <class ... arg_Ty>
 inline void cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ... args)
 {
-	_wait_Ty wait_obj;
+	_wait_Ty wait_obj(m_shared_data_ptr);
 
 	while (true)
 	{
