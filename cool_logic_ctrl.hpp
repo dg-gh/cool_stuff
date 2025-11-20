@@ -295,6 +295,9 @@ namespace cool
 		inline const bool& locked(index_Ty variable_index) const noexcept;
 		inline void lock_all(bool _locked) noexcept;
 
+		inline void* get_shared_data_ptr(index_Ty variable_index) noexcept;
+		inline const void* get_shared_data_ptr(index_Ty variable_index) const noexcept;
+
 		inline bool good() const noexcept;
 		inline bool init_ongoing() const noexcept;
 		inline std::size_t variable_count() const noexcept;
@@ -983,6 +986,24 @@ void inline cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, smal
 	{
 		(m_variable_info_ptr + variable_index)->locked = _locked;
 	}
+}
+
+template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
+inline void* cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_shared_data_ptr(index_Ty variable_index) noexcept
+{
+	assert(m_variable_info_ptr != nullptr);
+	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
+
+	return (m_variable_info_ptr + static_cast<std::size_t>(variable_index))->shared_data_ptr;
+}
+
+template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
+inline const void* cool::_logic_ctrl_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, small_Ty>::get_shared_data_ptr(index_Ty variable_index) const noexcept
+{
+	assert(m_variable_info_ptr != nullptr);
+	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
+
+	return (m_variable_info_ptr + static_cast<std::size_t>(variable_index))->shared_data_ptr;
 }
 
 template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool small_Ty>
