@@ -40,10 +40,10 @@
 //class custom_wait_example
 //{
 //public:
-//	custom_wait_example(void* shared_data_ptr) noexcept; // required for queue_spsc, queue_spsc, queue_wlock
-//	void push_wait() noexcept; // required for queue_spsc, queue_spsc, queue_wlock
-//	void pop_wait() noexcept; // required for queue_spsc, queue_spsc
-//	bool good() noexcept; // required for queue_spsc, queue_spsc
+//	custom_wait_example(void* shared_data_ptr) noexcept; // can be marked explicit, required for queue_spsc, queue_mpmc, queue_wlock
+//	void push_wait() noexcept; // required for queue_spsc, queue_mpmc, queue_wlock
+//	void pop_wait() noexcept; // required for queue_spsc, queue_mpmc
+//	bool good() noexcept; // required for queue_spsc, queue_mpmc
 //};
 
 // 'good()' should return false when the queue and all its items are to be discarded
@@ -170,7 +170,7 @@ namespace cool
 
 	class wait_noop {
 	public:
-		inline wait_noop(void*) noexcept;
+		explicit inline wait_noop(void*) noexcept;
 		inline void push_wait() noexcept;
 		inline void pop_wait() noexcept;
 		static inline constexpr bool good() noexcept;
@@ -352,7 +352,7 @@ namespace cool
 
 	class wait_yield {
 	public:
-		inline wait_yield(void*) noexcept;
+		explicit inline wait_yield(void*) noexcept;
 		inline void push_wait() noexcept;
 		inline void pop_wait() noexcept;
 		static inline constexpr bool good() noexcept;
