@@ -11,6 +11,7 @@
 #include <type_traits>
 #include <limits>
 
+
 #ifdef COOL_DURATION_CUSTOM_UNIT0
 #ifndef COOL_DURATION_CUSTOM_UNIT0_RATIO
 #define COOL_DURATION_CUSTOM_UNIT0_RATIO 1, 1
