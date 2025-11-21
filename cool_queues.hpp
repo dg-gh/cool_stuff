@@ -12,7 +12,18 @@
 #include <new>
 #include <cassert>
 
+
 // to allow the use of atomic to enable cool::queue_spsc/cool::queue_mpmc : #define COOL_QUEUES_ATOMIC
+
+#ifdef COOL_QUEUES_ATOMIC
+#endif // COOL_QUEUES_ATOMIC
+
+
+// to allow the use of this_thread/mutex/condition_variable to enable cool::queue_wlock : #define COOL_QUEUES_THREAD
+
+#ifdef COOL_QUEUES_THREAD
+#endif // COOL_QUEUES_THREAD
+
 
 #ifdef COOL_QUEUES_ATOMIC
 #include <atomic>

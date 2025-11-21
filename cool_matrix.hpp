@@ -12,32 +12,10 @@
 #include <type_traits>
 #include <memory>
 
-#ifndef COOL_MATRIX_RESTRICT
-#if defined(__clang__) || defined(__GNUC__) || defined(_MSC_VER)
-#define COOL_MATRIX_RESTRICT __restrict
-#else // compiler choice
-#define COOL_MATRIX_RESTRICT
-#endif // compiler choice
-#endif // COOL_MATRIX_RESTRICT
-
-#ifndef COOL_MATRIX_ASSUME_ALIGNED
-#if __cplusplus >= 202002L
-#define COOL_MATRIX_ASSUME_ALIGNED(ptr, align, Ty) std::assume_aligned<cool::_matrix_remove_zero_align<Ty, align>::value>(ptr)
-#else // C++ standard version
-#define COOL_MATRIX_ASSUME_ALIGNED(ptr, align, Ty) ptr
-#endif // C++ standard version
-#endif // COOL_MATRIX_ASSUME_ALIGNED
-
 
 #ifndef COOL_MATRIX_MM_DEFAULT_KERNEL_SPEC_PS
 #define COOL_MATRIX_MM_DEFAULT_KERNEL_SPEC_PS { 16, 2, 8 }
 #endif // COOL_MATRIX_MM_DEFAULT_KERNEL_SPEC_PS
-
-#ifndef COOL_MATRIX_DEFAULT_ALIGN_SPEC
-#define COOL_MATRIX_DEFAULT_ALIGN_SPEC { 0 } // default without alignment
-// #define COOL_MATRIX_DEFAULT_ALIGN_SPEC { 8, 16, 32 } // with alignment
-#endif // COOL_MATRIX_DEFAULT_ALIGN_SPEC
-
 
 // matrix multiply kernel specifications
 // values : { packed, broadcasted, repeat_threshold }
@@ -70,6 +48,11 @@
 // packed * broadcasted
 
 
+#ifndef COOL_MATRIX_DEFAULT_ALIGN_SPEC
+#define COOL_MATRIX_DEFAULT_ALIGN_SPEC { 0 } // default without alignment
+// #define COOL_MATRIX_DEFAULT_ALIGN_SPEC { 8, 16, 32 } // with alignment
+#endif // COOL_MATRIX_DEFAULT_ALIGN_SPEC
+
 // matrix align specifications
 // values in byte alignments : { a0, a1, ... , aN }
 //
@@ -79,6 +62,24 @@
 // default alignment of matrix will be aj for greatest the j such that
 // _rows_padded * sizeof(Ty) is a multiple of aj and aj is a multiple
 // of alignof(Ty)
+
+
+#ifndef COOL_MATRIX_RESTRICT
+#if defined(__clang__) || defined(__GNUC__) || defined(_MSC_VER)
+#define COOL_MATRIX_RESTRICT __restrict
+#else // compiler choice
+#define COOL_MATRIX_RESTRICT
+#endif // compiler choice
+#endif // COOL_MATRIX_RESTRICT
+
+
+#ifndef COOL_MATRIX_ASSUME_ALIGNED
+#if __cplusplus >= 202002L
+#define COOL_MATRIX_ASSUME_ALIGNED(ptr, align, Ty) std::assume_aligned<cool::_matrix_remove_zero_align<Ty, align>::value>(ptr)
+#else // C++ standard version
+#define COOL_MATRIX_ASSUME_ALIGNED(ptr, align, Ty) ptr
+#endif // C++ standard version
+#endif // COOL_MATRIX_ASSUME_ALIGNED
 
 
 namespace cool

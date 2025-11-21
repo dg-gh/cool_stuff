@@ -27,7 +27,24 @@
 #ifndef COOL_THREADS_NATIVE_HANDLE
 #endif // COOL_THREADS_NATIVE_HANDLE
 
+
 // to disable exceptions : #define COOL_THREADS_NO_EXCEPTIONS
+
+#ifndef COOL_THREADS_NO_EXCEPTIONS
+#endif // COOL_THREADS_NO_EXCEPTIONS
+
+
+// to force use of 32 bit counter in threads_mq : #define COOL_THREADS_MQ_32BIT_COUNTER
+
+#ifndef COOL_THREADS_MQ_32BIT_COUNTER
+#endif // COOL_THREADS_MQ_32BIT_COUNTER
+
+
+// to force use of 16 bit counter in threads_mq : #define COOL_THREADS_MQ_16BIT_COUNTER
+
+#ifndef COOL_THREADS_MQ_16BIT_COUNTER
+#endif // COOL_THREADS_MQ_16BIT_COUNTER
+
 
 #if !defined(xCOOL_THREADS_TRY) && !defined(xCOOL_THREADS_CATCH) && !defined(xCOOL_THREADS_EXCEPTION) && !defined(xCOOL_THREADS_SYSTEM_ERROR)
 #ifndef COOL_THREADS_NO_EXCEPTIONS
@@ -42,16 +59,6 @@
 #define xCOOL_THREADS_SYSTEM_ERROR std::system_error{ std::error_code{} }
 #endif // COOL_THREADS_NO_EXCEPTIONS
 #endif // !defined(xCOOL_THREADS_TRY) && !defined(xCOOL_THREADS_CATCH) && !defined(xCOOL_THREADS_EXCEPTION) && !defined(xCOOL_THREADS_SYSTEM_ERROR)
-
-// to force use of 32 bit counter in threads_mq : #define COOL_THREADS_MQ_32BIT_COUNTER
-
-#ifndef COOL_THREADS_MQ_32BIT_COUNTER
-#endif // COOL_THREADS_MQ_32BIT_COUNTER
-
-// to force use of 16 bit counter in threads_mq : #define COOL_THREADS_MQ_16BIT_COUNTER
-
-#ifndef COOL_THREADS_MQ_16BIT_COUNTER
-#endif // COOL_THREADS_MQ_16BIT_COUNTER
 
 
 namespace cool

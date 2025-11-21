@@ -16,9 +16,6 @@
 // to allow the use of std::vector to enable cool::logic_ctrl_vec : #define COOL_LOGIC_CTRL_VECTOR
 
 #ifdef COOL_LOGIC_CTRL_VECTOR
-#include <vector>
-#include <new>
-
 #endif // COOL_LOGIC_CTRL_VECTOR
 
 
@@ -26,6 +23,13 @@
 
 #ifdef COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
 #endif // COOL_LOGIC_CTRL_VIEW_VARIABLE_COUNT
+
+
+#ifdef COOL_LOGIC_CTRL_VECTOR
+#include <vector>
+#include <new>
+
+#endif // COOL_LOGIC_CTRL_VECTOR
 
 
 namespace cool
