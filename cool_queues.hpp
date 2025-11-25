@@ -226,12 +226,14 @@ namespace cool
 		inline bool good() const noexcept;
 		inline std::size_t size() const noexcept;
 		inline bool owns_buffer() const noexcept;
+		inline void* get_shared_data_ptr() noexcept;
+		inline const void* get_shared_data_ptr() const noexcept;
 		inline void delete_queue_buffer() noexcept;
 
 		template <class ... arg_Ty> inline bool try_push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value);
 		inline bool try_pop(Ty& target) noexcept;
 		template <class ... arg_Ty> inline void push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value);
-		inline bool pop(Ty& target) noexcept;
+		inline bool pop(Ty& target) noexcept; // returns false when the queue and all its items are to be discarded and item obtained should not be used
 
 	private:
 
@@ -309,12 +311,14 @@ namespace cool
 		inline bool good() const noexcept;
 		inline std::size_t size() const noexcept;
 		inline bool owns_buffer() const noexcept;
+		inline void* get_shared_data_ptr() noexcept;
+		inline const void* get_shared_data_ptr() const noexcept;
 		inline void delete_queue_buffer() noexcept;
 
 		template <class ... arg_Ty> inline bool try_push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value);
 		inline bool try_pop(Ty& target) noexcept;
 		template <class ... arg_Ty> inline void push(arg_Ty&& ... args)  noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value);
-		inline bool pop(Ty& target) noexcept;
+		inline bool pop(Ty& target) noexcept; // returns false when the queue and all its items are to be discarded and item obtained should not be used
 
 		class item_type {
 		public:
@@ -404,14 +408,16 @@ namespace cool
 		inline cool::queue_init_result init_queue_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr = nullptr);
 		inline cool::queue_init_result init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr = nullptr);
 		inline bool good() const noexcept;
-		inline bool owns_buffer() const noexcept;
 		inline std::size_t size() const noexcept;
+		inline bool owns_buffer() const noexcept;
+		inline void* get_shared_data_ptr() noexcept;
+		inline const void* get_shared_data_ptr() const noexcept;
 		inline void delete_queue_buffer() noexcept;
 
 		template <class ... arg_Ty> inline bool try_push(arg_Ty&& ... args);
 		inline bool try_pop(Ty& target);
 		template <class ... arg_Ty> inline void push(arg_Ty&& ... args);
-		inline bool pop(Ty& target);
+		inline bool pop(Ty& target); // returns false when the queue and all its items are to be discarded and item obtained should not be used
 
 	private:
 
@@ -750,6 +756,12 @@ inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::owns_buffer() cons
 }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
+inline void* cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::get_shared_data_ptr() noexcept { return m_shared_data_ptr; }
+
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
+inline const void* cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::get_shared_data_ptr() const noexcept { return m_shared_data_ptr; }
+
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
 inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::delete_queue_buffer() noexcept
 {
 	m_good.store(false, std::memory_order_seq_cst);
@@ -982,6 +994,12 @@ inline std::size_t cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::s
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
 inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::owns_buffer() const noexcept { return m_item_buffer_unaligned_data_ptr != nullptr; }
+
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline void* cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::get_shared_data_ptr() noexcept { return m_shared_data_ptr; }
+
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline const void* cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::get_shared_data_ptr() const noexcept { return m_shared_data_ptr; }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
 inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::delete_queue_buffer() noexcept
@@ -1263,6 +1281,12 @@ inline bool cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::owns_buffer() con
 {
 	return m_item_buffer_unaligned_data_ptr != nullptr;
 }
+
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
+inline void* cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::get_shared_data_ptr() noexcept { return m_shared_data_ptr; }
+
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
+inline const void* cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::get_shared_data_ptr() const noexcept { return m_shared_data_ptr; }
 
 template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
 inline void cool::queue_wlock<Ty, _cache_line_size, _wait_Ty>::delete_queue_buffer() noexcept
