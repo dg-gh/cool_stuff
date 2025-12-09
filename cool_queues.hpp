@@ -32,7 +32,6 @@
 
 #endif // COOL_QUEUES_ATOMIC
 
-// to allow the use of this_thread/mutex/condition_variable to enable cool::queue_wlock : #define COOL_QUEUES_THREAD
 
 #ifdef COOL_QUEUES_THREAD
 #include <thread>
