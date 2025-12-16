@@ -352,8 +352,7 @@ namespace cool
 		static constexpr std::size_t arg_count = sizeof...(arg_Ty);
 
 		func_ptr() noexcept = default;
-		inline func_ptr(value_type _func_ptr) noexcept;
-		inline func_ptr<return_Ty(arg_Ty ...)>& operator=(value_type _func_ptr) noexcept;
+		template <class _rhs_function_Ty> inline func_ptr(_rhs_function_Ty _func_ptr) noexcept;
 		template <class ... _arg_Ty> inline return_Ty operator()(_arg_Ty&& ... args) const;
 
 		inline value_type& function() noexcept;
@@ -1119,12 +1118,9 @@ template <class lhs_Ty, class enum_Ty> inline constexpr cool::enum_index<enum_Ty
 
 // member function pointers
 
-template <class return_Ty, class ... arg_Ty>
-inline cool::func_ptr<return_Ty(arg_Ty ...)>::func_ptr(value_type _func_ptr) noexcept : m_func_ptr(_func_ptr) {}
-
-template <class return_Ty, class ... arg_Ty>
-inline cool::func_ptr<return_Ty(arg_Ty ...)>& cool::func_ptr<return_Ty(arg_Ty ...)>::operator=(value_type _func_ptr) noexcept {
-	m_func_ptr = _func_ptr; return *this;
+template <class return_Ty, class ... arg_Ty> template <class _rhs_function_Ty>
+inline cool::func_ptr<return_Ty(arg_Ty ...)>::func_ptr(_rhs_function_Ty _func_ptr) noexcept : m_func_ptr(_func_ptr) {
+	static_assert(std::is_convertible<_rhs_function_Ty, value_type>::value, "func_ptr : constructor argument must be convertible to function pointer");
 }
 
 template <class return_Ty, class ... arg_Ty> template <class ... _arg_Ty>
