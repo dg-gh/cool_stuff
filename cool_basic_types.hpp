@@ -153,15 +153,10 @@ namespace cool
 		inline cool::integer<bool>& operator|=(cool::integer<bool> rhs) noexcept;
 		inline cool::integer<bool>& operator^=(cool::integer<bool> rhs) noexcept;
 
-		inline cool::integer<bool>& operator+=(cool::integer<bool> rhs) noexcept;
-		inline cool::integer<bool>& operator*=(cool::integer<bool> rhs) noexcept;
-
 		inline constexpr cool::integer<bool> operator&(cool::integer<bool> rhs) const noexcept;
 		inline constexpr cool::integer<bool> operator|(cool::integer<bool> rhs) const noexcept;
 		inline constexpr cool::integer<bool> operator^(cool::integer<bool> rhs) const noexcept;
 
-		inline constexpr cool::integer<bool> operator+(cool::integer<bool> rhs) const noexcept;
-		inline constexpr cool::integer<bool> operator*(cool::integer<bool> rhs) const noexcept;
 		inline constexpr cool::integer<bool> operator!() const noexcept;
 
 		inline constexpr bool operator==(cool::integer<bool> rhs) const noexcept;
@@ -710,34 +705,34 @@ inline cool::integer<int_Ty>& cool::integer<int_Ty>::operator>>=(cool::integer<i
 }
 template <class int_Ty>
 inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator&(cool::integer<int_Ty> rhs) const noexcept {
-	int_Ty ret = m_value;
-	ret &= rhs.m_value;
-	return cool::integer<int_Ty>(ret);
+	cool::integer<int_Ty> ret = m_value;
+	ret.m_value &= rhs.m_value;
+	return ret;
 }
 template <class int_Ty>
 inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator|(cool::integer<int_Ty> rhs) const noexcept {
-	int_Ty ret = m_value;
-	ret |= rhs.m_value;
-	return cool::integer<int_Ty>(ret);
+	cool::integer<int_Ty> ret = m_value;
+	ret.m_value |= rhs.m_value;
+	return ret;
 }
 template <class int_Ty>
 inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator^(cool::integer<int_Ty> rhs) const noexcept {
-	int_Ty ret = m_value;
-	ret ^= rhs.m_value;
-	return cool::integer<int_Ty>(ret);
+	cool::integer<int_Ty> ret = m_value;
+	ret.m_value ^= rhs.m_value;
+	return ret;
 }
 
 template <class int_Ty>
 inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator+(cool::integer<int_Ty> rhs) const noexcept {
-	int_Ty ret = m_value;
-	ret += rhs.m_value;
-	return cool::integer<int_Ty>(ret);
+	cool::integer<int_Ty> ret = m_value;
+	ret.m_value += rhs.m_value;
+	return ret;
 }
 template <class int_Ty>
 inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator-(cool::integer<int_Ty> rhs) const noexcept {
-	int_Ty ret = m_value;
-	ret -= rhs.m_value;
-	return cool::integer<int_Ty>(ret);
+	cool::integer<int_Ty> ret = m_value;
+	ret.m_value -= rhs.m_value;
+	return ret;
 }
 
 namespace cool
@@ -772,15 +767,15 @@ inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator*(cool::in
 }
 template <class int_Ty>
 inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator/(cool::integer<int_Ty> rhs) const noexcept {
-	int_Ty ret = m_value;
-	ret /= rhs.m_value;
-	return cool::integer<int_Ty>(ret);
+	cool::integer<int_Ty> ret = m_value;
+	ret.m_value /= rhs.m_value;
+	return ret;
 }
 template <class int_Ty>
 inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator%(cool::integer<int_Ty> rhs) const noexcept {
-	int_Ty ret = m_value;
-	ret %= rhs.m_value;
-	return cool::integer<int_Ty>(ret);
+	cool::integer<int_Ty> ret = m_value;
+	ret.m_value %= rhs.m_value;
+	return ret;
 }
 template <class int_Ty>
 inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator-() const noexcept {
@@ -790,9 +785,9 @@ template <class int_Ty>
 inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator~() const noexcept {
 	using unsigned_type = typename std::make_unsigned<int_Ty>::type;
 	constexpr unsigned_type one_bits = static_cast<unsigned_type>(-1);
-	int_Ty ret = m_value;
-	ret ^= one_bits;
-	return cool::integer<int_Ty>(ret);
+	cool::integer<int_Ty> ret = m_value;
+	ret.m_value ^= one_bits;
+	return ret;
 }
 template <class int_Ty>
 inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator!() const noexcept {
@@ -801,15 +796,15 @@ inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator!() const 
 
 template <class int_Ty>
 inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator<<(cool::integer<int_Ty> rhs) const noexcept {
-	int_Ty ret = m_value;
-	ret <<= rhs.m_value;
-	return cool::integer<int_Ty>(ret);
+	cool::integer<int_Ty> ret = m_value;
+	ret.m_value <<= rhs.m_value;
+	return ret;
 }
 template <class int_Ty>
 inline constexpr cool::integer<int_Ty> cool::integer<int_Ty>::operator>>(cool::integer<int_Ty> rhs) const noexcept {
-	int_Ty ret = m_value;
-	ret >>= rhs.m_value;
-	return cool::integer<int_Ty>(ret);
+	cool::integer<int_Ty> ret = m_value;
+	ret.m_value >>= rhs.m_value;
+	return ret;
 }
 
 template <class int_Ty>
@@ -836,35 +831,22 @@ inline cool::integer<bool>& cool::integer<bool>::operator&=(cool::integer<bool> 
 inline cool::integer<bool>& cool::integer<bool>::operator|=(cool::integer<bool> rhs) noexcept { m_value |= rhs.m_value; return *this; }
 inline cool::integer<bool>& cool::integer<bool>::operator^=(cool::integer<bool> rhs) noexcept { m_value ^= rhs.m_value; return *this; }
 
-inline cool::integer<bool>& cool::integer<bool>::operator+=(cool::integer<bool> rhs) noexcept { m_value |= rhs.m_value; return *this; }
-inline cool::integer<bool>& cool::integer<bool>::operator*=(cool::integer<bool> rhs) noexcept { m_value &= rhs.m_value; return *this; }
-
 inline constexpr cool::integer<bool> cool::integer<bool>::operator&(cool::integer<bool> rhs) const noexcept {
-	bool ret = m_value;
-	ret &= rhs.m_value;
-	return cool::integer<bool>(ret);
+	cool::integer<bool> ret = m_value;
+	ret.m_value &= rhs.m_value;
+	return ret;
 }
 inline constexpr cool::integer<bool> cool::integer<bool>::operator|(cool::integer<bool> rhs) const noexcept {
-	bool ret = m_value;
-	ret |= rhs.m_value;
-	return cool::integer<bool>(ret);
+	cool::integer<bool> ret = m_value;
+	ret.m_value |= rhs.m_value;
+	return ret;
 }
 inline constexpr cool::integer<bool> cool::integer<bool>::operator^(cool::integer<bool> rhs) const noexcept {
-	bool ret = m_value;
-	ret ^= rhs.m_value;
-	return cool::integer<bool>(ret);
+	cool::integer<bool> ret = m_value;
+	ret.m_value ^= rhs.m_value;
+	return ret;
 }
 
-inline constexpr cool::integer<bool> cool::integer<bool>::operator+(cool::integer<bool> rhs) const noexcept {
-	bool ret = m_value;
-	ret |= rhs.m_value;
-	return cool::integer<bool>(ret);
-}
-inline constexpr cool::integer<bool> cool::integer<bool>::operator*(cool::integer<bool> rhs) const noexcept {
-	bool ret = m_value;
-	ret &= rhs.m_value;
-	return cool::integer<bool>(ret);
-}
 inline constexpr cool::integer<bool> cool::integer<bool>::operator!() const noexcept {
 	return cool::integer<bool>(!m_value);
 }
