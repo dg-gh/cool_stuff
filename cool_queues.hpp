@@ -66,7 +66,7 @@ namespace cool
 
 	class wait_noop;
 #ifdef COOL_QUEUES_ATOMIC
-	template <class Ty, std::size_t _cache_line_size, class _wait_Ty = wait_noop> class queue_spsc;
+	template <class Ty, std::size_t _cache_line_size, class _wait_Ty = wait_noop, class _uintX_t = std::size_t> class queue_spsc;
 	template <class Ty, std::size_t _cache_line_size, class _wait_Ty = wait_noop, class _uintX_t = std::uint32_t> class queue_mpmc;
 #endif // COOL_QUEUES_ATOMIC
 
@@ -121,7 +121,7 @@ namespace cool
 		template <class Ty> friend class cool::queue_nosync;
 
 #ifdef COOL_QUEUES_ATOMIC
-		template <class Ty, std::size_t _cache_line_size, class _wait_Ty> friend class cool::queue_spsc;
+		template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX> friend class cool::queue_spsc;
 		template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX> friend class cool::queue_mpmc;
 #endif // COOL_QUEUES_ATOMIC
 
@@ -190,7 +190,7 @@ namespace cool
 
 	// queue_spsc
 
-	template <class Ty, std::size_t _cache_line_size, class _wait_Ty> class alignas(_cache_line_size) queue_spsc
+	template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t> class alignas(_cache_line_size) queue_spsc
 	{
 
 	public:
@@ -211,6 +211,8 @@ namespace cool
 		static constexpr std::size_t cache_line_size = alignof(cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>);
 
 		using wait_type = _wait_Ty;
+
+		using uintX_type = _uintX_t;
 
 		queue_spsc() noexcept = default;
 		queue_spsc(const cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>&) = delete;
@@ -237,16 +239,16 @@ namespace cool
 	private:
 
 		Ty* m_item_buffer_data_ptr = nullptr;
-		Ty* m_item_buffer_end_ptr = nullptr;
+		_uintX_t m_item_buffer_size = 0;
 		std::atomic<bool> m_good{ false };
 		void* m_shared_data_ptr = nullptr;
 		char* m_item_buffer_unaligned_data_ptr = nullptr;
 
-		alignas(_cache_line_size) std::atomic<Ty*> m_last_item_aptr{ nullptr };
-		const Ty* m_next_item_cached_ptr = nullptr;
+		alignas(_cache_line_size) std::atomic<_uintX_t> m_last_item_offset{ 0 };
+		_uintX_t m_next_item_cached_offset = 0;
 
-		alignas(_cache_line_size) std::atomic<Ty*> m_next_item_aptr{ nullptr };
-		const Ty* m_last_item_cached_ptr = nullptr;
+		alignas(_cache_line_size) std::atomic<_uintX_t> m_next_item_offset{ 0 };
+		_uintX_t m_last_item_cached_offset = 0;
 	};
 
 	// queue_mpmc
@@ -256,16 +258,18 @@ namespace cool
 
 	private:
 
+		template <class _uintX_type> class _upcast { public: using uint2X_type = void; };
+
 #if defined(UINT8_MAX) && defined(UINT16_MAX)
-		static inline constexpr std::uint16_t _upcast(std::uint8_t) noexcept { return 0; }
+		template <> class _upcast<std::uint8_t> { public: using uint2X_type = std::uint16_t; };
 #endif // defined(UINT8_MAX) && defined(UINT16_MAX)
 
 #if defined(UINT16_MAX) && defined(UINT32_MAX)
-		static inline constexpr std::uint32_t _upcast(std::uint16_t) noexcept { return 0; }
+		template <> class _upcast<std::uint16_t> { public: using uint2X_type = std::uint32_t; };
 #endif // defined(UINT16_MAX) && defined(UINT32_MAX)
 
 #if defined(UINT32_MAX) && defined(UINT64_MAX)
-		static inline constexpr std::uint64_t _upcast(std::uint32_t) noexcept { return 0; }
+		template <> class _upcast<std::uint32_t> { public: using uint2X_type = std::uint64_t; };
 #endif // defined(UINT32_MAX) && defined(UINT64_MAX)
 
 	public:
@@ -274,11 +278,6 @@ namespace cool
 
 		static_assert((_cache_line_size & (_cache_line_size - 1)) == 0,
 			"cool::queue_mpmc<value_type, cache_line_size, wait_type, uintX_type> requirement : cache_line_size must be a power of 2");
-
-		static_assert(std::is_integral<_uintX_t>::value && std::is_unsigned<_uintX_t>::value, "cool::queue_mpmc<...> : uintX_type must be unsigned integral type");
-#ifdef UINT64_MAX
-		static_assert(!std::is_same<_uintX_t, std::uint64_t>::value, "cool::queue_mpmc<...> : uintX_type must be strictly smaller type than std::uint64_t");
-#endif // UINT64_MAX
 
 		using value_type = Ty;
 		using pointer = Ty*;
@@ -293,9 +292,12 @@ namespace cool
 		using wait_type = _wait_Ty;
 
 		using uintX_type = _uintX_t;
-		using uint2X_type = decltype(_upcast(static_cast<_uintX_t>(0)));
+		using uint2X_type = typename _upcast<_uintX_t>::uint2X_type;
 
 		class item_type;
+
+		static_assert(!std::is_same<uint2X_type, void>::value,
+			"cool::queue_mpmc<...> : uintX_type must be std::uint8_t/std::uint16_t/std::uint32_t");
 
 		queue_mpmc() noexcept = default;
 		queue_mpmc(const cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>&) = delete;
@@ -627,14 +629,14 @@ inline void cool::wait_noop::pop_wait() noexcept {}
 inline constexpr bool cool::wait_noop::good() noexcept { return true; }
 
 #ifdef COOL_QUEUES_ATOMIC
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::queue_spsc::~queue_spsc()
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::queue_spsc::~queue_spsc()
 {
 	delete_queue_buffer();
 }
 
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::init_queue_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr)
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::init_queue_buffer(Ty* data_ptr, cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr)
 {
 	assert((reinterpret_cast<std::uintptr_t>(this) % cache_line_size == 0) && "cool::queue_spsc<...> : object location must be aligned in memory");
 	assert(data_ptr != nullptr);
@@ -648,32 +650,33 @@ inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>:
 		delete_queue_buffer();
 	}
 
-	if (!(m_last_item_aptr.is_lock_free() && m_next_item_aptr.is_lock_free()))
+	if (!(m_last_item_atomic_offset.is_lock_free() && m_next_item_atomic_offset.is_lock_free()))
 	{
 		return cool::queue_init_result(cool::queue_init_result::not_lockfree);
 	}
 
-	if ((data_ptr == nullptr) || (new_item_buffer_size.value() == 0))
+	if ((data_ptr == nullptr) || (new_item_buffer_size.value() == 0)
+		|| (static_cast<std::uintmax_t>(new_item_buffer_size.value()) > static_cast<std::uintmax_t>(std::numeric_limits<_uintX_t>::max() - 1)))
 	{
 		return cool::queue_init_result(cool::queue_init_result::bad_parameters);
 	}
 
 	m_item_buffer_data_ptr = data_ptr;
-	m_item_buffer_end_ptr = data_ptr + new_item_buffer_size.value() + 1;
+	m_item_buffer_size = new_item_buffer_size.value() + 1;
 	m_shared_data_ptr = shared_data_ptr;
 	m_item_buffer_unaligned_data_ptr = nullptr;
 
-	m_last_item_aptr.store(m_item_buffer_data_ptr, std::memory_order_relaxed);
-	m_last_item_cached_ptr = m_item_buffer_data_ptr;
-	m_next_item_aptr.store(m_item_buffer_data_ptr, std::memory_order_relaxed);
-	m_next_item_cached_ptr = m_item_buffer_data_ptr;
+	m_last_item_offset.store(0, std::memory_order_relaxed);
+	m_last_item_cached_offset = 0;
+	m_next_item_offset.store(0, std::memory_order_relaxed);
+	m_next_item_cached_offset = 0;
 
 	m_good.store(true, std::memory_order_seq_cst);
 	return cool::queue_init_result(cool::queue_init_result::success);
 }
 
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr)
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::init_queue_new_buffer(cool::item_buffer_size new_item_buffer_size, void* shared_data_ptr)
 {
 	assert((reinterpret_cast<std::uintptr_t>(this) % cache_line_size == 0) && "cool::queue_spsc<...> : object location must be aligned in memory");
 
@@ -686,12 +689,13 @@ inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>:
 		delete_queue_buffer();
 	}
 
-	if (!(m_last_item_aptr.is_lock_free() && m_next_item_aptr.is_lock_free()))
+	if (!(m_last_item_offset.is_lock_free() && m_next_item_offset.is_lock_free()))
 	{
 		return cool::queue_init_result(cool::queue_init_result::not_lockfree);
 	}
 
-	if (new_item_buffer_size.value() == 0)
+	if ((new_item_buffer_size.value() == 0)
+		|| (static_cast<std::uintmax_t>(new_item_buffer_size.value()) > static_cast<std::uintmax_t>(std::numeric_limits<_uintX_t>::max() - 1)))
 	{
 		return cool::queue_init_result(cool::queue_init_result::bad_parameters);
 	}
@@ -714,11 +718,11 @@ inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>:
 	}
 
 	m_shared_data_ptr = shared_data_ptr;
-	m_item_buffer_end_ptr = m_item_buffer_data_ptr + new_item_buffer_size_p1;
-	m_last_item_aptr.store(m_item_buffer_data_ptr, std::memory_order_relaxed);
-	m_last_item_cached_ptr = m_item_buffer_data_ptr;
-	m_next_item_aptr.store(m_item_buffer_data_ptr, std::memory_order_relaxed);
-	m_next_item_cached_ptr = m_item_buffer_data_ptr;
+	m_item_buffer_size = static_cast<_uintX_t>(new_item_buffer_size_p1);
+	m_last_item_offset.store(0, std::memory_order_relaxed);
+	m_last_item_cached_offset = 0;
+	m_next_item_offset.store(0, std::memory_order_relaxed);
+	m_next_item_cached_offset = 0;
 
 	for (std::size_t k = 0; k < new_item_buffer_size_p1; k++)
 	{
@@ -729,18 +733,18 @@ inline cool::queue_init_result cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>:
 	return cool::queue_init_result(cool::queue_init_result::success);
 }
 
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::good() const noexcept
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::good() const noexcept
 {
 	return m_good.load(std::memory_order_seq_cst);
 }
 
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline std::size_t cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::size() const noexcept
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline std::size_t cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::size() const noexcept
 {
 	if (m_item_buffer_data_ptr != nullptr)
 	{
-		return static_cast<std::size_t>(m_item_buffer_end_ptr - m_item_buffer_data_ptr) - 1;
+		return static_cast<std::size_t>(m_item_buffer_size) - 1;
 	}
 	else
 	{
@@ -748,26 +752,26 @@ inline std::size_t cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::size() cons
 	}
 }
 
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::owns_buffer() const noexcept
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::owns_buffer() const noexcept
 {
 	return m_item_buffer_unaligned_data_ptr != nullptr;
 }
 
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline void* cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::get_shared_data_ptr() noexcept { return m_shared_data_ptr; }
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline void* cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::get_shared_data_ptr() noexcept { return m_shared_data_ptr; }
 
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline const void* cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::get_shared_data_ptr() const noexcept { return m_shared_data_ptr; }
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline const void* cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::get_shared_data_ptr() const noexcept { return m_shared_data_ptr; }
 
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::delete_queue_buffer() noexcept
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::delete_queue_buffer() noexcept
 {
 	m_good.store(false, std::memory_order_seq_cst);
 
 	if (m_item_buffer_unaligned_data_ptr != nullptr)
 	{
-		std::size_t item_buffer_size_p1 = static_cast<std::size_t>(m_item_buffer_end_ptr - m_item_buffer_data_ptr);
+		std::size_t item_buffer_size_p1 = static_cast<std::size_t>(m_item_buffer_size);
 		for (std::size_t k = 0; k < item_buffer_size_p1; k++)
 		{
 			(m_item_buffer_data_ptr + k)->~Ty();
@@ -777,95 +781,135 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::delete_queue_buffe
 	}
 
 	m_item_buffer_data_ptr = nullptr;
-	m_item_buffer_end_ptr = nullptr;
+	m_item_buffer_size = 0;
 	m_shared_data_ptr = nullptr;
 	m_item_buffer_unaligned_data_ptr = nullptr;
 
-	m_last_item_aptr.store(nullptr, std::memory_order_relaxed);
-	m_last_item_cached_ptr = nullptr;
+	m_last_item_offset.store(0, std::memory_order_relaxed);
+	m_last_item_cached_offset = 0;
 
-	m_next_item_aptr.store(nullptr, std::memory_order_relaxed);
-	m_next_item_cached_ptr = nullptr;
+	m_next_item_offset.store(0, std::memory_order_relaxed);
+	m_next_item_cached_offset = 0;
 }
 
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty> template <class ... arg_Ty>
-inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::try_push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value)
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t> template <class ... arg_Ty>
+inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::try_push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value)
 {
-	Ty* last_item_ptr = m_last_item_aptr.load(std::memory_order_relaxed);
-	Ty* last_item_ptr_p1 = (last_item_ptr + 1 != m_item_buffer_end_ptr) ? last_item_ptr + 1 : m_item_buffer_data_ptr;
+	_uintX_t last_item_offset = m_last_item_offset.load(std::memory_order_relaxed);
+	_uintX_t last_item_offset_p1 = (last_item_offset + 1 != m_item_buffer_size) ? last_item_offset + 1 : 0;
 
-	if (last_item_ptr_p1 == m_next_item_cached_ptr)
+	if (last_item_offset_p1 == m_next_item_cached_offset)
 	{
-		m_next_item_cached_ptr = m_next_item_aptr.load(std::memory_order_acquire);
-		if (last_item_ptr_p1 == m_next_item_cached_ptr)
+		m_next_item_cached_offset = m_next_item_offset.load(std::memory_order_acquire);
+		if (last_item_offset_p1 == m_next_item_cached_offset)
 		{
 			return false;
 		}
 	}
 
+	Ty* last_item_ptr = m_item_buffer_data_ptr + static_cast<std::size_t>(last_item_offset);
 	last_item_ptr->~Ty();
 	new (last_item_ptr) Ty(std::forward<arg_Ty>(args)...);
-	m_last_item_aptr.store(last_item_ptr_p1, std::memory_order_release);
+	m_last_item_offset.store(last_item_offset_p1, std::memory_order_release);
 	return true;
 }
 
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::try_pop(Ty& target) noexcept
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::try_pop(Ty& target) noexcept
 {
-	Ty* next_item_ptr = m_next_item_aptr.load(std::memory_order_relaxed);
+	_uintX_t next_item_offset = m_next_item_offset.load(std::memory_order_relaxed);
 
-	if (next_item_ptr == m_last_item_cached_ptr)
+	if (next_item_offset == m_last_item_cached_offset)
 	{
-		m_last_item_cached_ptr = m_last_item_aptr.load(std::memory_order_acquire);
-		if (next_item_ptr == m_last_item_cached_ptr)
+		m_last_item_cached_offset = m_last_item_offset.load(std::memory_order_acquire);
+		if (next_item_offset == m_last_item_cached_offset)
 		{
 			return false;
 		}
 	}
 
-	target = std::move(*next_item_ptr);
-	Ty* next_item_ptr_p1 = (next_item_ptr + 1 != m_item_buffer_end_ptr) ? next_item_ptr + 1 : m_item_buffer_data_ptr;
-	m_next_item_aptr.store(next_item_ptr_p1, std::memory_order_release);
+	target = std::move(*(m_item_buffer_data_ptr + static_cast<std::size_t>(next_item_offset)));
+	_uintX_t next_item_offset_p1 = (next_item_offset + 1 != m_item_buffer_size) ? next_item_offset + 1 : 0;
+	m_next_item_offset.store(next_item_offset_p1, std::memory_order_release);
 	return true;
 }
 
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty> template <class ... arg_Ty>
-inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value)
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t> template <class ... arg_Ty>
+inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::push(arg_Ty&& ... args) noexcept(std::is_nothrow_constructible<Ty, arg_Ty ...>::value)
 {
-	Ty* last_item_ptr = m_last_item_aptr.load(std::memory_order_relaxed);
-	Ty* last_item_ptr_p1 = (last_item_ptr + 1 != m_item_buffer_end_ptr) ? last_item_ptr + 1 : m_item_buffer_data_ptr;
+	_uintX_t last_item_offset = m_last_item_offset.load(std::memory_order_relaxed);
+	_uintX_t last_item_offset_p1 = (last_item_offset + 1 != m_item_buffer_size) ? last_item_offset + 1 : 0;
 
-	_wait_Ty wait_obj(m_shared_data_ptr);
-	while (last_item_ptr_p1 == m_next_item_cached_ptr)
+	if (std::is_same<_wait_Ty, cool::wait_noop>::value)
 	{
-		m_next_item_cached_ptr = m_next_item_aptr.load(std::memory_order_acquire);
-		wait_obj.push_wait();
-	}
-
-	last_item_ptr->~Ty();
-	new (last_item_ptr) Ty(std::forward<arg_Ty>(args)...);
-	m_last_item_aptr.store(last_item_ptr_p1, std::memory_order_release);
-}
-
-template <class Ty, std::size_t _cache_line_size, class _wait_Ty>
-inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty>::pop(Ty& target) noexcept
-{
-	Ty* next_item_ptr = m_next_item_aptr.load(std::memory_order_relaxed);
-
-	_wait_Ty wait_obj(m_shared_data_ptr);
-	while (next_item_ptr == m_last_item_cached_ptr)
-	{
-		m_last_item_cached_ptr = m_last_item_aptr.load(std::memory_order_acquire);
-		wait_obj.pop_wait();
-		if (!wait_obj.good())
+		while (last_item_offset_p1 == m_next_item_cached_offset)
 		{
-			return false;
+			m_next_item_cached_offset = m_next_item_offset.load(std::memory_order_acquire);
+		}
+	}
+	else
+	{
+		if (last_item_offset_p1 == m_next_item_cached_offset)
+		{
+			m_next_item_cached_offset = m_next_item_offset.load(std::memory_order_acquire);
+
+			if (last_item_offset_p1 == m_next_item_cached_offset)
+			{
+				_wait_Ty wait_obj(m_shared_data_ptr);
+
+				do
+				{
+					m_next_item_cached_offset = m_next_item_offset.load(std::memory_order_acquire);
+					wait_obj.push_wait();
+				} while (last_item_offset_p1 == m_next_item_cached_offset);
+			}
 		}
 	}
 
-	target = std::move(*next_item_ptr);
-	Ty* next_item_ptr_p1 = (next_item_ptr + 1 != m_item_buffer_end_ptr) ? next_item_ptr + 1 : m_item_buffer_data_ptr;
-	m_next_item_aptr.store(next_item_ptr_p1, std::memory_order_release);
+	Ty* last_item_ptr = m_item_buffer_data_ptr + static_cast<std::size_t>(last_item_offset);
+	last_item_ptr->~Ty();
+	new (last_item_ptr) Ty(std::forward<arg_Ty>(args)...);
+	m_last_item_offset.store(last_item_offset_p1, std::memory_order_release);
+}
+
+template <class Ty, std::size_t _cache_line_size, class _wait_Ty, class _uintX_t>
+inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::pop(Ty& target) noexcept
+{
+	_uintX_t next_item_offset = m_next_item_offset.load(std::memory_order_relaxed);
+
+	if (std::is_same<_wait_Ty, cool::wait_noop>::value)
+	{
+		while (next_item_offset == m_last_item_cached_offset)
+		{
+			m_last_item_cached_offset = m_last_item_offset.load(std::memory_order_acquire);
+		}
+	}
+	else
+	{
+		if (next_item_offset == m_last_item_cached_offset)
+		{
+			m_last_item_cached_offset = m_last_item_offset.load(std::memory_order_acquire);
+
+			if (next_item_offset == m_last_item_cached_offset)
+			{
+				_wait_Ty wait_obj(m_shared_data_ptr);
+
+				do
+				{
+					m_last_item_cached_offset = m_last_item_offset.load(std::memory_order_acquire);
+					wait_obj.pop_wait();
+					if (!wait_obj.good())
+					{
+						return false;
+					}
+				} while (next_item_offset == m_last_item_cached_offset);
+			}
+		}
+	}
+
+	target = std::move(*(m_item_buffer_data_ptr + static_cast<std::size_t>(next_item_offset)));
+	_uintX_t next_item_offset_p1 = (next_item_offset + 1 != m_item_buffer_size) ? next_item_offset + 1 : 0;
+	m_next_item_offset.store(next_item_offset_p1, std::memory_order_release);
 	return true;
 }
 
@@ -1094,10 +1138,21 @@ inline void cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::push(arg
 
 	item_type& item_ref = *(m_item_buffer_data_ptr + static_cast<std::size_t>(last_item_info.item_number));
 
-	_wait_Ty wait_obj(m_shared_data_ptr);
-	while (last_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
+	if (std::is_same<_wait_Ty, cool::wait_noop>::value)
 	{
-		wait_obj.push_wait();
+		while (last_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire)) {}
+	}
+	else
+	{
+		if (last_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
+		{
+			_wait_Ty wait_obj(m_shared_data_ptr);
+
+			do
+			{
+				wait_obj.push_wait();
+			} while (last_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire));
+		}
 	}
 
 	item_ref.value.~Ty();
@@ -1113,13 +1168,24 @@ inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::pop(Ty& 
 
 	item_type& item_ref = *(m_item_buffer_data_ptr + static_cast<std::size_t>(next_item_info.item_number));
 
-	_wait_Ty wait_obj(m_shared_data_ptr);
-	while (next_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
+	if (std::is_same<_wait_Ty, cool::wait_noop>::value)
 	{
-		wait_obj.pop_wait();
-		if (!wait_obj.good())
+		while (next_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire)) {}
+	}
+	else
+	{
+		if (next_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire))
 		{
-			return false;
+			_wait_Ty wait_obj(m_shared_data_ptr);
+
+			do
+			{
+				wait_obj.pop_wait();
+				if (!wait_obj.good())
+				{
+					return false;
+				}
+			} while (next_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire));
 		}
 	}
 
