@@ -362,6 +362,12 @@ namespace cool
 	};
 
 	template <class return_Ty, class ... arg_Ty>
+	inline bool operator==(typename cool::func_ptr<return_Ty(arg_Ty ...)>::value_type lhs, cool::func_ptr<return_Ty(arg_Ty ...)> rhs) noexcept;
+
+	template <class return_Ty, class ... arg_Ty>
+	inline bool operator!=(typename cool::func_ptr<return_Ty(arg_Ty ...)>::value_type lhs, cool::func_ptr<return_Ty(arg_Ty ...)> rhs) noexcept;
+
+	template <class return_Ty, class ... arg_Ty>
 	inline cool::func_ptr<return_Ty(arg_Ty ...)> make_func_ptr(return_Ty(*_func_ptr)(arg_Ty ...)) noexcept;
 
 #if __cplusplus >= 201703L
@@ -417,6 +423,12 @@ namespace cool
 
 		value_type m_func_ptr;
 	};
+
+	template <class object_Ty, class return_Ty, class ... arg_Ty>
+	inline bool operator==(typename cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)>::value_type lhs, cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)> rhs) noexcept;
+
+	template <class object_Ty, class return_Ty, class ... arg_Ty>
+	inline bool operator!=(typename cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)>::value_type lhs, cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)> rhs) noexcept;
 
 	template <class object_Ty, class return_Ty, class ... arg_Ty>
 	inline cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)> make_member_func_ptr(return_Ty(object_Ty::* _func_ptr)(arg_Ty ...)) noexcept;
@@ -1125,6 +1137,18 @@ inline bool cool::func_ptr<return_Ty(arg_Ty ...)>::operator!=(cool::func_ptr<ret
 }
 
 template <class return_Ty, class ... arg_Ty>
+inline bool cool::operator==(typename cool::func_ptr<return_Ty(arg_Ty ...)>::value_type lhs, cool::func_ptr<return_Ty(arg_Ty ...)> rhs) noexcept
+{
+	return lhs == rhs.function();
+}
+
+template <class return_Ty, class ... arg_Ty>
+inline bool cool::operator!=(typename cool::func_ptr<return_Ty(arg_Ty ...)>::value_type lhs, cool::func_ptr<return_Ty(arg_Ty ...)> rhs) noexcept
+{
+	return lhs != rhs.function();
+}
+
+template <class return_Ty, class ... arg_Ty>
 inline cool::func_ptr<return_Ty(arg_Ty ...)> cool::make_func_ptr(return_Ty(*_func_ptr)(arg_Ty ...)) noexcept
 {
 	return cool::func_ptr<return_Ty(arg_Ty ...)>(_func_ptr);
@@ -1167,6 +1191,18 @@ inline bool cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)>::operator==(
 template <class object_Ty, class return_Ty, class ... arg_Ty>
 inline bool cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)>::operator!=(cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)> rhs) const noexcept {
 	return m_func_ptr != rhs.m_func_ptr;
+}
+
+template <class object_Ty, class return_Ty, class ... arg_Ty>
+inline bool cool::operator==(typename cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)>::value_type lhs, cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)> rhs) noexcept
+{
+	return lhs == rhs.function();
+}
+
+template <class object_Ty, class return_Ty, class ... arg_Ty>
+inline bool cool::operator!=(typename cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)>::value_type lhs, cool::member_func_ptr<object_Ty, return_Ty(arg_Ty ...)> rhs) noexcept
+{
+	return lhs != rhs.function();
 }
 
 template <class object_Ty, class return_Ty, class ... arg_Ty>
