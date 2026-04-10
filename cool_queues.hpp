@@ -859,8 +859,8 @@ inline void cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::push(arg
 
 				do
 				{
-					m_next_item_cached_offset = m_next_item_offset.load(std::memory_order_acquire);
 					wait_obj.push_wait();
+					m_next_item_cached_offset = m_next_item_offset.load(std::memory_order_acquire);
 				} while (last_item_offset_p1 == m_next_item_cached_offset);
 			}
 		}
@@ -896,12 +896,12 @@ inline bool cool::queue_spsc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::pop(Ty& 
 
 				do
 				{
-					m_last_item_cached_offset = m_last_item_offset.load(std::memory_order_acquire);
-					wait_obj.pop_wait();
 					if (!wait_obj.good())
 					{
 						return false;
 					}
+					wait_obj.pop_wait();
+					m_last_item_cached_offset = m_last_item_offset.load(std::memory_order_acquire);
 				} while (next_item_offset == m_last_item_cached_offset);
 			}
 		}
@@ -1180,11 +1180,11 @@ inline bool cool::queue_mpmc<Ty, _cache_line_size, _wait_Ty, _uintX_t>::pop(Ty& 
 
 			do
 			{
-				wait_obj.pop_wait();
 				if (!wait_obj.good())
 				{
 					return false;
 				}
+				wait_obj.pop_wait();
 			} while (next_item_info.round_number != item_ref.round_number.load(std::memory_order_acquire));
 		}
 	}
