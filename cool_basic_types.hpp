@@ -544,6 +544,67 @@ namespace cool
 #endif // __cplusplus >= 201703L
 
 
+	// task
+
+	template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align = alignof(std::max_align_t)> class task
+	{
+
+	public:
+
+		static constexpr std::size_t arg_buffer_size = _arg_buffer_size;
+		static constexpr std::size_t arg_buffer_align = _arg_buffer_align;
+
+		static_assert((_arg_buffer_align& (_arg_buffer_align - 1)) == 0,
+			"cool::task<arg_buffer_size, arg_buffer_align> requirement : arg_buffer_align must be a power of 2");
+		static_assert(_arg_buffer_align >= alignof(std::max_align_t),
+			"cool::task<arg_buffer_size, arg_buffer_align> requirement : arg_buffer_align must be greater or equal to alignof(std::max_align_t)");
+
+		task() noexcept = default;
+		inline task(const cool::task<_arg_buffer_size, _arg_buffer_align>& rhs);
+		inline cool::task<_arg_buffer_size, _arg_buffer_align>& operator=(const cool::task<_arg_buffer_size, _arg_buffer_align>& rhs);
+		inline task(cool::task<_arg_buffer_size, _arg_buffer_align>&& rhs) noexcept;
+		inline cool::task<_arg_buffer_size, _arg_buffer_align>& operator=(cool::task<_arg_buffer_size, _arg_buffer_align>&& rhs) noexcept;
+		inline ~task();
+
+		template <class function_Ty, class ... arg_Ty> inline task(function_Ty func, arg_Ty&& ... args);
+
+		template <class function_Ty, class ... arg_Ty> inline void store(function_Ty func, arg_Ty&& ... args);
+		inline void exec();
+		inline void clear() noexcept;
+
+		inline void(*function() const noexcept)(void);
+		inline bool has_function() const noexcept;
+
+		template <class ... arg_Ty> static inline constexpr bool arg_type_is_valid() noexcept;
+
+	private:
+
+		using _function_ptr_type = void(*)(void);
+		using _callable_type = void(*)(cool::task<_arg_buffer_size, _arg_buffer_align>*, cool::task<_arg_buffer_size, _arg_buffer_align>*, bool);
+
+		template <class function_Ty> static inline constexpr _function_ptr_type _make_function_ptr(function_Ty func) noexcept;
+		template <class function_Ty, class ... arg_Ty> static inline constexpr _callable_type _make_callable() noexcept;
+
+		template <std::size_t ... _indices> class indices {};
+		template <std::size_t n, std::size_t ... _indices> class build_indices : public build_indices<n - 1, n - 1, _indices...> {};
+		template <std::size_t ... _indices> class build_indices<0, _indices...> : public indices<_indices...> {};
+
+		template <class function_Ty, class tuple_Ty, std::size_t ... _indices>
+		static inline void call_no_return(function_Ty task, tuple_Ty&& args, indices<_indices...>) {
+			task(std::get<_indices>(std::forward<tuple_Ty>(args))...);
+		}
+		template <class function_Ty, class tuple_Ty>
+		static inline void call_no_return(function_Ty task, tuple_Ty&& args) {
+			call_no_return(task, std::move(args), build_indices<std::tuple_size<tuple_Ty>::value>());
+		}
+
+		alignas(_arg_buffer_align) unsigned char m_arg_buffer[_arg_buffer_size];
+
+		_function_ptr_type m_function_ptr = nullptr;
+		_callable_type m_callable = nullptr;
+	};
+
+
 	// aligned
 
 	template <class Ty, std::size_t _align, std::size_t _alloc_align> class alignas(_alloc_align) _aligned_realign_impl;
@@ -1354,6 +1415,199 @@ inline cool::object_member_func_ptr<const volatile object_Ty, return_Ty(arg_Ty .
 	return cool::object_member_func_ptr<const volatile object_Ty, return_Ty(arg_Ty ...)>(obj_ptr, _func_ptr);
 }
 #endif // __cplusplus >= 201703L
+
+
+// task
+
+template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline cool::task<_arg_buffer_size, _arg_buffer_align>::task(const cool::task<_arg_buffer_size, _arg_buffer_align>& rhs)
+	: m_function_ptr(rhs.m_function_ptr), m_callable(rhs.m_callable)
+{
+	if (rhs.m_callable != nullptr)
+	{
+		rhs.m_callable(this, const_cast<cool::task<_arg_buffer_size, _arg_buffer_align>*>(&rhs), false);
+	}
+}
+
+template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline cool::task<_arg_buffer_size, _arg_buffer_align>& cool::task<_arg_buffer_size, _arg_buffer_align>::operator=(const cool::task<_arg_buffer_size, _arg_buffer_align>& rhs)
+{
+	if (m_callable != nullptr)
+	{
+		m_callable(this, nullptr, true);
+	}
+
+	if (rhs.m_callable != nullptr)
+	{
+		rhs.m_callable(this, const_cast<cool::task<_arg_buffer_size, _arg_buffer_align>*>(&rhs), false);
+	}
+
+	m_function_ptr = rhs.m_function_ptr;
+	m_callable = rhs.m_callable;
+
+	return *this;
+}
+
+template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline cool::task<_arg_buffer_size, _arg_buffer_align>::task(cool::task<_arg_buffer_size, _arg_buffer_align>&& rhs) noexcept
+	: m_function_ptr(rhs.m_function_ptr), m_callable(rhs.m_callable)
+{
+	if (rhs.m_callable != nullptr)
+	{
+		rhs.m_callable(this, &rhs, true);
+	}
+
+	rhs.m_function_ptr = nullptr;
+	rhs.m_callable = nullptr;
+}
+
+template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline cool::task<_arg_buffer_size, _arg_buffer_align>& cool::task<_arg_buffer_size, _arg_buffer_align>::operator=(cool::task<_arg_buffer_size, _arg_buffer_align>&& rhs) noexcept
+{
+	if (m_callable != nullptr)
+	{
+		m_callable(this, nullptr, true);
+	}
+
+	if (rhs.m_callable != nullptr)
+	{
+		rhs.m_callable(this, &rhs, true);
+	}
+
+	m_function_ptr = rhs.m_function_ptr;
+	m_callable = rhs.m_callable;
+	rhs.m_function_ptr = nullptr;
+	rhs.m_callable = nullptr;
+
+	return *this;
+}
+
+template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline cool::task<_arg_buffer_size, _arg_buffer_align>::~task()
+{
+	if (m_callable != nullptr)
+	{
+		m_callable(this, nullptr, true);
+	}
+}
+
+template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... arg_Ty>
+inline cool::task<_arg_buffer_size, _arg_buffer_align>::task(function_Ty func, arg_Ty&& ... args)
+	: m_function_ptr(_make_function_ptr(func)), m_callable(_make_callable<function_Ty, arg_Ty ...>())
+{
+	using _cool_arg_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
+
+	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
+		"cool::task<...> constructor : func must be a function pointer");
+	static_assert(sizeof(_cool_arg_pack) <= _arg_buffer_size, "cool::task<...> constructor : func arguments size too large");
+	static_assert(alignof(_cool_arg_pack) <= _arg_buffer_align, "cool::task<...> constructor : func arguments alignment too large");
+
+	new (static_cast<void*>(m_arg_buffer)) _cool_arg_pack(std::forward<arg_Ty>(args)...);
+}
+
+template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... arg_Ty>
+inline void cool::task<_arg_buffer_size, _arg_buffer_align>::store(function_Ty func, arg_Ty&& ... args)
+{
+	using _cool_arg_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
+
+	static_assert(std::is_pointer<function_Ty>::value && std::is_function<typename std::remove_pointer<function_Ty>::type>::value,
+		"cool::task<...>::store : func must be a function pointer");
+	static_assert(sizeof(_cool_arg_pack) <= _arg_buffer_size, "cool::store<...>::store : func arguments size too large");
+	static_assert(alignof(_cool_arg_pack) <= _arg_buffer_align, "cool::store<...>::store : func arguments alignment too large");
+
+	if (m_callable != nullptr)
+	{
+		m_callable(this, nullptr, true);
+	}
+
+	new (static_cast<void*>(m_arg_buffer)) _cool_arg_pack(std::forward<arg_Ty>(args)...);
+
+	m_function_ptr = _make_function_ptr<function_Ty>(func);
+	m_callable = _make_callable<function_Ty, arg_Ty ...>();
+}
+
+template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline void cool::task<_arg_buffer_size, _arg_buffer_align>::exec()
+{
+	m_callable(this, nullptr, false);
+}
+
+template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline void cool::task<_arg_buffer_size, _arg_buffer_align>::clear() noexcept
+{
+	if (m_callable != nullptr)
+	{
+		m_callable(this, nullptr, true);
+
+		m_function_ptr = nullptr;
+		m_callable = nullptr;
+	}
+}
+
+template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline void(*cool::task<_arg_buffer_size, _arg_buffer_align>::function() const noexcept)(void)
+{
+	return m_function_ptr;
+}
+
+template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align>
+inline bool cool::task<_arg_buffer_size, _arg_buffer_align>::has_function() const noexcept
+{
+	return m_function_ptr != nullptr;
+}
+
+template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class ... arg_Ty>
+inline constexpr bool cool::task<_arg_buffer_size, _arg_buffer_align>::arg_type_is_valid() noexcept
+{
+	using _cool_arg_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
+
+	constexpr bool ret = (sizeof(_cool_arg_pack) <= _arg_buffer_size) && (alignof(_cool_arg_pack) <= _arg_buffer_align);
+	return ret;
+}
+
+template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty>
+inline constexpr typename cool::task<_arg_buffer_size, _arg_buffer_align>::_function_ptr_type cool::task<_arg_buffer_size, _arg_buffer_align>::_make_function_ptr(function_Ty func) noexcept
+{
+	_function_ptr_type function_ptr{};
+	std::memcpy(&function_ptr, &func, sizeof(_function_ptr_type));
+	return function_ptr;
+}
+
+template <std::size_t _arg_buffer_size, std::size_t _arg_buffer_align> template <class function_Ty, class ... arg_Ty>
+inline constexpr typename cool::task<_arg_buffer_size, _arg_buffer_align>::_callable_type cool::task<_arg_buffer_size, _arg_buffer_align>::_make_callable() noexcept
+{
+	using _cool_arg_pack = std::tuple<typename std::decay<arg_Ty>::type ...>;
+
+	return [](cool::task<_arg_buffer_size, _arg_buffer_align>* _task_ptr, cool::task<_arg_buffer_size, _arg_buffer_align>* _fetch_task_ptr, bool _call_destructor)
+	{
+		if (_fetch_task_ptr == nullptr)
+		{
+			if (!_call_destructor)
+			{
+				function_Ty function_ptr;
+				std::memcpy(&function_ptr, &(_task_ptr->m_function_ptr), sizeof(_function_ptr_type));
+
+				call_no_return(function_ptr, std::move(*reinterpret_cast<_cool_arg_pack*>(_task_ptr->m_arg_buffer)));
+			}
+			else
+			{
+				reinterpret_cast<_cool_arg_pack*>(_task_ptr->m_arg_buffer)->~_cool_arg_pack();
+			}
+		}
+		else
+		{
+			if (_call_destructor)
+			{
+				new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_arg_pack(std::move(*reinterpret_cast<_cool_arg_pack*>(_fetch_task_ptr->m_arg_buffer)));
+				reinterpret_cast<_cool_arg_pack*>(_fetch_task_ptr->m_arg_buffer)->~_cool_arg_pack();
+			}
+			else
+			{
+				new (static_cast<void*>(_task_ptr->m_arg_buffer)) _cool_arg_pack(*reinterpret_cast<const _cool_arg_pack*>(_fetch_task_ptr->m_arg_buffer));
+			}
+		}
+	};
+}
 
 
 // aligned
