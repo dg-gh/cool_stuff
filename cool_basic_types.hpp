@@ -80,6 +80,12 @@ namespace cool
 		static constexpr bool is_signed = std::is_signed<int_Ty>::value;
 
 		integer() noexcept = default;
+		constexpr integer(const cool::integer<int_Ty>&) noexcept = default;
+		constexpr cool::integer<int_Ty>& operator=(const cool::integer<int_Ty>&) noexcept = default;
+		constexpr integer(cool::integer<int_Ty>&&) noexcept = default;
+		constexpr cool::integer<int_Ty>& operator=(cool::integer<int_Ty>&&) noexcept = default;
+		~integer() = default;
+
 		inline constexpr integer(int_Ty val) noexcept;
 
 		static inline constexpr cool::integer<int_Ty> min() noexcept;
@@ -144,7 +150,18 @@ namespace cool
 		static constexpr bool is_signed = std::is_signed<bool>::value;
 
 		integer() noexcept = default;
+		constexpr integer(const cool::integer<bool>&) noexcept = default;
+		constexpr cool::integer<bool>& operator=(const cool::integer<bool>&) noexcept = default;
+		constexpr integer(cool::integer<bool>&&) noexcept = default;
+		constexpr cool::integer<bool>& operator=(cool::integer<bool>&&) noexcept = default;
+		~integer() = default;
+
 		inline constexpr integer(bool val) noexcept;
+
+		template <class other_Ty> inline constexpr integer(const other_Ty& val) noexcept : m_value(false) {
+			static_assert(std::is_same<other_Ty, cool::integer<bool>>::value || std::is_same<other_Ty, bool>::value,
+				"cool::ubool requirement : construction/assignement only from cool::ubool and bool types");
+		}
 
 		static inline constexpr cool::integer<bool> min() noexcept;
 		static inline constexpr cool::integer<bool> max() noexcept;
@@ -951,20 +968,10 @@ template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs
 
 template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> cool::operator+(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept
 {
-	constexpr bool is_not_bool = !std::is_same<rhs_int_Ty, bool>::value;
-
-	if (is_not_bool)
-	{
-		rhs_int_Ty ret = static_cast<rhs_int_Ty>(lhs);
-		ret += rhs.get_value();
-		return cool::integer<rhs_int_Ty>(ret);
-	}
-	else
-	{
-		rhs_int_Ty ret = static_cast<rhs_int_Ty>(lhs);
-		ret |= rhs.get_value();
-		return cool::integer<rhs_int_Ty>(ret);
-	}
+	static_assert(!std::is_same<rhs_int_Ty, bool>::value, "cool::integer<bool> does not allow operator+");
+	rhs_int_Ty ret = static_cast<rhs_int_Ty>(lhs);
+	ret += rhs.get_value();
+	return cool::integer<rhs_int_Ty>(ret);
 }
 template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> cool::operator-(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
 	static_assert(!std::is_same<rhs_int_Ty, bool>::value, "cool::integer<bool> does not allow operator-");
@@ -974,20 +981,10 @@ template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs
 }
 template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> cool::operator*(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept
 {
-	constexpr bool is_not_bool = !std::is_same<rhs_int_Ty, bool>::value;
-
-	if (is_not_bool)
-	{
-		rhs_int_Ty ret = static_cast<rhs_int_Ty>(lhs);
-		ret *= rhs.get_value();
-		return cool::integer<rhs_int_Ty>(ret);
-	}
-	else
-	{
-		rhs_int_Ty ret = static_cast<rhs_int_Ty>(lhs);
-		ret &= rhs.get_value();
-		return cool::integer<rhs_int_Ty>(ret);
-	}
+	static_assert(!std::is_same<rhs_int_Ty, bool>::value, "cool::integer<bool> does not allow operator*");
+	rhs_int_Ty ret = static_cast<rhs_int_Ty>(lhs);
+	ret *= rhs.get_value();
+	return cool::integer<rhs_int_Ty>(ret);
 }
 template <class lhs_int_Ty, class rhs_int_Ty> inline constexpr cool::integer<rhs_int_Ty> cool::operator/(lhs_int_Ty lhs, cool::integer<rhs_int_Ty> rhs) noexcept {
 	static_assert(!std::is_same<rhs_int_Ty, bool>::value, "cool::integer<bool> does not allow operator/");
