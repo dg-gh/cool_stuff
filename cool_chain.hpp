@@ -32,6 +32,12 @@
 #endif // COOL_CHAIN_VECTOR
 
 
+#ifndef COOL_EMPTY_CLASS
+#define COOL_EMPTY_CLASS
+namespace cool { class empty {}; }
+#endif // COOL_EMPTY_CLASS
+
+
 namespace cool
 {
 	// > Ty must be copy assignable from refresh_result_Ty
@@ -46,10 +52,10 @@ namespace cool
 
 	// > member functions set_variable/refresh_variable will favor passing by value if 'value_type_is_small' is true
 
-	template <class Ty, class cmp_Ty = std::not_equal_to<Ty>, class index_Ty = std::size_t, class refresh_result_Ty = Ty, bool _value_type_is_small = (sizeof(refresh_result_Ty) <= 2 * sizeof(refresh_result_Ty*))> class _chain_base;
-	template <class Ty, class cmp_Ty = std::not_equal_to<Ty>, class index_Ty = std::size_t, class refresh_result_Ty = Ty, bool _value_type_is_small = (sizeof(refresh_result_Ty) <= 2 * sizeof(refresh_result_Ty*))> class chain;
+	template <class Ty, class cmp_Ty = std::not_equal_to<Ty>, class index_Ty = std::size_t, class state_Ty = cool::empty, class refresh_result_Ty = Ty, bool _value_type_is_small = (sizeof(refresh_result_Ty) <= 2 * sizeof(refresh_result_Ty*))> class _chain_base;
+	template <class Ty, class cmp_Ty = std::not_equal_to<Ty>, class index_Ty = std::size_t, class state_Ty = cool::empty, class refresh_result_Ty = Ty, bool _value_type_is_small = (sizeof(refresh_result_Ty) <= 2 * sizeof(refresh_result_Ty*))> class chain;
 #ifdef COOL_CHAIN_VECTOR
-	template <class Ty, class cmp_Ty = std::not_equal_to<Ty>, class index_Ty = std::size_t, class refresh_result_Ty = Ty, bool _value_type_is_small = (sizeof(refresh_result_Ty) <= 2 * sizeof(refresh_result_Ty*))> class chain_vec;
+	template <class Ty, class cmp_Ty = std::not_equal_to<Ty>, class index_Ty = std::size_t, class state_Ty = cool::empty, class refresh_result_Ty = Ty, bool _value_type_is_small = (sizeof(refresh_result_Ty) <= 2 * sizeof(refresh_result_Ty*))> class chain_vec;
 #endif // COOL_CHAIN_VECTOR
 
 	template <class cmp_Ty, class index_Ty> class chain_observed_info;
@@ -57,7 +63,7 @@ namespace cool
 	template <class index_Ty> class chain_init_result;
 	class max_depth;
 
-	template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty = Ty, bool _value_type_is_small = (sizeof(Ty) <= 2 * sizeof(Ty*))> class chain_variable_info;
+	template <class Ty, class cmp_Ty, class index_Ty, class state_Ty = cool::empty, class refresh_result_Ty = Ty, bool _value_type_is_small = (sizeof(Ty) <= 2 * sizeof(Ty*))> class chain_variable_info;
 	template <class cmp_Ty, class index_Ty> class chain_observer_info;
 	template <class cmp_Ty, class index_Ty> class chain_link_info;
 
@@ -165,10 +171,10 @@ namespace cool
 		int m_result = chain_init_result::undefined;
 		index_Ty m_index = static_cast<index_Ty>(0);
 
-		template <class Ty, class cmp_Ty, class index_Ty2, class refresh_result_Ty2, bool _value_type_is_small> friend class cool::_chain_base;
-		template <class Ty, class cmp_Ty, class index_Ty2, class refresh_result_Ty2, bool _value_type_is_small> friend class cool::chain;
+		template <class Ty, class cmp_Ty, class index_Ty2, class state_Ty2, class refresh_result_Ty2, bool _value_type_is_small> friend class cool::_chain_base;
+		template <class Ty, class cmp_Ty, class index_Ty2, class state_Ty2, class refresh_result_Ty2, bool _value_type_is_small> friend class cool::chain;
 #ifdef COOL_CHAIN_VECTOR
-		template <class Ty, class cmp_Ty, class index_Ty2, class refresh_result_Ty2, bool _value_type_is_small> friend class cool::chain_vec;
+		template <class Ty, class cmp_Ty, class index_Ty2, class state_Ty2, class refresh_result_Ty2, bool _value_type_is_small> friend class cool::chain_vec;
 #endif // COOL_CHAIN_VECTOR
 	};
 
@@ -218,7 +224,7 @@ namespace cool
 
 	// _chain_base
 
-	template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small> class _chain_base
+	template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small> class _chain_base : public state_Ty
 	{
 
 	public:
@@ -233,11 +239,12 @@ namespace cool
 
 		using compare_type = cmp_Ty;
 		using index_type = index_Ty;
+		using state_type = state_Ty;
 		using refresh_result_value_type = refresh_result_Ty;
 
 		static constexpr bool value_type_is_small = _value_type_is_small;
 
-		using variable_info_type = cool::chain_variable_info<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>;
+		using variable_info_type = cool::chain_variable_info<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>;
 		using observed_info_type = cool::chain_observed_info<cmp_Ty, index_Ty>;
 		using observer_info_type = cool::chain_observer_info<cmp_Ty, index_Ty>;
 		using link_info_type = cool::chain_link_info<cmp_Ty, index_Ty>;
@@ -249,9 +256,15 @@ namespace cool
 		class variable_view;
 
 		// > 1st arg is observer/refreshed variable index, observer variable gets assigned the return value
-		// > 2nt arg provides a view/array of all variables
-		// > 3rd arg points to shared data of observer
-		using refresh_func_type = refresh_result_Ty(*)(index_Ty, typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::variable_view, void*);
+		// > 2nd arg provides a view/array of all variables
+		// > 3rd arg gives reference to state
+		using refresh_func_type = refresh_result_Ty(*)(index_Ty, typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::variable_view, state_Ty&);
+
+		// > 1st arg is refreshed variable index
+		// > 2nd arg provides new value
+		// > 3rd arg provides previous value
+		// > 4th arg gives reference to state
+		using on_new_value_func_type = void(*)(index_Ty, arg_value_type, arg_value_type, state_Ty&);
 
 		using get_observers_result_type = cool::chain_get_observers_result<index_Ty>;
 #ifdef COOL_CHAIN_VECTOR
@@ -299,9 +312,6 @@ namespace cool
 		inline const bool& locked(index_Ty variable_index) const noexcept;
 		inline void lock_all(bool _locked) noexcept;
 
-		inline void* get_shared_data_ptr(index_Ty variable_index) noexcept;
-		inline const void* get_shared_data_ptr(index_Ty variable_index) const noexcept;
-
 		inline bool good() const noexcept;
 		inline bool init_ongoing() const noexcept;
 		inline std::size_t variable_count() const noexcept;
@@ -316,7 +326,7 @@ namespace cool
 #endif // COOL_CHAIN_VECTOR
 
 		init_result_type init_set_cmp(index_Ty variable_index, cmp_Ty cmp) noexcept;
-		init_result_type init_set_shared_data_ptr(index_Ty variable_index, void* shared_data_ptr) noexcept;
+		init_result_type init_set_on_new_value(index_Ty variable_index, on_new_value_func_type on_new_value_func) noexcept;
 
 		class variable_view
 		{
@@ -354,9 +364,9 @@ namespace cool
 
 	private:
 
-		friend class cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>;
+		friend class cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>;
 #ifdef COOL_CHAIN_VECTOR
-		friend class cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>;
+		friend class cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>;
 #endif // COOL_CHAIN_VECTOR
 
 		class _lock_guard
@@ -365,10 +375,10 @@ namespace cool
 		public:
 
 			inline _lock_guard(bool& lock_ref) noexcept;
-			_lock_guard(const cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard&) = delete;
-			cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard& operator=(const cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard&) = delete;
-			_lock_guard(cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard&&) = delete;
-			cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard& operator=(cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard&&) = delete;
+			_lock_guard(const cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard&) = delete;
+			cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard& operator=(const cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard&) = delete;
+			_lock_guard(cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard&&) = delete;
+			cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard& operator=(cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard&&) = delete;
 			inline ~_lock_guard();
 
 		private:
@@ -400,44 +410,45 @@ namespace cool
 
 	// chain
 
-	template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small> class chain
-		: public cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>
+	template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small> class chain
+		: public cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>
 	{
 
 	public:
 
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::value_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::pointer;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::const_pointer;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::reference;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::const_reference;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::size_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::difference_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::value_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::pointer;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::const_pointer;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::reference;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::const_reference;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::size_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::difference_type;
 
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::compare_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::index_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::refresh_result_value_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::compare_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::index_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::refresh_result_value_type;
 
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::variable_info_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::observed_info_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::observer_info_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::link_info_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::variable_info_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::observed_info_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::observer_info_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::link_info_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type;
 
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::arg_value_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::variable_view;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::refresh_func_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::arg_value_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::variable_view;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::refresh_func_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::on_new_value_func_type;
 
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::get_observers_result_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::get_observers_result_type;
 #ifdef COOL_CHAIN_VECTOR
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::get_observers_vec_result_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::get_observers_vec_result_type;
 #endif // COOL_CHAIN_VECTOR
 
 		chain() noexcept = default;
-		chain(const cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>&) = delete;
-		cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>& operator=(const cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>&) = delete;
-		chain(cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>&& rhs) noexcept;
-		cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>& operator=(cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>&& rhs) noexcept;
+		chain(const cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>&) = delete;
+		cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>& operator=(const cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>&) = delete;
+		chain(cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>&& rhs) noexcept;
+		cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>& operator=(cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>&& rhs) noexcept;
 		~chain() = default;
 
 		// setup and clear
@@ -473,44 +484,45 @@ namespace cool
 
 	// chain_vec
 
-	template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small> class chain_vec
-		: public cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>
+	template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small> class chain_vec
+		: public cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>
 	{
 
 	public:
 
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::value_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::pointer;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::const_pointer;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::reference;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::const_reference;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::size_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::difference_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::value_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::pointer;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::const_pointer;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::reference;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::const_reference;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::size_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::difference_type;
 
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::compare_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::index_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::refresh_result_value_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::compare_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::index_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::refresh_result_value_type;
 
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::variable_info_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::observed_info_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::observer_info_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::link_info_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::variable_info_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::observed_info_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::observer_info_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::link_info_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type;
 
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::arg_value_type;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::variable_view;
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::refresh_func_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::arg_value_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::variable_view;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::refresh_func_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::on_new_value_func_type;
 
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::get_observers_result_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::get_observers_result_type;
 #ifdef COOL_CHAIN_VECTOR
-		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::get_observers_vec_result_type;
+		using typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::get_observers_vec_result_type;
 #endif // COOL_CHAIN_VECTOR
 
 		chain_vec() noexcept = default;
-		chain_vec(const cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>&) = delete;
-		cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>& operator=(const cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>&) = delete;
-		chain_vec(cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>&&) noexcept;
-		cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>& operator=(cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>&&) noexcept;
+		chain_vec(const cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>&) = delete;
+		cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>& operator=(const cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>&) = delete;
+		chain_vec(cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>&&) noexcept;
+		cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>& operator=(cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>&&) noexcept;
 		~chain_vec();
 
 		// setup and clear
@@ -540,7 +552,7 @@ namespace cool
 
 	// chain_variable_info
 
-	template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small> class chain_variable_info
+	template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small> class chain_variable_info
 	{
 
 	public:
@@ -557,15 +569,16 @@ namespace cool
 		using index_type = index_Ty;
 		using refresh_result_value_type = refresh_result_Ty;
 
-		static constexpr bool value_type_is_small = cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::value_type_is_small;
-		using arg_value_type = typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::arg_value_type;
-		using refresh_func_type = typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::refresh_func_type;
+		static constexpr bool value_type_is_small = cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::value_type_is_small;
+		using arg_value_type = typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::arg_value_type;
+		using refresh_func_type = typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::refresh_func_type;
+		using on_new_value_func_type = typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::on_new_value_func_type;
 
 		chain_variable_info() = default;
 		inline chain_variable_info(cmp_Ty _cmp) noexcept;
 
 		refresh_func_type refresh_func = nullptr;
-		void* shared_data_ptr = nullptr;
+		on_new_value_func_type on_new_value_func = nullptr;
 		std::size_t observer_index_begin = 0;
 		std::size_t observer_index_end = 0;
 		cmp_Ty cmp{};
@@ -712,14 +725,14 @@ inline constexpr cool::max_depth::max_depth(int new_max_depth) noexcept : m_valu
 
 inline constexpr int cool::max_depth::value() const noexcept { return m_value; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::set_variable(index_Ty variable_index, arg_value_type new_value)
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+void cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::set_variable(index_Ty variable_index, arg_value_type new_value)
 {
 	set_variable(variable_index, new_value, cool::max_depth(m_default_max_depth));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::set_variable(index_Ty variable_index, arg_value_type new_value, cool::max_depth _max_depth)
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+void cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::set_variable(index_Ty variable_index, arg_value_type new_value, cool::max_depth _max_depth)
 {
 	assert(good());
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -730,6 +743,12 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 	if (variable_info_ref.cmp(new_value, previous_value) && !variable_info_ref.locked)
 	{
 		*(m_variables_ptr + static_cast<std::size_t>(variable_index)) = new_value;
+
+		if (variable_info_ref.on_new_value_func != nullptr)
+		{
+			variable_info_ref.on_new_value_func(variable_index, new_value, previous_value, *static_cast<state_Ty*>(this));
+		}
+
 		int _max_depth_value = _max_depth.value();
 
 		if (_max_depth_value > 0)
@@ -753,7 +772,7 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 #else // COOL_CHAIN_VIEW_VARIABLE_COUNT
 							_chain_base::variable_view(m_variables_ptr, m_variable_count),
 #endif // COOL_CHAIN_VIEW_VARIABLE_COUNT
-							observer_variable_info_ref.shared_data_ptr
+							*static_cast<state_Ty*>(this)
 						),
 						cool::max_depth(_max_depth_value - 1)
 					);
@@ -763,14 +782,14 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 	}
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::set_variable_no_cmp(index_Ty variable_index, arg_value_type new_value)
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+void cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::set_variable_no_cmp(index_Ty variable_index, arg_value_type new_value)
 {
 	set_variable_no_cmp(variable_index, new_value, cool::max_depth(m_default_max_depth));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::set_variable_no_cmp(index_Ty variable_index, arg_value_type new_value, cool::max_depth _max_depth)
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+void cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::set_variable_no_cmp(index_Ty variable_index, arg_value_type new_value, cool::max_depth _max_depth)
 {
 	assert(good());
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -779,7 +798,14 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 
 	if (!variable_info_ref.locked)
 	{
+		refresh_result_Ty previous_value = *(m_variables_ptr + static_cast<std::size_t>(variable_index));
 		*(m_variables_ptr + static_cast<std::size_t>(variable_index)) = new_value;
+
+		if (variable_info_ref.on_new_value_func != nullptr)
+		{
+			variable_info_ref.on_new_value_func(variable_index, new_value, previous_value, *static_cast<state_Ty*>(this));
+		}
+
 		int _max_depth_value = _max_depth.value();
 
 		if (_max_depth_value > 0)
@@ -800,7 +826,7 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 #else // COOL_CHAIN_VIEW_VARIABLE_COUNT
 						_chain_base::variable_view(m_variables_ptr, m_variable_count),
 #endif // COOL_CHAIN_VIEW_VARIABLE_COUNT
-						observer_variable_info_ref.shared_data_ptr
+						*static_cast<state_Ty*>(this)
 					),
 					cool::max_depth(_max_depth_value - 1)
 				);
@@ -809,14 +835,14 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 	}
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::refresh_variable(index_Ty variable_index)
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+void cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::refresh_variable(index_Ty variable_index)
 {
 	refresh_variable(variable_index, cool::max_depth(m_default_max_depth));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::refresh_variable(index_Ty variable_index, cool::max_depth _max_depth)
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+void cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::refresh_variable(index_Ty variable_index, cool::max_depth _max_depth)
 {
 	assert(good());
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -827,13 +853,19 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 	{
 		refresh_result_Ty new_value = variable_info_ref.refresh_func(variable_index,
 			_chain_base::variable_view(m_variables_ptr),
-			variable_info_ref.shared_data_ptr
+			*static_cast<state_Ty*>(this)
 		);
 		refresh_result_Ty previous_value = *(m_variables_ptr + static_cast<std::size_t>(variable_index));
 
 		if (variable_info_ref.cmp(new_value, previous_value))
 		{
 			*(m_variables_ptr + static_cast<std::size_t>(variable_index)) = new_value;
+
+			if (variable_info_ref.on_new_value_func != nullptr)
+			{
+				variable_info_ref.on_new_value_func(variable_index, new_value, previous_value, *static_cast<state_Ty*>(this));
+			}
+
 			int _max_depth_value = _max_depth.value();
 
 			if (_max_depth_value > 0)
@@ -857,7 +889,7 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 #else // COOL_CHAIN_VIEW_VARIABLE_COUNT
 								_chain_base::variable_view(m_variables_ptr, m_variable_count),
 #endif // COOL_CHAIN_VIEW_VARIABLE_COUNT
-								observer_variable_info_ref.shared_data_ptr
+								*static_cast<state_Ty*>(this)
 							),
 							cool::max_depth(_max_depth_value - 1)
 						);
@@ -868,14 +900,14 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 	}
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::refresh_variable_no_cmp(index_Ty variable_index)
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+void cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::refresh_variable_no_cmp(index_Ty variable_index)
 {
 	refresh_variable_no_cmp(variable_index, cool::max_depth(m_default_max_depth));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::refresh_variable_no_cmp(index_Ty variable_index, cool::max_depth _max_depth)
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+void cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::refresh_variable_no_cmp(index_Ty variable_index, cool::max_depth _max_depth)
 {
 	assert(good());
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -886,10 +918,25 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 	{
 		if (variable_info_ref.refresh_func != nullptr)
 		{
-			*(m_variables_ptr + static_cast<std::size_t>(variable_index)) = variable_info_ref.refresh_func(variable_index,
+			refresh_result_Ty new_value = variable_info_ref.refresh_func(variable_index,
 				_chain_base::variable_view(m_variables_ptr),
-				variable_info_ref.shared_data_ptr
+				*static_cast<state_Ty*>(this)
 			);
+			refresh_result_Ty previous_value = *(m_variables_ptr + static_cast<std::size_t>(variable_index));
+			*(m_variables_ptr + static_cast<std::size_t>(variable_index)) = new_value;
+
+			if (variable_info_ref.on_new_value_func != nullptr)
+			{
+				variable_info_ref.on_new_value_func(variable_index, new_value, previous_value, *static_cast<state_Ty*>(this));
+			}
+		}
+		else
+		{
+			if (variable_info_ref.on_new_value_func != nullptr)
+			{
+				refresh_result_Ty previous_value = *(m_variables_ptr + static_cast<std::size_t>(variable_index));
+				variable_info_ref.on_new_value_func(variable_index, previous_value, previous_value, *static_cast<state_Ty*>(this));
+			}
 		}
 
 		int _max_depth_value = _max_depth.value();
@@ -912,7 +959,7 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 #else // COOL_CHAIN_VIEW_VARIABLE_COUNT
 						_chain_base::variable_view(m_variables_ptr, m_variable_count),
 #endif // COOL_CHAIN_VIEW_VARIABLE_COUNT
-						observer_variable_info_ref.shared_data_ptr
+						*static_cast<state_Ty*>(this)
 					),
 					cool::max_depth(_max_depth_value - 1)
 				);
@@ -921,8 +968,8 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 	}
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline Ty& cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::operator[](index_Ty variable_index) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline Ty& cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::operator[](index_Ty variable_index) noexcept
 {
 	assert(m_variables_ptr != nullptr);
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -930,8 +977,8 @@ inline Ty& cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_typ
 	return *(m_variables_ptr + static_cast<std::size_t>(variable_index));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline const Ty& cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::operator[](index_Ty variable_index) const noexcept
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline const Ty& cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::operator[](index_Ty variable_index) const noexcept
 {
 	assert(m_variables_ptr != nullptr);
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -939,32 +986,32 @@ inline const Ty& cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _val
 	return *(m_variables_ptr + static_cast<std::size_t>(variable_index));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::data() noexcept { return m_variables_ptr; }
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::data() noexcept { return m_variables_ptr; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline const Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::data() const noexcept { return m_variables_ptr; }
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline const Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::data() const noexcept { return m_variables_ptr; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::begin() noexcept { return m_variables_ptr; }
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::begin() noexcept { return m_variables_ptr; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::end() noexcept { return m_variables_ptr + m_variable_count; }
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::end() noexcept { return m_variables_ptr + m_variable_count; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline const Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::begin() const noexcept { return m_variables_ptr; }
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline const Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::begin() const noexcept { return m_variables_ptr; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline const Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::end() const noexcept { return m_variables_ptr + m_variable_count; }
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline const Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::end() const noexcept { return m_variables_ptr + m_variable_count; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline const Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::cbegin() const noexcept { return m_variables_ptr; }
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline const Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::cbegin() const noexcept { return m_variables_ptr; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline const Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::cend() const noexcept { return m_variables_ptr + m_variable_count; }
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline const Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::cend() const noexcept { return m_variables_ptr + m_variable_count; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline bool& cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::locked(index_Ty variable_index) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline bool& cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::locked(index_Ty variable_index) noexcept
 {
 	assert(m_variable_info_ptr != nullptr);
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -972,8 +1019,8 @@ inline bool& cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_t
 	return (m_variable_info_ptr + static_cast<std::size_t>(variable_index))->locked;
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline const bool& cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::locked(index_Ty variable_index) const noexcept
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline const bool& cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::locked(index_Ty variable_index) const noexcept
 {
 	assert(m_variable_info_ptr != nullptr);
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -981,8 +1028,8 @@ inline const bool& cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _v
 	return (m_variable_info_ptr + static_cast<std::size_t>(variable_index))->locked;
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-void inline cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::lock_all(bool _locked) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+void inline cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::lock_all(bool _locked) noexcept
 {
 	assert(m_variable_info_ptr != nullptr);
 
@@ -992,51 +1039,33 @@ void inline cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_ty
 	}
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline void* cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::get_shared_data_ptr(index_Ty variable_index) noexcept
-{
-	assert(m_variable_info_ptr != nullptr);
-	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline bool cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::good() const noexcept { return m_init == init_result_type::success; }
 
-	return (m_variable_info_ptr + static_cast<std::size_t>(variable_index))->shared_data_ptr;
-}
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline bool cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_ongoing() const noexcept { return m_init == init_result_type::init_ongoing; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline const void* cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::get_shared_data_ptr(index_Ty variable_index) const noexcept
-{
-	assert(m_variable_info_ptr != nullptr);
-	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline std::size_t cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::variable_count() const noexcept { return m_variable_count; }
 
-	return (m_variable_info_ptr + static_cast<std::size_t>(variable_index))->shared_data_ptr;
-}
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline int cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::default_max_depth() const noexcept { return m_default_max_depth; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline bool cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::good() const noexcept { return m_init == init_result_type::success; }
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline std::size_t cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::link_count() const noexcept { return m_link_count; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline bool cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_ongoing() const noexcept { return m_init == init_result_type::init_ongoing; }
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline std::size_t cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::max_link_count() const noexcept { return m_max_link_count; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline std::size_t cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::variable_count() const noexcept { return m_variable_count; }
-
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline int cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::default_max_depth() const noexcept { return m_default_max_depth; }
-
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline std::size_t cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::link_count() const noexcept { return m_link_count; }
-
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline std::size_t cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::max_link_count() const noexcept { return m_max_link_count; }
-
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-cool::chain_get_observers_result<index_Ty> cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::get_observers(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+cool::chain_get_observers_result<index_Ty> cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::get_observers(
 	index_Ty variable_index, index_Ty* observer_list_optional_ptr, std::size_t max_observer_list_size) const noexcept
 {
 	return get_observers(variable_index, observer_list_optional_ptr, max_observer_list_size, cool::max_depth(m_default_max_depth));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-cool::chain_get_observers_result<index_Ty> cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::get_observers(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+cool::chain_get_observers_result<index_Ty> cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::get_observers(
 	index_Ty variable_index, index_Ty* observer_list_optional_ptr, std::size_t max_observer_list_size, cool::max_depth _max_depth) const noexcept
 {
 	assert(good());
@@ -1066,8 +1095,8 @@ cool::chain_get_observers_result<index_Ty> cool::_chain_base<Ty, cmp_Ty, index_T
 	return obs_result;
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::_get_observers_sub(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+void cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::_get_observers_sub(
 	index_Ty variable_index, index_Ty* observer_list_optional_ptr, std::size_t max_observer_list_size, int _max_depth_value, int _max_depth_initial_value,
 	cool::chain_get_observers_result<index_Ty>& obs_result_ref) const noexcept
 {
@@ -1115,14 +1144,14 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 }
 
 #ifdef COOL_CHAIN_VECTOR
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-cool::chain_get_observers_vec_result<index_Ty> cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::get_observers_vec(index_Ty variable_index) const
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+cool::chain_get_observers_vec_result<index_Ty> cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::get_observers_vec(index_Ty variable_index) const
 {
 	return get_observers_vec(variable_index, cool::max_depth(m_default_max_depth));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-cool::chain_get_observers_vec_result<index_Ty> cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::get_observers_vec(index_Ty variable_index, cool::max_depth _max_depth) const
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+cool::chain_get_observers_vec_result<index_Ty> cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::get_observers_vec(index_Ty variable_index, cool::max_depth _max_depth) const
 {
 	assert(good());
 	assert(static_cast<std::size_t>(variable_index) < m_variable_count);
@@ -1152,8 +1181,8 @@ cool::chain_get_observers_vec_result<index_Ty> cool::_chain_base<Ty, cmp_Ty, ind
 	return obs_result;
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::_get_observers_vec_sub(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+void cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::_get_observers_vec_sub(
 	index_Ty variable_index, int _max_depth_value, int _max_depth_initial_value,
 	cool::chain_get_observers_vec_result<index_Ty>& obs_result_ref) const
 {
@@ -1196,8 +1225,8 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 }
 #endif // COOL_CHAIN_VECTOR
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_set_cmp(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_set_cmp(
 	index_Ty variable_index, cmp_Ty cmp) noexcept
 {
 	index_Ty return_index = variable_index;
@@ -1226,9 +1255,8 @@ typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_
 	return init_result_type(m_init, return_index);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_set_shared_data_ptr(
-	index_Ty variable_index, void* shared_data_ptr) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_set_on_new_value(index_Ty variable_index, on_new_value_func_type on_new_value_func) noexcept
 {
 	index_Ty return_index = variable_index;
 
@@ -1236,7 +1264,7 @@ typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_
 	{
 		if (static_cast<std::size_t>(variable_index) < m_variable_count)
 		{
-			(m_variable_info_ptr + static_cast<std::size_t>(variable_index))->shared_data_ptr = shared_data_ptr;
+			(m_variable_info_ptr + static_cast<std::size_t>(variable_index))->on_new_value_func = on_new_value_func;
 			return_index = static_cast<index_Ty>(0);
 		}
 		else
@@ -1257,18 +1285,18 @@ typename cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_
 }
 
 #ifndef COOL_CHAIN_VIEW_VARIABLE_COUNT
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::variable_view::variable_view(const Ty* ptr) noexcept : m_ptr(ptr) {}
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::variable_view::variable_view(const Ty* ptr) noexcept : m_ptr(ptr) {}
 #else // COOL_CHAIN_VIEW_VARIABLE_COUNT
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::variable_view::variable_view(const Ty* ptr, std::size_t _variable_count) noexcept : m_ptr(ptr), m_variable_count(_variable_count) {}
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::variable_view::variable_view(const Ty* ptr, std::size_t _variable_count) noexcept : m_ptr(ptr), m_variable_count(_variable_count) {}
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline std::size_t cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::variable_view::variable_count() const noexcept { return m_variable_count; }
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline std::size_t cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::variable_view::variable_count() const noexcept { return m_variable_count; }
 #endif // COOL_CHAIN_VIEW_VARIABLE_COUNT
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline const Ty& cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::variable_view::operator[](index_Ty variable_index) const noexcept
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline const Ty& cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::variable_view::operator[](index_Ty variable_index) const noexcept
 {
 	assert(m_ptr != nullptr);
 #ifdef COOL_CHAIN_VIEW_VARIABLE_COUNT
@@ -1278,11 +1306,11 @@ inline const Ty& cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _val
 	return *(m_ptr + static_cast<std::size_t>(variable_index));
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline const Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::variable_view::data() const noexcept { return m_ptr; }
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline const Ty* cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::variable_view::data() const noexcept { return m_ptr; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::_delete_chain_sub() noexcept
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+void cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::_delete_chain_sub() noexcept
 {
 	this->m_variables_ptr = nullptr;
 	this->m_variable_info_ptr = nullptr;
@@ -1298,22 +1326,22 @@ void cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_s
 	this->m_max_link_count = 0;
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard::_lock_guard(bool& lock_ref) noexcept : m_ptr(&lock_ref) { lock_ref = true; }
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard::_lock_guard(bool& lock_ref) noexcept : m_ptr(&lock_ref) { lock_ref = true; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard::~_lock_guard() { *m_ptr = false; }
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::_lock_guard::~_lock_guard() { *m_ptr = false; }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::chain(cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>&& rhs) noexcept
-	: cool::_chain_base<Ty, cmp_Ty, refresh_result_Ty, index_Ty, _value_type_is_small>(rhs)
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::chain(cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>&& rhs) noexcept
+	: cool::_chain_base<Ty, cmp_Ty, state_Ty, refresh_result_Ty, index_Ty, _value_type_is_small>(rhs)
 {
 	rhs._delete_chain_sub();
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>& cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::operator=(
-	cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>&& rhs) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>& cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::operator=(
+	cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>&& rhs) noexcept
 {
 	this->m_variables_ptr = rhs.m_variables_ptr;
 	this->m_variable_info_ptr = rhs.m_variable_info_ptr;
@@ -1333,8 +1361,8 @@ cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>& cool
 	return *this;
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_chain_begin(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_chain_begin(
 	Ty* variables_ptr,
 	variable_info_type* variable_info_ptr,
 	cool::variable_count new_variable_count,
@@ -1388,15 +1416,15 @@ typename cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_sma
 	return init_result_type(this->m_init);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
 	index_Ty observer_variable_index, std::initializer_list<index_Ty> observed_variables, refresh_func_type refresh_func) noexcept
 {
 	return init_add_link(observer_variable_index, observed_variables.begin(), observed_variables.size(), refresh_func);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
 	index_Ty observer_variable_index, const index_Ty* observed_variables_ptr, std::size_t observed_variable_count, refresh_func_type refresh_func) noexcept
 {
 	assert(refresh_func != nullptr);
@@ -1458,15 +1486,15 @@ typename cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_sma
 	return init_result_type(this->m_init, return_index);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
 	index_Ty observer_variable_index, std::initializer_list<observed_info_type> observed_variables, refresh_func_type refresh_func) noexcept(std::is_nothrow_copy_assignable<cmp_Ty>::value)
 {
 	return init_add_link(observer_variable_index, observed_variables.begin(), observed_variables.size(), refresh_func);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
 	index_Ty observer_variable_index, const observed_info_type* observed_variables_ptr, std::size_t observed_variable_count, refresh_func_type refresh_func) noexcept(std::is_nothrow_copy_assignable<cmp_Ty>::value)
 {
 	assert(refresh_func != nullptr);
@@ -1529,15 +1557,15 @@ typename cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_sma
 	return init_result_type(this->m_init, return_index);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
 	index_Ty observer_variable_index, refresh_func_type refresh_func) noexcept
 {
 	return init_add_link(observer_variable_index, static_cast<const index_Ty*>(nullptr), 0, refresh_func);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_chain_end()
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_chain_end()
 {
 	if (this->m_init == init_result_type::init_ongoing)
 	{
@@ -1598,25 +1626,25 @@ typename cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_sma
 	return init_result_type(this->m_init);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-void cool::chain<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::delete_chain() noexcept
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+void cool::chain<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::delete_chain() noexcept
 {
 	this->_delete_chain_sub();
 }
 
 #ifdef COOL_CHAIN_VECTOR
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::chain_vec(cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>&& rhs) noexcept
-	: cool::_chain_base<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>(rhs),
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::chain_vec(cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>&& rhs) noexcept
+	: cool::_chain_base<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>(rhs),
 	m_observer_info_vec(std::move(rhs.m_observer_info_vec)),
 	m_link_info_vec(std::move(rhs.m_link_info_vec))
 {
 	rhs._delete_chain_sub();
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>& cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::operator=(
-	cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>&& rhs) noexcept
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>& cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::operator=(
+	cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>&& rhs) noexcept
 {
 	this->m_variables_ptr = rhs.m_variables_ptr;
 	this->m_variable_info_ptr = rhs.m_variable_info_ptr;
@@ -1639,14 +1667,14 @@ cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>& 
 	return *this;
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::chain_vec::~chain_vec()
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::chain_vec::~chain_vec()
 {
 	delete_chain();
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_new_chain_begin(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_new_chain_begin(
 	cool::variable_count new_variable_count,
 	cool::max_depth new_default_max_depth,
 	cmp_Ty default_cmp)
@@ -1703,15 +1731,15 @@ typename cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is
 	return init_result_type(this->m_init);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
 	index_Ty observer_variable_index, std::initializer_list<index_Ty> observed_variables, refresh_func_type refresh_func)
 {
 	return init_add_link(observer_variable_index, observed_variables.begin(), observed_variables.size(), refresh_func);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
 	index_Ty observer_variable_index, const index_Ty* observed_variables_ptr, std::size_t observed_variable_count, refresh_func_type refresh_func)
 {
 	assert(refresh_func != nullptr);
@@ -1771,15 +1799,15 @@ typename cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is
 	return init_result_type(this->m_init, return_index);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
 	index_Ty observer_variable_index, std::initializer_list<observed_info_type> observed_variables, refresh_func_type refresh_func)
 {
 	return init_add_link(observer_variable_index, observed_variables.begin(), observed_variables.size(), refresh_func);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
 	index_Ty observer_variable_index, const observed_info_type* observed_variables_ptr, std::size_t observed_variable_count, refresh_func_type refresh_func)
 {
 	assert(refresh_func != nullptr);
@@ -1839,15 +1867,15 @@ typename cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is
 	return init_result_type(this->m_init, return_index);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_add_link(
 	index_Ty observer_variable_index, refresh_func_type refresh_func) noexcept
 {
 	return init_add_link(observer_variable_index, static_cast<const index_Ty*>(nullptr), 0, refresh_func);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-typename cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::init_chain_end()
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+typename cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_result_type cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::init_chain_end()
 {
 	if (this->m_init == init_result_type::init_ongoing)
 	{
@@ -1908,8 +1936,8 @@ typename cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is
 	return init_result_type(this->m_init);
 }
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-void cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::delete_chain() noexcept
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+void cool::chain_vec<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::delete_chain() noexcept
 {
 	m_link_info_vec.clear();
 	m_observer_info_vec.clear();
@@ -1940,8 +1968,8 @@ void cool::chain_vec<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_sma
 }
 #endif // COOL_CHAIN_VECTOR
 
-template <class Ty, class cmp_Ty, class index_Ty, class refresh_result_Ty, bool _value_type_is_small>
-inline cool::chain_variable_info<Ty, cmp_Ty, index_Ty, refresh_result_Ty, _value_type_is_small>::chain_variable_info(cmp_Ty _cmp) noexcept : cmp(std::move(_cmp)) {}
+template <class Ty, class cmp_Ty, class index_Ty, class state_Ty, class refresh_result_Ty, bool _value_type_is_small>
+inline cool::chain_variable_info<Ty, cmp_Ty, index_Ty, state_Ty, refresh_result_Ty, _value_type_is_small>::chain_variable_info(cmp_Ty _cmp) noexcept : cmp(std::move(_cmp)) {}
 
 template <class cmp_Ty, class index_Ty>
 inline cool::chain_observer_info<cmp_Ty, index_Ty>::chain_observer_info(index_Ty _observer_index, cmp_Ty _cmp) noexcept
